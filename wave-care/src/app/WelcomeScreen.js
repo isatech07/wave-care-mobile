@@ -9,6 +9,8 @@ import {
 } from 'react-native';
 import { useFonts, Poppins_400Regular, Poppins_500Medium } from '@expo-google-fonts/poppins';
 
+
+
 export default function WelcomeScreen({ navigation }) {
   //Carregamento das fontes
   const [fontsLoaded] = useFonts({ Poppins_400Regular, Poppins_500Medium });
@@ -92,7 +94,8 @@ export default function WelcomeScreen({ navigation }) {
   );
 }
 
-// Estilos
+/* ESTILIZAÇÃO */
+
 const styles = StyleSheet.create({
 
   // Container principal
@@ -110,18 +113,18 @@ const styles = StyleSheet.create({
   // Título 
   logo: {
     fontFamily: 'serif',
-    fontSize: 50,
+    fontSize: 60,
     fontWeight: '600',
     color: '#FFFFFF',
-    letterSpacing: 3,
+    letterSpacing: 1,
     textAlign: 'center',
   },
 
   // Linha divisória abaixo do título
   divider: {
     height: 1,
-    backgroundColor: '#FFFFFF',
-    opacity: 0.9,
+    backgroundColor: '#2A8C8C',
+    opacity: 1,
     marginTop: 10,
     marginBottom: 18,
     width: '100%',
