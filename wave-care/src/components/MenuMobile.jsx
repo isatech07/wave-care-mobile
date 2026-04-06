@@ -1,119 +1,284 @@
-import React, { useRef, useState } from 'react';
+import React, { useState } from 'react';
 import {
   View,
+  Text,
   TouchableOpacity,
   StyleSheet,
-  Animated,
-  Dimensions,
+  Modal,
+  Pressable,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-const { width } = Dimensions.get('window');
+const ACTIVE_COLOR = '#2D5A45';
+const INACTIVE_COLOR = '#ABABAB';
+const HOME_BG = '#2D5A45';
 
-const TABS = [
-  { key: 'home',   icon: 'home-outline',        iconActive: 'home' },
-  { key: 'explore',icon: 'compass-outline',      iconActive: 'compass' },
-  { key: 'search', icon: 'search-outline',       iconActive: 'search' },
-  { key: 'cart',   icon: 'bag-handle-outline',   iconActive: 'bag-handle' },
+const ESTACOES = [
+  { label: 'Verão',     icon: 'sunny',      activeColor: '#F59E0B' },
+  { label: 'Outono',    icon: 'leaf',       activeColor: '#B45309' },
+  { label: 'Inverno',   icon: 'snow',       activeColor: '#3B82F6' },
+  { label: 'Primavera', icon: 'flower',     activeColor: '#EC4899' },
 ];
 
-const ACTIVE_COLOR   = '#3EA89B';   // teal, igual ao da imagem
-const INACTIVE_COLOR = '#8A8F9E';
-const BAR_BG         = '#C8CDD8';   // cinza azulado do mock
-const CONTAINER_BG   = '#2B2D35';   // fundo escuro ao redor
+const TABS = [
+  { key: 'loja',     label: 'Loja',     icon: 'bag-handle' },
+  { key: 'quiz',     label: 'Quiz',     icon: 'help-circle' },
+  { key: 'home',     label: 'Home',     icon: 'home',   center: true },
+  { key: 'estacoes', label: 'Estações', icon: 'leaf' },
+  { key: 'perfil',   label: 'Perfil',   icon: 'person' },
+];
 
-export default function MenuMobile({ onTabChange }) {
-  const [activeTab, setActiveTab] = useState('home');
-  const scales = useRef(TABS.map(() => new Animated.Value(1))).current;
+/**
+ * MenuMobile
+ *
+ * Props:
+ *   activeTab   {string}    – chave da aba ativa (ex: 'home', 'loja')
+ *   onTabChange {function}  – callback(tabKey, estacaoLabel?)
+ */
+export default function MenuMobile({ activeTab = 'home', onTabChange }) {
+  const [showEstacoes, setShowEstacoes]   = useState(false);
+  const [activeEstacao, setActiveEstacao] = useState(null);
 
-  const handlePress = (key, index) => {
-    setActiveTab(key);
-    onTabChange?.(key);
-
-    // pop animation
-    Animated.sequence([
-      Animated.timing(scales[index], {
-        toValue: 0.78,
-        duration: 90,
-        useNativeDriver: true,
-      }),
-      Animated.spring(scales[index], {
-        toValue: 1,
-        friction: 4,
-        tension: 200,
-        useNativeDriver: true,
-      }),
-    ]).start();
+  const handlePress = (tab) => {
+    if (tab.key === 'estacoes') {
+      setShowEstacoes(true);
+      return;
+    }
+    onTabChange?.(tab.key);
   };
 
+  const handleSelectEstacao = (estacao) => {
+    setActiveEstacao(estacao.label);
+    setShowEstacoes(false);
+    onTabChange?.('estacoes', estacao.label);
+  };
+
+  const isEstacaoActive = activeTab === 'estacoes';
+
   return (
-    <View style={styles.wrapper}>
-      <View style={styles.bar}>
-        {TABS.map((tab, index) => {
-          const isActive = activeTab === tab.key;
+    <>
+      {/* ── BARRA DE NAVEGAÇÃO ── */}
+      <View style={styles.container}>
+        {TABS.map((tab) => {
+          if (tab.center) {
+            return (
+              <TouchableOpacity
+                key={tab.key}
+                style={styles.centerWrapper}
+                onPress={() => handlePress(tab)}
+                activeOpacity={0.85}
+              >
+                <View style={[
+                  styles.centerButton,
+                  activeTab === 'home' && styles.centerButtonActive,
+                ]}>
+                  <Ionicons name={tab.icon} size={26} color="#fff" />
+                </View>
+              </TouchableOpacity>
+            );
+          }
+
+          const isActive =
+            activeTab === tab.key ||
+            (tab.key === 'estacoes' && isEstacaoActive);
+
           return (
             <TouchableOpacity
               key={tab.key}
+              style={styles.tabItem}
+              onPress={() => handlePress(tab)}
               activeOpacity={0.7}
-              onPress={() => handlePress(tab.key, index)}
-              style={styles.tabButton}
             >
-              <Animated.View
-                style={[
-                  styles.iconWrap,
-                  isActive && styles.iconWrapActive,
-                  { transform: [{ scale: scales[index] }] },
-                ]}
-              >
-                <Ionicons
-                  name={isActive ? tab.iconActive : tab.icon}
-                  size={24}
-                  color={isActive ? ACTIVE_COLOR : INACTIVE_COLOR}
-                />
-              </Animated.View>
+              <Ionicons
+                name={isActive ? tab.icon : `${tab.icon}-outline`}
+                size={22}
+                color={isActive ? ACTIVE_COLOR : INACTIVE_COLOR}
+              />
+              <Text style={[styles.label, isActive && styles.labelActive]}>
+                {tab.key === 'estacoes' && activeEstacao
+                  ? activeEstacao
+                  : tab.label}
+              </Text>
             </TouchableOpacity>
           );
         })}
       </View>
-    </View>
+
+      {/* ── BOTTOM SHEET DE ESTAÇÕES ── */}
+      <Modal
+        visible={showEstacoes}
+        transparent
+        animationType="slide"
+        statusBarTranslucent
+        onRequestClose={() => setShowEstacoes(false)}
+      >
+        <Pressable style={styles.overlay} onPress={() => setShowEstacoes(false)}>
+          <Pressable style={styles.sheet} onPress={() => {}}>
+
+            <View style={styles.handle} />
+
+            <Text style={styles.sheetTitle}>Escolha uma estação</Text>
+
+            {ESTACOES.map((estacao) => {
+              const selected = activeEstacao === estacao.label;
+              return (
+                <TouchableOpacity
+                  key={estacao.label}
+                  style={[styles.estacaoItem, selected && styles.estacaoItemSelected]}
+                  onPress={() => handleSelectEstacao(estacao)}
+                  activeOpacity={0.75}
+                >
+                  <View style={[
+                    styles.estacaoIconWrapper,
+                    { backgroundColor: estacao.activeColor + '22' },
+                  ]}>
+                    <Ionicons
+                      name={estacao.icon}
+                      size={20}
+                      color={estacao.activeColor}
+                    />
+                  </View>
+                  <Text style={[styles.estacaoLabel, selected && styles.estacaoLabelSelected]}>
+                    {estacao.label}
+                  </Text>
+                  {selected && (
+                    <Ionicons
+                      name="checkmark-circle"
+                      size={20}
+                      color={ACTIVE_COLOR}
+                      style={styles.checkIcon}
+                    />
+                  )}
+                </TouchableOpacity>
+              );
+            })}
+
+          </Pressable>
+        </Pressable>
+      </Modal>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
-  wrapper: {
-    backgroundColor: CONTAINER_BG,
-    paddingHorizontal: 12,
-    paddingBottom: 8,
-    paddingTop: 6,
-  },
-  bar: {
+  // ── Barra ──────────────────────────────────────────────
+  container: {
     flexDirection: 'row',
-    backgroundColor: BAR_BG,
-    borderRadius: 14,
-    paddingVertical: 10,
-    paddingHorizontal: 8,
     alignItems: 'center',
-    justifyContent: 'space-around',
-    // sombra sutil
+    backgroundColor: '#fff',
+    borderTopWidth: 0.5,
+    borderTopColor: '#E0E0E0',
+    paddingBottom: Platform.OS === 'ios' ? 24 : 8,
+    paddingTop: 8,
+    paddingHorizontal: 8,
+    elevation: 12,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.18,
-    shadowRadius: 6,
-    elevation: 5,
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
   },
-  tabButton: {
+  tabItem: {
     flex: 1,
     alignItems: 'center',
-    justifyContent: 'center',
+    gap: 4,
   },
-  iconWrap: {
-    width: 44,
-    height: 44,
+  label: {
+    fontSize: 10,
+    color: INACTIVE_COLOR,
+    fontWeight: '400',
+  },
+  labelActive: {
+    color: ACTIVE_COLOR,
+    fontWeight: '600',
+  },
+
+  // ── Botão central (Home) ────────────────────────────────
+  centerWrapper: {
+    flex: 1,
+    alignItems: 'center',
+    marginTop: -24,
+  },
+  centerButton: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: HOME_BG,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: HOME_BG,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  centerButtonActive: {
+    shadowOpacity: 0.6,
+    transform: [{ scale: 1.05 }],
+  },
+
+  // ── Overlay + Sheet ─────────────────────────────────────
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    justifyContent: 'flex-end',
+  },
+  sheet: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingHorizontal: 20,
+    paddingBottom: Platform.OS === 'ios' ? 40 : 24,
+    paddingTop: 12,
+  },
+  handle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#E0E0E0',
+    alignSelf: 'center',
+    marginBottom: 20,
+  },
+  sheetTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#888',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginBottom: 12,
+  },
+
+  // ── Itens do Sheet ──────────────────────────────────────
+  estacaoItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 12,
     borderRadius: 12,
+    marginBottom: 4,
+  },
+  estacaoItemSelected: {
+    backgroundColor: '#2D5A450D',
+  },
+  estacaoIconWrapper: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  iconWrapActive: {
-    backgroundColor: 'rgba(62,168,155,0.13)',
+  estacaoLabel: {
+    flex: 1,
+    fontSize: 16,
+    color: '#333',
+    fontWeight: '400',
+  },
+  estacaoLabelSelected: {
+    color: ACTIVE_COLOR,
+    fontWeight: '600',
+  },
+  checkIcon: {
+    marginLeft: 'auto',
   },
 });
