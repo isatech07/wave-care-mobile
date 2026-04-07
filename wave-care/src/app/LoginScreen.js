@@ -1,218 +1,116 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  SafeAreaView,
-  StatusBar,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-} from 'react-native';
-
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, Text, View, TouchableOpacity, Dimensions, KeyboardAvoidingView, Platform } from 'react-native';
+import Animated, { 
+  FadeInDown, FadeInUp, useAnimatedStyle, useSharedValue, 
+  withSpring, withTiming, interpolate, Easing 
+} from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { useFonts, Poppins_400Regular, Poppins_500Medium } from '@expo-google-fonts/poppins';
+import AnimatedInput from '../components/AnimatedInput';
+import { Colors } from '../theme/colors';
 
+const { width } = Dimensions.get('window');
 
 export default function LoginScreen({ navigation }) {
-  const [email, setEmail] = useState('');
-  const [senha, setSenha] = useState('');
-  const [showSenha, setShowSenha] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [secureText, setSecureText] = useState(true);
+  
+  // Animações
+  const buttonWidth = useSharedValue(width * 0.8);
+  const loadingProgress = useSharedValue(0);
+
+  const animatedButtonStyle = useAnimatedStyle(() => ({
+    width: buttonWidth.value,
+  }));
+
+  const progressStyle = useAnimatedStyle(() => ({
+    width: `${loadingProgress.value}%`,
+    opacity: loadingProgress.value > 0 ? 1 : 0,
+  }));
+
+  const handleLogin = () => {
+    if (loading) return;
+    
+    setLoading(true);
+    buttonWidth.value = withSpring(width * 0.7);
+    loadingProgress.value = withTiming(100, { duration: 2000, easing: Easing.bezier(0.4, 0, 0.2, 1) });
+
+    setTimeout(() => {
+      setLoading(false);
+      loadingProgress.value = 0;
+      buttonWidth.value = withSpring(width * 0.8);
+      navigation.navigate('Home'); 
+    }, 2200);
+  };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#C8D5D5" />
+    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
+      <LinearGradient colors={[Colors.secondary, Colors.primary]} style={styles.header}>
+        <Animated.Text entering={FadeInUp.delay(200)} style={styles.title}>Wave Care</Animated.Text>
+        <Animated.Text entering={FadeInUp.delay(400)} style={styles.subtitle}>Sua beleza no ritmo das ondas.</Animated.Text>
+      </LinearGradient>
 
-      {/* Header com logo */}
-      <View style={styles.header}>
-        <Text style={styles.logo}>Wave Care</Text>
-      </View>
+      <Animated.View entering={FadeInDown.springify()} style={styles.loginCard}>
+        <AnimatedInput placeholder="E-mail" keyboardType="email-address" />
+        
+        <View style={styles.passwordContainer}>
+          <AnimatedInput placeholder="Senha" secureTextEntry={secureText} />
+          <TouchableOpacity style={styles.eyeIcon} onPress={() => setSecureText(!secureText)}>
+            <Ionicons name={secureText ? "eye-off-outline" : "eye-outline"} size={22} color={Colors.accent} />
+          </TouchableOpacity>
+        </View>
 
-      {/* Card do formulário */}
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.cardWrapper}
-      >
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          <View style={styles.card}>
-            <Text style={styles.title}>Entrar</Text>
+        <TouchableOpacity style={styles.forgotPass}>
+          <Text style={styles.forgotText}>Esqueceu a senha?</Text>
+        </TouchableOpacity>
 
-            {/* Campo E-mail */}
-            <TextInput
-              style={[styles.input, { outlineWidth: 0, outlineColor: 'transparent', outlineStyle: 'none' }]}
-              placeholder="Insira seu e-mail"
-              placeholderTextColor="#aaa"
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-            />
+        <View style={styles.buttonWrapper}>
+          <TouchableOpacity activeOpacity={0.9} onPress={handleLogin} disabled={loading}>
+            <Animated.View style={[styles.loginButton, animatedButtonStyle]}>
+              {/* Barra de Carregamento Interna */}
+              <Animated.View style={[styles.progressBar, progressStyle]} />
+              
+              <Text style={styles.buttonText}>{loading ? 'Conectando...' : 'Entrar'}</Text>
+            </Animated.View>
+          </TouchableOpacity>
+        </View>
+      </Animated.View>
 
-            {/* Campo Senha */}
-            <View style={styles.inputRow}>
-              <TextInput
-                style={[styles.input, { flex: 1, marginBottom: 0, outline: 'none' }]}
-                placeholder="Insira sua senha"
-                placeholderTextColor="#aaa"
-                value={senha}
-                onChangeText={setSenha}
-                secureTextEntry={!showSenha}
-                autoCapitalize="none"
-              />
-              <TouchableOpacity
-                style={styles.eyeBtn}
-                onPress={() => setShowSenha(!showSenha)}
-              >
-                <Ionicons
-                  name={showSenha ? 'eye-outline' : 'eye-off-outline'}
-                  size={20}
-                  color="#aaa"
-                />
-              </TouchableOpacity>
-            </View>
-
-            {/* Botão Entrar */}
-            <TouchableOpacity
-              style={styles.btnPrimary}
-              onPress={() => navigation.navigate('Home')} // ← adiciona o onPress
-            >
-              <Text style={styles.btnPrimaryText}>Entrar</Text>
-            </TouchableOpacity>
-
-            {/* Separador */}
-            <View style={styles.separator}>
-              <View style={styles.line} />
-              <Text style={styles.separatorText}>Ou</Text>
-              <View style={styles.line} />
-            </View>
-
-            {/* Botão Criar Conta */}
-            <TouchableOpacity
-              style={styles.btnSecondary}
-              onPress={() => navigation?.navigate('Register')}
-            >
-              <Text style={styles.btnSecondaryText}>Cria Conta</Text>
-            </TouchableOpacity>
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+      <TouchableOpacity style={styles.footer} onPress={() => navigation.navigate('Cadastro')}>
+        <Text style={styles.footerText}>Novo por aqui? <Text style={styles.footerLink}>Criar Conta</Text></Text>
+      </TouchableOpacity>
+    </KeyboardAvoidingView>
   );
 }
 
-/* ESTILIZAÇÃO */
-
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#9FA8B0',
+  container: { flex: 1, backgroundColor: Colors.background },
+  header: { height: '35%', justifyContent: 'center', paddingHorizontal: 30, borderBottomLeftRadius: 60 },
+  title: { fontSize: 42, fontWeight: '700', color: '#FFF', fontFamily: 'serif' },
+  subtitle: { fontSize: 16, color: '#FFF', opacity: 0.8 },
+  loginCard: { backgroundColor: '#FFF', marginHorizontal: 25, marginTop: -40, borderRadius: 30, padding: 25, elevation: 10 },
+  passwordContainer: { position: 'relative' },
+  eyeIcon: { position: 'absolute', right: 15, top: 15, zIndex: 10 },
+  forgotPass: { alignSelf: 'flex-end', marginBottom: 25 },
+  forgotText: { color: Colors.primary, fontSize: 13, fontWeight: '600' },
+  buttonWrapper: { alignItems: 'center' },
+  loginButton: { 
+    backgroundColor: Colors.secondary, 
+    height: 55, 
+    borderRadius: 15, 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    overflow: 'hidden' 
   },
-  header: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingTop: 20,
+  progressBar: { 
+    position: 'absolute', 
+    bottom: 0, 
+    left: 0, 
+    height: 4, 
+    backgroundColor: Colors.accent 
   },
-  logo: {
-    fontSize: 65,
-    color: '#fff',
-    fontFamily: Platform.OS === 'ios' ? 'Georgia' : 'serif',
-    fontWeight: '600',
-    letterSpacing: 4,
-  },
-  cardWrapper: {
-    flex: 2,
-  },
-  scrollContent: {
-    flexGrow: 1,
-  },
-  card: {
-    flex: 1,
-    backgroundColor: '#1A7A78',
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    paddingHorizontal: 24,
-    paddingTop: 32,
-    paddingBottom: 40,
-  },
-  title: {
-    fontSize: 30,
-    fontWeight: '700',
-    color: '#fff',
-    marginBottom: 24,
-    fontFamily: 'Poppins_500Medium',
-  },
-  input: {
-    backgroundColor: '#fff',
-    borderRadius: 50,
-    paddingHorizontal: 18,
-    paddingVertical: 12,
-    fontSize: 14,
-    color: '#333',
-    marginBottom: 12,
-    fontFamily: 'Poppins_400Regular',
-  },
-  inputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 50,
-    marginBottom: 12,
-    paddingRight: 12,
-  },
-  eyeBtn: {
-    padding: 4,
-  },
-  eyeIcon: {
-    fontSize: 16,
-  },
-  btnPrimary: {
-    backgroundColor: '#0D3D3C',
-    borderRadius: 50,
-    paddingVertical: 14,
-    alignItems: 'center',
-    marginTop: 8,
-    marginBottom: 20,
-  },
-  btnPrimaryText: {
-    color: '#fff',
-    fontWeight: '600',
-    fontSize: 15,
-    letterSpacing: 0.5,
-    fontFamily: 'Poppins_500Medium',
-  },
-  separator: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  line: {
-    flex: 1,
-    height: 1,
-    backgroundColor: 'rgba(255,255,255,0.4)',
-  },
-  separatorText: {
-    color: 'rgba(255,255,255,0.8)',
-    marginHorizontal: 10,
-    fontSize: 13,
-  },
-  btnSecondary: {
-    backgroundColor: '#fff',
-    borderRadius: 50,
-    paddingVertical: 14,
-    alignItems: 'center',
-  },
-  btnSecondaryText: {
-    color: '#1A7A78',
-    fontWeight: '600',
-    fontSize: 15,
-    letterSpacing: 0.5,
-    fontFamily: 'Poppins_500Medium',
-  },
+  buttonText: { color: '#FFF', fontSize: 16, fontWeight: '700' },
+  footer: { marginTop: 40, alignItems: 'center' },
+  footerText: { color: '#666' },
+  footerLink: { color: Colors.primary, fontWeight: '700' }
 });
