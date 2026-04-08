@@ -1,222 +1,206 @@
-import React, { useEffect, useRef } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  Animated,
-  StatusBar,
-} from 'react-native';
-import { useFonts, Poppins_400Regular, Poppins_500Medium } from '@expo-google-fonts/poppins';
+import React, { useEffect } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
+import { useFonts, Poppins_400Regular, Poppins_500Medium, Poppins_700Bold } from '@expo-google-fonts/poppins';
+import { LinearGradient } from 'expo-linear-gradient';
+import Animated, { 
+  FadeInDown, 
+  FadeInUp, 
+  useSharedValue, 
+  useAnimatedStyle, 
+  withSpring, 
+  withDelay 
+} from 'react-native-reanimated';
+import { Colors } from '../theme/colors'; // Usando o arquivo de cores criado anteriormente
 
-
+const { width } = Dimensions.get('window');
 
 export default function WelcomeScreen({ navigation }) {
-  //Carregamento das fontes
-  const [fontsLoaded] = useFonts({ Poppins_400Regular, Poppins_500Medium });
+  const [fontsLoaded] = useFonts({ 
+    Poppins_400Regular, 
+    Poppins_500Medium,
+    Poppins_700Bold 
+  });
 
-  // Valores de animação
-  const fadeTitle = useRef(new Animated.Value(0)).current;
-  const fadeSubtitle = useRef(new Animated.Value(0)).current;
-  const fadeDesc = useRef(new Animated.Value(0)).current;
-  const fadeButtons = useRef(new Animated.Value(0)).current;
-  const slideUp = useRef(new Animated.Value(40)).current;
+  // Micro-interação para os botões
+  const scaleBtn = useSharedValue(1);
+  const animatedBtnStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scaleBtn.value }]
+  }));
 
-  // Animações de entrada 
-  useEffect(() => {
-    if (!fontsLoaded) return;
-    Animated.stagger(180, [
-      Animated.parallel([
-        Animated.timing(fadeTitle, { toValue: 1, duration: 700, useNativeDriver: true }),
-        Animated.timing(slideUp, { toValue: 0, duration: 700, useNativeDriver: true }),
-      ]),
-      Animated.timing(fadeSubtitle, { toValue: 1, duration: 600, useNativeDriver: true }),
-      Animated.timing(fadeDesc, { toValue: 1, duration: 600, useNativeDriver: true }),
-      Animated.timing(fadeButtons, { toValue: 1, duration: 600, useNativeDriver: true }),
-    ]).start();
-  }, [fontsLoaded]);
   if (!fontsLoaded) return null;
+
+  const pressIn = () => (scaleBtn.value = withSpring(0.96));
+  const pressOut = () => (scaleBtn.value = withSpring(1));
 
   return (
     <View style={styles.container}>
-      {/* Status Bar */}
-      <StatusBar barStyle="light-content" backgroundColor="#9FA8B0" />
-      <View style={styles.content}>
+      <StatusBar style="light" />
+      
+      {/* Background Cinematográfico */}
+      <LinearGradient
+        colors={[Colors.secondary, Colors.primary, Colors.background]}
+        style={StyleSheet.absoluteFill}
+      />
 
-        {/*  Título principal e divisor */}
-        <Animated.View style={{ opacity: fadeTitle, transform: [{ translateY: slideUp }] }}>
+      <View style={styles.content}>
+        
+        {/* Bloco de Título Animado */}
+        <Animated.View 
+          entering={FadeInUp.duration(1000).springify()}
+          style={styles.header}
+        >
           <Text style={styles.logo}>Wave Care</Text>
           <View style={styles.divider} />
         </Animated.View>
 
-        {/* Subtítulo */}
-        <Animated.Text style={[styles.subtitle, { opacity: fadeSubtitle }]}>
+        {/* Textos com Entrada em Cascata (Stagger) */}
+        <Animated.Text 
+          entering={FadeInDown.delay(400).duration(800)}
+          style={styles.subtitle}
+        >
           Bem‑vindo à Wave Care
         </Animated.Text>
 
-        {/* Descrição*/}
-        <Animated.Text style={[styles.description, { opacity: fadeDesc }]}>
-          Crie sua conta e comece sua jornada de cuidados capilares com produtos, rotinas e dicas para
-          manter seus fios saudáveis em todas as estações.
+        <Animated.Text 
+          entering={FadeInDown.delay(600).duration(800)}
+          style={styles.description}
+        >
+          Crie sua conta e comece sua jornada de cuidados capilares com produtos e rotinas para manter seus fios saudáveis.
         </Animated.Text>
 
-        {/* Botões */}
-        <Animated.View style={[styles.buttonsContainer, { opacity: fadeButtons }]}>
-
-          {/* Botão - Criar Conta */}
+        {/* Container de Ações */}
+        <Animated.View 
+          entering={FadeInDown.delay(800).duration(800)}
+          style={styles.buttonsContainer}
+        >
           <TouchableOpacity
-            style={styles.btnPrimary}
-            activeOpacity={0.85}
-            onPress={() => navigation?.navigate('Register')}
+            activeOpacity={1}
+            onPressIn={pressIn}
+            onPressOut={pressOut}
+            onPress={() => navigation?.navigate('Cadastro')}
           >
-            <Text style={styles.btnPrimaryText}>Criar Conta</Text>
+            <Animated.View style={[styles.btnPrimary, animatedBtnStyle]}>
+              <Text style={styles.btnPrimaryText}>Criar Conta</Text>
+            </Animated.View>
           </TouchableOpacity>
 
-          {/* Separador "Ou" */}
           <View style={styles.orRow}>
             <View style={styles.orLine} />
             <Text style={styles.orText}>Ou</Text>
             <View style={styles.orLine} />
           </View>
 
-          {/* Botão - Entrar */}
           <TouchableOpacity
-            style={styles.btnSecondary}
-            activeOpacity={0.85}
+            activeOpacity={0.8}
             onPress={() => navigation?.navigate('Login')}
+            style={styles.btnSecondary}
           >
             <Text style={styles.btnSecondaryText}>Entrar</Text>
           </TouchableOpacity>
-
         </Animated.View>
       </View>
     </View>
   );
 }
 
-/* ESTILIZAÇÃO */
-
 const styles = StyleSheet.create({
-
-  // Container principal
   container: {
     flex: 1,
-    backgroundColor: '#9FA8B0',
     alignItems: 'center',
     justifyContent: 'center',
   },
   content: {
-    width: '80%',
+    width: '85%',
     alignItems: 'center',
+    paddingTop: 50,
   },
-
-  // Título 
+  header: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
   logo: {
-    fontFamily: 'serif',
-    fontSize: 60,
-    fontWeight: '600',
+    fontFamily: 'serif', // Ou Poppins_700Bold para mais modernidade
+    fontSize: 54,
     color: '#FFFFFF',
-    letterSpacing: 1,
+    letterSpacing: -1,
     textAlign: 'center',
   },
-
-  // Linha divisória abaixo do título
   divider: {
-    height: 1,
-    backgroundColor: '#2A8C8C',
-    opacity: 1,
-    marginTop: 10,
-    marginBottom: 18,
-    width: '100%',
+    height: 4,
+    backgroundColor: Colors.accent,
+    width: 60,
+    borderRadius: 2,
+    marginTop: -5,
   },
-
-  // Subtítulo
   subtitle: {
     fontFamily: 'serif',
-    fontSize: 25,
+    fontSize: 24,
     fontStyle: 'italic',
     color: '#FFFFFF',
-    marginBottom: 14,
+    marginBottom: 15,
     textAlign: 'center',
   },
-
-  // Descrição 
   description: {
     fontFamily: 'Poppins_400Regular',
-    fontSize: 12,
+    fontSize: 14,
     color: '#FFFFFF',
-    opacity: 0.85,
+    opacity: 0.9,
     textAlign: 'center',
-    lineHeight: 20,
-    marginBottom: 36,
+    lineHeight: 22,
+    marginBottom: 40,
   },
   buttonsContainer: {
     width: '100%',
-    alignItems: 'center',
   },
-
-  // Botão primário 
   btnPrimary: {
     width: '100%',
-    height: 50,
+    height: 60,
     backgroundColor: '#FFFFFF',
-    borderRadius: 30,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.12,
-    shadowRadius: 6,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.1,
+    shadowRadius: 15,
+    elevation: 8,
   },
   btnPrimaryText: {
     fontFamily: 'Poppins_500Medium',
-    color: '#333333',
-    fontSize: 15,
-    letterSpacing: 0.4,
-    fontWeight: '600',
+    color: Colors.secondary,
+    fontSize: 16,
+    fontWeight: '700',
   },
-
-  // Separador "Ou"
   orRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    width: '100%',
-    marginVertical: 16,
+    marginVertical: 25,
   },
   orLine: {
     flex: 1,
     height: 1,
     backgroundColor: '#FFFFFF',
-    opacity: 0.4,
+    opacity: 0.3,
   },
   orText: {
     fontFamily: 'Poppins_400Regular',
     color: '#FFFFFF',
-    fontSize: 13,
-    marginHorizontal: 10,
-    opacity: 0.8,
+    fontSize: 14,
+    marginHorizontal: 15,
   },
-
-  // Botão secundário 
   btnSecondary: {
     width: '100%',
-    height: 50,
-    backgroundColor: '#2A8C8C',
-    borderRadius: 30,
+    height: 60,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.5)',
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    elevation: 3,
   },
   btnSecondaryText: {
     fontFamily: 'Poppins_500Medium',
     color: '#FFFFFF',
-    fontSize: 15,
-    letterSpacing: 0.4,
-    fontWeight: '500',
+    fontSize: 16,
   },
 });
