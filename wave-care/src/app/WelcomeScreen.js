@@ -1,79 +1,66 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts, Poppins_400Regular, Poppins_500Medium, Poppins_700Bold } from '@expo-google-fonts/poppins';
 import { LinearGradient } from 'expo-linear-gradient';
-import Animated, { 
-  FadeInDown, 
-  FadeInUp, 
-  useSharedValue, 
-  useAnimatedStyle, 
-  withSpring, 
-  withDelay 
+import Animated, {
+  FadeInDown,
+  FadeInUp,
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
 } from 'react-native-reanimated';
-import { Colors } from '../theme/colors'; // Usando o arquivo de cores criado anteriormente
+import { Colors } from '../theme/colors';
 
 const { width } = Dimensions.get('window');
 
 export default function WelcomeScreen({ navigation }) {
-  const [fontsLoaded] = useFonts({ 
-    Poppins_400Regular, 
+  const [fontsLoaded] = useFonts({
+    Poppins_400Regular,
     Poppins_500Medium,
-    Poppins_700Bold 
+    Poppins_700Bold,
   });
 
-  // Micro-interação para os botões
   const scaleBtn = useSharedValue(1);
   const animatedBtnStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scaleBtn.value }]
+    transform: [{ scale: scaleBtn.value }],
   }));
 
   if (!fontsLoaded) return null;
 
-  const pressIn = () => (scaleBtn.value = withSpring(0.96));
+  const pressIn  = () => (scaleBtn.value = withSpring(0.96));
   const pressOut = () => (scaleBtn.value = withSpring(1));
 
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
-      
-      {/* Background Cinematográfico */}
+
       <LinearGradient
         colors={[Colors.secondary, Colors.primary, Colors.background]}
         style={StyleSheet.absoluteFill}
       />
 
       <View style={styles.content}>
-        
-        {/* Bloco de Título Animado */}
-        <Animated.View 
-          entering={FadeInUp.duration(1000).springify()}
-          style={styles.header}
-        >
+
+        {/* Header */}
+        <Animated.View entering={FadeInUp.duration(1000).springify()} style={styles.header}>
           <Text style={styles.logo}>Wave Care</Text>
           <View style={styles.divider} />
         </Animated.View>
 
-        {/* Textos com Entrada em Cascata (Stagger) */}
-        <Animated.Text 
-          entering={FadeInDown.delay(400).duration(800)}
-          style={styles.subtitle}
-        >
+        {/* Subtitle */}
+        <Animated.Text entering={FadeInDown.delay(400).duration(800)} style={styles.subtitle}>
           Bem‑vindo à Wave Care
         </Animated.Text>
 
-        <Animated.Text 
-          entering={FadeInDown.delay(600).duration(800)}
-          style={styles.description}
-        >
+        {/* Description */}
+        <Animated.Text entering={FadeInDown.delay(600).duration(800)} style={styles.description}>
           Crie sua conta e comece sua jornada de cuidados capilares com produtos e rotinas para manter seus fios saudáveis.
         </Animated.Text>
 
-        {/* Container de Ações */}
-        <Animated.View 
-          entering={FadeInDown.delay(800).duration(800)}
-          style={styles.buttonsContainer}
-        >
+        {/* Buttons */}
+        <Animated.View entering={FadeInDown.delay(800).duration(800)} style={styles.buttonsContainer}>
+
           <TouchableOpacity
             activeOpacity={1}
             onPressIn={pressIn}
@@ -98,6 +85,7 @@ export default function WelcomeScreen({ navigation }) {
           >
             <Text style={styles.btnSecondaryText}>Entrar</Text>
           </TouchableOpacity>
+
         </Animated.View>
       </View>
     </View>
@@ -105,6 +93,7 @@ export default function WelcomeScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
+  // ─── Layout ────────────────────────────────────────────────────────────────
   container: {
     flex: 1,
     alignItems: 'center',
@@ -115,24 +104,29 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingTop: 50,
   },
+
+  // ─── Header ────────────────────────────────────────────────────────────────
   header: {
     alignItems: 'center',
     marginBottom: 20,
   },
   logo: {
-    fontFamily: 'serif', // Ou Poppins_700Bold para mais modernidade
+    fontFamily: 'serif',
+    fontWeight:'600',
     fontSize: 54,
     color: '#FFFFFF',
     letterSpacing: -1,
-    textAlign: 'center',
+    textAlign: 'center'
   },
   divider: {
     height: 4,
-    backgroundColor: Colors.accent,
     width: 60,
+    backgroundColor: Colors.accent,
     borderRadius: 2,
     marginTop: -5,
   },
+
+  // ─── Textos ────────────────────────────────────────────────────────────────
   subtitle: {
     fontFamily: 'serif',
     fontSize: 24,
@@ -150,6 +144,8 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     marginBottom: 40,
   },
+
+  // ─── Botões ────────────────────────────────────────────────────────────────
   buttonsContainer: {
     width: '100%',
   },
@@ -167,11 +163,12 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   btnPrimaryText: {
-    fontFamily: 'Poppins_500Medium',
-    color: Colors.secondary,
+    fontFamily: 'Poppins_700Bold',
     fontSize: 16,
-    fontWeight: '700',
+    color: Colors.secondary,
   },
+
+  // ─── Separador "Ou" ────────────────────────────────────────────────────────
   orRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -185,10 +182,12 @@ const styles = StyleSheet.create({
   },
   orText: {
     fontFamily: 'Poppins_400Regular',
-    color: '#FFFFFF',
     fontSize: 14,
+    color: '#FFFFFF',
     marginHorizontal: 15,
   },
+
+  // ─── Botão Secundário ──────────────────────────────────────────────────────
   btnSecondary: {
     width: '100%',
     height: 60,
@@ -200,7 +199,7 @@ const styles = StyleSheet.create({
   },
   btnSecondaryText: {
     fontFamily: 'Poppins_500Medium',
-    color: '#FFFFFF',
     fontSize: 16,
+    color: '#FFFFFF',
   },
 });

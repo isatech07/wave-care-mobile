@@ -1,7 +1,7 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { GestureHandlerRootView } from 'react-native-gesture-handler'; // OBRIGATÓRIO
+import { GestureHandlerRootView } from 'react-native-gesture-handler'; 
 
 import WelcomeScreen from './src/app/WelcomeScreen';
 import CadastroScreen from './src/app/CadastroScreen';
@@ -12,7 +12,6 @@ const Stack = createNativeStackNavigator();
 
 export default function App() {
   return (
-    // O GestureHandlerRootView deve envolver tudo para as animações funcionarem
     <GestureHandlerRootView style={{ flex: 1 }}>
       <NavigationContainer>
         <Stack.Navigator 
@@ -24,9 +23,6 @@ export default function App() {
         >
           <Stack.Screen name="Welcome" component={WelcomeScreen} />
           
-          {/* DICA: Mantenha o nome "Cadastro" aqui para bater com o 
-            navigation.navigate('Cadastro') que usamos nas telas 
-          */}
           <Stack.Screen name="Cadastro" component={CadastroScreen} />
           
           <Stack.Screen name="Login" component={LoginScreen} />
