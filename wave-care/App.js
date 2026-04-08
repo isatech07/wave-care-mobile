@@ -7,26 +7,24 @@ import WelcomeScreen from './src/app/WelcomeScreen';
 import CadastroScreen from './src/app/CadastroScreen';
 import LoginScreen from './src/app/LoginScreen';
 import HomeScreen from './src/app/HomeScreen';
+import QuizScreen from './src/app/QuizScreen';
 
 const Stack = createNativeStackNavigator();
 
 export default function App() {
   return (
-    // O GestureHandlerRootView deve envolver tudo para as animações funcionarem
+    
     <GestureHandlerRootView style={{ flex: 1 }}>
       <NavigationContainer>
         <Stack.Navigator 
           initialRouteName="Welcome" 
           screenOptions={{ 
             headerShown: false,
-            animation: 'fade_from_bottom' // Transição elegante e suave
+            animation: 'fade_from_bottom' 
           }}
         >
           <Stack.Screen name="Welcome" component={WelcomeScreen} />
-          
-          {/* DICA: Mantenha o nome "Cadastro" aqui para bater com o 
-            navigation.navigate('Cadastro') que usamos nas telas 
-          */}
+          <Stack.Screen name="Quiz" component={QuizScreen} />
           <Stack.Screen name="Cadastro" component={CadastroScreen} />
           
           <Stack.Screen name="Login" component={LoginScreen} />

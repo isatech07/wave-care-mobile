@@ -49,10 +49,10 @@ export default function MenuMobile({ activeTab = 'home', onTabChange }) {
   };
 
   const handleSelectEstacao = (estacao) => {
-    setActiveEstacao(estacao.label);
-    setShowEstacoes(false);
-    onTabChange?.('estacoes', estacao.label);
-  };
+  setActiveEstacao(estacao.label);
+  setShowEstacoes(false);
+  onTabChange?.('loja', estacao.label); 
+};
 
   const isEstacaoActive = activeTab === 'estacoes';
 
