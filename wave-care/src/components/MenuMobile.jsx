@@ -9,6 +9,7 @@ import {
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 
 const ACTIVE_COLOR = '#2D5A45';
 const INACTIVE_COLOR = '#ABABAB';
@@ -29,15 +30,9 @@ const TABS = [
   { key: 'perfil',   label: 'Perfil',   icon: 'person' },
 ];
 
-/**
- * MenuMobile
- *
- * Props:
- *   activeTab   {string}    – chave da aba ativa (ex: 'home', 'loja')
- *   onTabChange {function}  – callback(tabKey, estacaoLabel?)
- */
 export default function MenuMobile({ activeTab = 'home', onTabChange }) {
-  const [showEstacoes, setShowEstacoes]   = useState(false);
+  const navigation = useNavigation();
+  const [showEstacoes, setShowEstacoes] = useState(false);
   const [activeEstacao, setActiveEstacao] = useState(null);
 
   const handlePress = (tab) => {
@@ -45,20 +40,25 @@ export default function MenuMobile({ activeTab = 'home', onTabChange }) {
       setShowEstacoes(true);
       return;
     }
+
+    if (tab.key === 'perfil') {
+      navigation.navigate('Perfil');
+      return;
+    }
+    
     onTabChange?.(tab.key);
   };
 
   const handleSelectEstacao = (estacao) => {
     setActiveEstacao(estacao.label);
     setShowEstacoes(false);
-    onTabChange?.('estacoes', estacao.label);
+    onTabChange?.('loja', estacao.label); 
   };
 
   const isEstacaoActive = activeTab === 'estacoes';
 
   return (
     <>
-      {/* ── BARRA DE NAVEGAÇÃO ── */}
       <View style={styles.container}>
         {TABS.map((tab) => {
           if (tab.center) {
@@ -105,7 +105,6 @@ export default function MenuMobile({ activeTab = 'home', onTabChange }) {
         })}
       </View>
 
-      {/* ── BOTTOM SHEET DE ESTAÇÕES ── */}
       <Modal
         visible={showEstacoes}
         transparent
@@ -115,9 +114,7 @@ export default function MenuMobile({ activeTab = 'home', onTabChange }) {
       >
         <Pressable style={styles.overlay} onPress={() => setShowEstacoes(false)}>
           <Pressable style={styles.sheet} onPress={() => {}}>
-
             <View style={styles.handle} />
-
             <Text style={styles.sheetTitle}>Escolha uma estação</Text>
 
             {ESTACOES.map((estacao) => {
@@ -153,7 +150,6 @@ export default function MenuMobile({ activeTab = 'home', onTabChange }) {
                 </TouchableOpacity>
               );
             })}
-
           </Pressable>
         </Pressable>
       </Modal>
@@ -162,7 +158,6 @@ export default function MenuMobile({ activeTab = 'home', onTabChange }) {
 }
 
 const styles = StyleSheet.create({
-  // ── Barra ──────────────────────────────────────────────
   container: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -192,8 +187,6 @@ const styles = StyleSheet.create({
     color: ACTIVE_COLOR,
     fontWeight: '600',
   },
-
-  // ── Botão central (Home) ────────────────────────────────
   centerWrapper: {
     flex: 1,
     alignItems: 'center',
@@ -216,8 +209,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.6,
     transform: [{ scale: 1.05 }],
   },
-
-  // ── Overlay + Sheet ─────────────────────────────────────
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.35)',
@@ -247,8 +238,6 @@ const styles = StyleSheet.create({
     letterSpacing: 0.8,
     marginBottom: 12,
   },
-
-  // ── Itens do Sheet ──────────────────────────────────────
   estacaoItem: {
     flexDirection: 'row',
     alignItems: 'center',
