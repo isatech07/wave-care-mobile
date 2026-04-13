@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
   Text,
@@ -7,6 +7,7 @@ import {
   Dimensions,
   KeyboardAvoidingView,
   Platform,
+  Alert,
 } from 'react-native';
 import Animated, {
   FadeInDown,
@@ -19,20 +20,31 @@ import Animated, {
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { useFonts, Poppins_400Regular, Poppins_500Medium, Poppins_700Bold } from '@expo-google-fonts/poppins';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {
+  useFonts,
+  Poppins_400Regular,
+  Poppins_500Medium,
+  Poppins_700Bold,
+} from '@expo-google-fonts/poppins';
 import AnimatedInput from '../components/AnimatedInput';
 import { Colors } from '../theme/colors';
+import { useUser } from '../contexts/UserContext';
 
 const { width } = Dimensions.get('window');
 
 export default function LoginScreen({ navigation }) {
+  const { updateUser } = useUser(); // Mude de 'login' para 'updateUser'
+
   const [fontsLoaded] = useFonts({
     Poppins_400Regular,
     Poppins_500Medium,
     Poppins_700Bold,
   });
 
-  const [loading,    setLoading]    = useState(false);
+  const [email, setEmail]         = useState('');
+  const [senha, setSenha]         = useState('');
+  const [loading, setLoading]     = useState(false);
   const [secureText, setSecureText] = useState(true);
 
   const buttonWidth     = useSharedValue(width * 0.8);
@@ -47,10 +59,22 @@ export default function LoginScreen({ navigation }) {
     opacity: loadingProgress.value > 0 ? 1 : 0,
   }));
 
+  // Pré-preenche email se tiver salvo
+  useEffect(() => {
+    AsyncStorage.getItem('wavecare_last_email').then((saved) => {
+      if (saved) setEmail(saved);
+    });
+  }, []);
+
   if (!fontsLoaded) return null;
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (loading) return;
+
+    if (!email.trim() || !senha.trim()) {
+      Alert.alert('Atenção', 'Preencha e-mail e senha para entrar.');
+      return;
+    }
 
     setLoading(true);
     buttonWidth.value     = withSpring(width * 0.7);
@@ -59,12 +83,65 @@ export default function LoginScreen({ navigation }) {
       easing: Easing.bezier(0.4, 0, 0.2, 1),
     });
 
-    setTimeout(() => {
+    try {
+      // Busca usuário salvo no AsyncStorage
+      const raw = await AsyncStorage.getItem('wavecare_user');
+      const savedUser = raw ? JSON.parse(raw) : null;
+
+      // Aguarda a animação terminar
+      await new Promise(resolve => setTimeout(resolve, 2200));
+
       setLoading(false);
       loadingProgress.value = 0;
       buttonWidth.value     = withSpring(width * 0.8);
-      navigation.navigate('Home');
-    }, 2200);
+
+      if (savedUser && savedUser.email === email.trim()) {
+        // Usuário existe - faz login
+        await AsyncStorage.setItem('wavecare_last_email', email.trim());
+        updateUser(savedUser); // Usa updateUser em vez de login
+        navigation.replace('Home');
+      } else if (!savedUser) {
+        // Sem conta cadastrada — cria sessão básica com o email
+        const newUser = { 
+          id: Date.now().toString(),
+          name: email.split('@')[0], 
+          email: email.trim(), 
+          phone: '', 
+          city: '',
+          guest: false,
+          favorites: [],
+          orders: [],
+          hairProfile: null,
+        };
+        await AsyncStorage.setItem('wavecare_user', JSON.stringify(newUser));
+        await AsyncStorage.setItem('wavecare_last_email', email.trim());
+        updateUser(newUser);
+        navigation.replace('Home');
+      } else {
+        Alert.alert('E-mail não encontrado', 'Verifique o e-mail ou crie uma conta.');
+      }
+    } catch (error) {
+      console.error('Erro no login:', error);
+      setLoading(false);
+      loadingProgress.value = 0;
+      buttonWidth.value     = withSpring(width * 0.8);
+      Alert.alert('Erro', 'Não foi possível fazer login. Tente novamente.');
+    }
+  };
+
+  const handleGuest = async () => {
+    const guestUser = {
+      id: 'guest_' + Date.now(),
+      guest: true,
+      name: 'Convidado',
+      email: null,
+      favorites: [],
+      orders: [],
+    };
+    await AsyncStorage.setItem('wavecare_guest', 'true');
+    await AsyncStorage.setItem('wavecare_user', JSON.stringify(guestUser));
+    updateUser(guestUser);
+    navigation.replace('Home');
   };
 
   return (
@@ -84,11 +161,25 @@ export default function LoginScreen({ navigation }) {
 
       {/* Card de Login */}
       <Animated.View entering={FadeInDown.springify()} style={styles.loginCard}>
-        <AnimatedInput placeholder="E-mail" keyboardType="email-address" />
+        <AnimatedInput
+          placeholder="E-mail"
+          keyboardType="email-address"
+          value={email}
+          onChangeText={setEmail}
+          autoCapitalize="none"
+        />
 
         <View style={styles.passwordContainer}>
-          <AnimatedInput placeholder="Senha" secureTextEntry={secureText} />
-          <TouchableOpacity style={styles.eyeIcon} onPress={() => setSecureText(!secureText)}>
+          <AnimatedInput
+            placeholder="Senha"
+            secureTextEntry={secureText}
+            value={senha}
+            onChangeText={setSenha}
+          />
+          <TouchableOpacity
+            style={styles.eyeIcon}
+            onPress={() => setSecureText(!secureText)}
+          >
             <Ionicons
               name={secureText ? 'eye-off-outline' : 'eye-outline'}
               size={22}
@@ -106,14 +197,24 @@ export default function LoginScreen({ navigation }) {
           <TouchableOpacity activeOpacity={0.9} onPress={handleLogin} disabled={loading}>
             <Animated.View style={[styles.loginButton, animatedButtonStyle]}>
               <Animated.View style={[styles.progressBar, progressStyle]} />
-              <Text style={styles.buttonText}>{loading ? 'Conectando...' : 'Entrar'}</Text>
+              <Text style={styles.buttonText}>
+                {loading ? 'Conectando...' : 'Entrar'}
+              </Text>
             </Animated.View>
           </TouchableOpacity>
         </View>
+
+        {/* Entrar sem conta */}
+        <TouchableOpacity style={styles.guestBtn} onPress={handleGuest}>
+          <Text style={styles.guestText}>Continuar sem conta</Text>
+        </TouchableOpacity>
       </Animated.View>
 
       {/* Footer */}
-      <TouchableOpacity style={styles.footer} onPress={() => navigation.navigate('Cadastro')}>
+      <TouchableOpacity
+        style={styles.footer}
+        onPress={() => navigation.navigate('Cadastro')}
+      >
         <Text style={styles.footerText}>
           Novo por aqui?{' '}
           <Text style={styles.footerLink}>Criar Conta</Text>
@@ -124,13 +225,11 @@ export default function LoginScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  // ─── Layout ────────────────────────────────────────────────────────────────
   container: {
     flex: 1,
     backgroundColor: Colors.background,
   },
 
-  // ─── Header ────────────────────────────────────────────────────────────────
   header: {
     height: '35%',
     justifyContent: 'center',
@@ -140,7 +239,7 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: 'serif',
     fontSize: 42,
-    fontWeight:'600',
+    fontWeight: '600',
     color: '#FFF',
   },
   subtitle: {
@@ -150,7 +249,6 @@ const styles = StyleSheet.create({
     opacity: 0.8,
   },
 
-  // ─── Card de Login ─────────────────────────────────────────────────────────
   loginCard: {
     backgroundColor: '#FFF',
     marginHorizontal: 25,
@@ -160,7 +258,6 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
 
-  // ─── Input de Senha ────────────────────────────────────────────────────────
   passwordContainer: {
     position: 'relative',
   },
@@ -171,7 +268,6 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
 
-  // ─── Esqueceu a Senha ──────────────────────────────────────────────────────
   forgotPass: {
     alignSelf: 'flex-end',
     marginBottom: 25,
@@ -182,7 +278,6 @@ const styles = StyleSheet.create({
     color: Colors.primary,
   },
 
-  // ─── Botão de Login ────────────────────────────────────────────────────────
   buttonWrapper: {
     alignItems: 'center',
   },
@@ -207,7 +302,18 @@ const styles = StyleSheet.create({
     color: '#FFF',
   },
 
-  // ─── Footer ────────────────────────────────────────────────────────────────
+  guestBtn: {
+    marginTop: 14,
+    alignItems: 'center',
+    paddingVertical: 10,
+  },
+  guestText: {
+    fontFamily: 'Poppins_500Medium',
+    fontSize: 13,
+    color: '#999',
+    textDecorationLine: 'underline',
+  },
+
   footer: {
     marginTop: 40,
     alignItems: 'center',

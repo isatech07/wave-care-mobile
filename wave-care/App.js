@@ -10,6 +10,8 @@ import LoginScreen from './src/app/LoginScreen';
 import HomeScreen from './src/app/HomeScreen';
 import QuizScreen from './src/app/QuizScreen';
 import PerfilScreen from './src/app/PerfilScreen';
+import LojaScreen from './src/app/LojaScreen';
+
 
 const Stack = createNativeStackNavigator();
 
@@ -18,19 +20,21 @@ export default function App() {
     <UserProvider>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <NavigationContainer>
-          <Stack.Navigator 
-            initialRouteName="Welcome" 
-            screenOptions={{ 
+          <Stack.Navigator
+            initialRouteName="Welcome"
+            screenOptions={{
               headerShown: false,
-              animation: 'fade_from_bottom' 
+              animation: 'fade_from_bottom',
             }}
           >
-            <Stack.Screen name="Welcome" component={WelcomeScreen} />
-            <Stack.Screen name="Quiz" component={QuizScreen} />
+            <Stack.Screen name="Welcome"  component={WelcomeScreen} />
             <Stack.Screen name="Cadastro" component={CadastroScreen} />
-            <Stack.Screen name="Login" component={LoginScreen} />
-            <Stack.Screen name="Home" component={HomeScreen} />
-            <Stack.Screen name="Perfil" component={PerfilScreen} />
+            <Stack.Screen name="Login"    component={LoginScreen} />
+            <Stack.Screen name="Home"     component={HomeScreen} />
+            <Stack.Screen name="Quiz"     component={QuizScreen} />
+            <Stack.Screen name="Loja"     component={LojaScreen} />
+            <Stack.Screen name="Perfil"   component={PerfilScreen} />
+            
           </Stack.Navigator>
         </NavigationContainer>
       </GestureHandlerRootView>

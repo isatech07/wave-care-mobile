@@ -28,6 +28,9 @@ import Animated, {
   ZoomIn,
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
+import { useUser } from '../contexts/UserContext';
+import MenuMobile from '../components/MenuMobile';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -215,15 +218,15 @@ const PRODUCTS = [
 ];
 
 const BADGE_COLORS = {
-  'Novo': { bg: '#e8f5e9', text: '#2e7d32' },
-  'Popular': { bg: '#fff3e0', text: '#e65100' },
-  'Verão': { bg: '#fff8e1', text: '#f57f17' },
-  'Premium': { bg: COLORS.goldLight, text: COLORS.green },
-  'Kit': { bg: '#e3f2fd', text: '#1565c0' },
-  'Oferta': { bg: '#fce4ec', text: '#c62828' },
-  'Best Seller': { bg: COLORS.goldLight, text: COLORS.goldDark },
-  'Exclusivo': { bg: '#f3e5f5', text: '#6a1b9a' },
-  'Luxo': { bg: '#212121', text: COLORS.gold },
+  'Novo':       { bg: '#e8f5e9', text: '#2e7d32' },
+  'Popular':    { bg: '#fff3e0', text: '#e65100' },
+  'Verão':      { bg: '#fff8e1', text: '#f57f17' },
+  'Premium':    { bg: COLORS.goldLight, text: COLORS.green },
+  'Kit':        { bg: '#e3f2fd', text: '#1565c0' },
+  'Oferta':     { bg: '#fce4ec', text: '#c62828' },
+  'Best Seller':{ bg: COLORS.goldLight, text: COLORS.goldDark },
+  'Exclusivo':  { bg: '#f3e5f5', text: '#6a1b9a' },
+  'Luxo':       { bg: '#212121', text: COLORS.gold },
 };
 
 const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
@@ -434,7 +437,7 @@ function ProductCard({ item, viewMode, onAddToCart, isFavorite, onToggleFavorite
       withSpring(1.3, { damping: 6 }),
       withSpring(1, { damping: 10 })
     );
-    onToggleFavorite(item.id);
+    onToggleFavorite(item);
   };
 
   const handlePressIn = () => {
@@ -589,8 +592,15 @@ function FloatingCartButton({ cartCount, onPress }) {
   );
 }
 
-export default function LojaScreen({ estacaoFilter = null }) {
-  const [selectedSeason, setSelectedSeason] = useState(estacaoFilter || 'Todos');
+export default function LojaScreen() {
+  const navigation = useNavigation();
+  const route = useRoute();
+  const { user, toggleFavorite } = useUser();
+
+  // Lê o filtro de estação passado via navigation.navigate('Loja', { estacaoFilter: '...' })
+  const estacaoParam = route.params?.estacaoFilter ?? null;
+
+  const [selectedSeason, setSelectedSeason] = useState(estacaoParam || 'Todos');
   const [viewMode, setViewMode] = useState('grid');
   const [cart, setCart] = useState([]);
   const [favorites, setFavorites] = useState([]);
@@ -602,6 +612,28 @@ export default function LojaScreen({ estacaoFilter = null }) {
   const [toastMessage, setToastMessage] = useState('');
   const [toastIcon, setToastIcon] = useState('checkmark-circle');
   const toastTimeout = useRef(null);
+
+  // Atualiza o filtro de estação sempre que a tela receber foco com novo parâmetro
+  useFocusEffect(
+    useCallback(() => {
+      const param = route.params?.estacaoFilter ?? null;
+      if (param) {
+        setSelectedSeason(param);
+      }
+    }, [route.params?.estacaoFilter])
+  );
+
+  // Carrega favoritos do usuário quando a tela ganha foco
+  useFocusEffect(
+    useCallback(() => {
+      if (user && !user.guest && user.favorites) {
+        const favoriteIds = user.favorites.map(fav => fav.id);
+        setFavorites(favoriteIds);
+      } else {
+        setFavorites([]);
+      }
+    }, [user])
+  );
 
   const showToast = useCallback((message, icon = 'checkmark-circle') => {
     if (toastTimeout.current) clearTimeout(toastTimeout.current);
@@ -632,17 +664,29 @@ export default function LojaScreen({ estacaoFilter = null }) {
     setCart(prev => prev.filter(i => i.id !== id));
   }, []);
 
-  const handleToggleFavorite = useCallback((id) => {
-    setFavorites(prev => {
-      const isFav = prev.includes(id);
-      showToast(isFav ? 'Removido dos favoritos' : 'Adicionado aos favoritos', isFav ? 'heart-dislike-outline' : 'heart');
-      return isFav ? prev.filter(f => f !== id) : [...prev, id];
-    });
-  }, [showToast]);
+  const handleToggleFavorite = useCallback(async (product) => {
+    if (!user || user.guest) {
+      showToast('Faça login para favoritar produtos', 'log-in-outline');
+      setTimeout(() => {
+        navigation.navigate('Login');
+      }, 1500);
+      return;
+    }
+
+    const wasAdded = await toggleFavorite(product);
+
+    if (wasAdded) {
+      setFavorites(prev => [...prev, product.id]);
+      showToast(product.nome + ' adicionado aos favoritos', 'heart');
+    } else {
+      setFavorites(prev => prev.filter(id => id !== product.id));
+      showToast(product.nome + ' removido dos favoritos', 'heart-dislike-outline');
+    }
+  }, [user, toggleFavorite, showToast, navigation]);
 
   const filteredProducts = PRODUCTS
     .filter(p => {
-      const matchSeason = selectedSeason === 'Todos' || p.estacao === selectedSeason || p.estacao === 'Todos';
+      const matchSeason = selectedSeason === 'Todos' || p.estacao === selectedSeason;
       const matchCat = selectedCategory === 'Todos' || p.categoria === selectedCategory;
       return matchSeason && matchCat;
     })
@@ -665,12 +709,6 @@ export default function LojaScreen({ estacaoFilter = null }) {
       onToggleFavorite={handleToggleFavorite}
     />
   ), [viewMode, handleAddToCart, favorites, handleToggleFavorite]);
-
-  useEffect(() => {
-    if (estacaoFilter && estacaoFilter !== 'Todos') {
-      setSelectedSeason(estacaoFilter);
-    }
-  }, [estacaoFilter]);
 
   const ListHeader = (
     <View>
@@ -739,10 +777,10 @@ export default function LojaScreen({ estacaoFilter = null }) {
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.sortRow} contentContainerStyle={styles.sortContent}>
         {[
-          { key: 'default', label: 'Relevância', icon: 'flash-outline' },
-          { key: 'rating', label: 'Melhor avaliados', icon: 'star-outline' },
-          { key: 'priceAsc', label: 'Menor preço', icon: 'trending-down-outline' },
-          { key: 'priceDesc', label: 'Maior preço', icon: 'trending-up-outline' },
+          { key: 'default',   label: 'Relevância',      icon: 'flash-outline' },
+          { key: 'rating',    label: 'Melhor avaliados', icon: 'star-outline' },
+          { key: 'priceAsc',  label: 'Menor preço',      icon: 'trending-down-outline' },
+          { key: 'priceDesc', label: 'Maior preço',      icon: 'trending-up-outline' },
         ].map(opt => (
           <TouchableOpacity key={opt.key} style={[styles.sortChip, sortOrder === opt.key && styles.sortChipActive]} onPress={() => setSortOrder(opt.key)} activeOpacity={0.7}>
             <Ionicons name={opt.icon} size={13} color={sortOrder === opt.key ? COLORS.green : COLORS.gray} style={{ marginRight: 5 }} />
@@ -797,6 +835,8 @@ export default function LojaScreen({ estacaoFilter = null }) {
         onRemove={handleRemoveFromCart}
         onDelete={handleDeleteFromCart}
       />
+      {/* Sem props — o MenuMobile lê a rota ativa sozinho */}
+      <MenuMobile />
     </View>
   );
 }

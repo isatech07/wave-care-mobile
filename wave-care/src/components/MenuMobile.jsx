@@ -9,29 +9,35 @@ import {
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useNavigationState } from '@react-navigation/native';
 
 const ACTIVE_COLOR = '#2D5A45';
 const INACTIVE_COLOR = '#ABABAB';
 const HOME_BG = '#2D5A45';
 
 const ESTACOES = [
-  { label: 'Verão',     icon: 'sunny',      activeColor: '#F59E0B' },
-  { label: 'Outono',    icon: 'leaf',       activeColor: '#B45309' },
-  { label: 'Inverno',   icon: 'snow',       activeColor: '#3B82F6' },
-  { label: 'Primavera', icon: 'flower',     activeColor: '#EC4899' },
+  { label: 'Verão',     icon: 'sunny',   activeColor: '#F59E0B' },
+  { label: 'Outono',    icon: 'leaf',    activeColor: '#B45309' },
+  { label: 'Inverno',   icon: 'snow',    activeColor: '#3B82F6' },
+  { label: 'Primavera', icon: 'flower',  activeColor: '#EC4899' },
 ];
 
 const TABS = [
-  { key: 'loja',     label: 'Loja',     icon: 'bag-handle' },
-  { key: 'quiz',     label: 'Quiz',     icon: 'help-circle' },
-  { key: 'home',     label: 'Home',     icon: 'home',   center: true },
+  { key: 'Loja',     label: 'Loja',     icon: 'bag-handle' },
+  { key: 'Quiz',     label: 'Quiz',     icon: 'help-circle' },
+  { key: 'Home',     label: 'Home',     icon: 'home',   center: true },
   { key: 'estacoes', label: 'Estações', icon: 'leaf' },
-  { key: 'perfil',   label: 'Perfil',   icon: 'person' },
+  { key: 'Perfil',   label: 'Perfil',   icon: 'person' },
 ];
 
-export default function MenuMobile({ activeTab = 'home', onTabChange }) {
+export default function MenuMobile() {
   const navigation = useNavigation();
+
+  // Pega o nome da rota atual para destacar o tab correto
+  const currentRoute = useNavigationState(
+    (state) => state?.routes?.[state.index]?.name ?? 'Home'
+  );
+
   const [showEstacoes, setShowEstacoes] = useState(false);
   const [activeEstacao, setActiveEstacao] = useState(null);
 
@@ -40,28 +46,26 @@ export default function MenuMobile({ activeTab = 'home', onTabChange }) {
       setShowEstacoes(true);
       return;
     }
-
-    if (tab.key === 'perfil') {
-      navigation.navigate('Perfil');
-      return;
-    }
-    
-    onTabChange?.(tab.key);
+    // Evita renavegar para a tela atual (impede duplicação)
+    if (currentRoute === tab.key) return;
+    navigation.navigate(tab.key);
   };
 
   const handleSelectEstacao = (estacao) => {
     setActiveEstacao(estacao.label);
     setShowEstacoes(false);
-    onTabChange?.('loja', estacao.label); 
+    // Navega para Loja passando o filtro de estação como parâmetro de rota
+    navigation.navigate('Loja', { estacaoFilter: estacao.label });
   };
 
-  const isEstacaoActive = activeTab === 'estacoes';
+  const isEstacaoActive = currentRoute === 'estacoes';
 
   return (
     <>
       <View style={styles.container}>
         {TABS.map((tab) => {
           if (tab.center) {
+            const isHomeActive = currentRoute === 'Home';
             return (
               <TouchableOpacity
                 key={tab.key}
@@ -71,7 +75,7 @@ export default function MenuMobile({ activeTab = 'home', onTabChange }) {
               >
                 <View style={[
                   styles.centerButton,
-                  activeTab === 'home' && styles.centerButtonActive,
+                  isHomeActive && styles.centerButtonActive,
                 ]}>
                   <Ionicons name={tab.icon} size={26} color="#fff" />
                 </View>
@@ -80,7 +84,7 @@ export default function MenuMobile({ activeTab = 'home', onTabChange }) {
           }
 
           const isActive =
-            activeTab === tab.key ||
+            currentRoute === tab.key ||
             (tab.key === 'estacoes' && isEstacaoActive);
 
           return (

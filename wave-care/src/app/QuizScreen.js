@@ -20,6 +20,7 @@ import Animated, {
   SlideOutLeft,
 } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
+import MenuMobile from "../components/MenuMobile";
 
 const { width, height } = Dimensions.get("window");
 
@@ -499,8 +500,11 @@ export default function QuizScreen({ navigation, onTabChange, setActiveTab }) {
       <View style={styles.footer}>
         <View style={styles.footerLine} />
         <Text style={styles.footerText}>Litoral Norte SP</Text>
+        
       </View>
+      <MenuMobile />
     </SafeAreaView>
+    
   );
 }
 
