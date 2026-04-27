@@ -48,10 +48,19 @@ const C = {
 
 // Imagens dos produtos de verão
 const IMAGES = {
-  kit:         require('../../assets/products/verao-produtos/Summer-Protection-kit.png'),
-  mascara:     require('../../assets/products/verao-produtos/verao-mascara.png'),
-  shampoo:     require('../../assets/products/verao-produtos/verao-shampoo.png'),
-  propaganda:  require('../../assets/products/verao-produtos/propaganda-verao.jpg'),
+  kitCompleto:    require('../../assets/products/verao-produtos/Summer-Protection-kit.png'),
+  condicionador:  require('../../assets/products/verao-produtos/verao-condicionador.png'),
+  creme:          require('../../assets/products/verao-produtos/verao-creme.png'),
+  gelatina:       require('../../assets/products/verao-produtos/verao-gelatina.png'),
+  kit1:           require('../../assets/products/verao-produtos/verao-kit-1.png'),
+  kit2:           require('../../assets/products/verao-produtos/verao-kit-2.png'),
+  kit3:           require('../../assets/products/verao-produtos/verao-kit-3.png'),
+  kit4:           require('../../assets/products/verao-produtos/verao-kit-4.png'),
+  kit5:           require('../../assets/products/verao-produtos/verao-kit-5.png'),
+  mascara:        require('../../assets/products/verao-produtos/verao-mascara.png'),
+  oleo:           require('../../assets/products/verao-produtos/verao-oleo.png'),
+  shampoo:        require('../../assets/products/verao-produtos/verao-shampoo.png'),
+  propaganda:     require('../../assets/products/verao-produtos/propaganda-verao.jpg'),
 };
 
 function useFadeSlide(delay = 0, fromY = 24) {
@@ -115,11 +124,8 @@ function ProductCard({ name, desc, price, oldPrice, stars, reviews, highlight, i
   return (
     <Animated.View style={[styles.productCard, highlight && styles.productCardHighlight, anim]}>
       <View style={[styles.productThumb, highlight && styles.productThumbHighlight]}>
-        <Circle size={160} color="rgba(194,65,12,0.06)" style={{ top: -40, right: -40 }} />
-        <Circle size={100} color="rgba(217,119,6,0.08)" style={{ bottom: 10, left: 10 }} />
-
         {image ? (
-          <Image source={image} style={styles.productImage} resizeMode="contain" />
+          <Image source={image} style={styles.productImage} resizeMode="cover" />
         ) : (
           <View style={styles.productImagePlaceholder}>
             <Ionicons name="image-outline" size={44} color={C.mutedLight} />
@@ -165,18 +171,15 @@ function ProductCard({ name, desc, price, oldPrice, stars, reviews, highlight, i
   );
 }
 
-function ProductCardSmall({ name, price, stars, reviews, image, delay }) {
+function ProductCardSmall({ name, price, stars, reviews, image, delay, type }) {
   const anim = useFadeSlide(delay, 20);
   const [fav, setFav] = useState(false);
 
   return (
     <Animated.View style={[styles.productCardSmall, anim]}>
       <View style={styles.productThumbSmall}>
-        <Circle size={100} color="rgba(194,65,12,0.06)" style={{ top: -25, right: -25 }} />
-        <Circle size={65}  color="rgba(217,119,6,0.07)" style={{ bottom: 5, left: 5 }} />
-
         {image ? (
-          <Image source={image} style={styles.productImageSmall} resizeMode="contain" />
+          <Image source={image} style={styles.productImageSmall} resizeMode="cover" />
         ) : (
           <View style={styles.productImagePlaceholder}>
             <Ionicons name="image-outline" size={32} color={C.mutedLight} />
@@ -234,6 +237,7 @@ function Divider({ label }) {
 
 export default function SummerScreen() {
   const scrollViewRef = useRef(null);
+  const [activeFilter, setActiveFilter] = useState('todos');
 
   const [fontsLoaded] = useFonts({
     PlayfairDisplay_700Bold,
@@ -353,7 +357,7 @@ export default function SummerScreen() {
             stars="4.8"
             reviews="250"
             highlight
-            image={IMAGES.kit}
+            image={IMAGES.kitCompleto}
             delay={200}
           />
         </View>
@@ -366,39 +370,46 @@ export default function SummerScreen() {
           </Text>
           <Divider />
 
+          {/* Filtro */}
+          <View style={styles.filterRow}>
+            {[
+              { key: 'todos',    label: 'Todos' },
+              { key: 'produto',  label: 'Produtos' },
+              { key: 'kit',      label: 'Kits' },
+            ].map(f => (
+              <TouchableOpacity
+                key={f.key}
+                style={[styles.filterChip, activeFilter === f.key && styles.filterChipActive]}
+                onPress={() => setActiveFilter(f.key)}
+                activeOpacity={0.75}
+              >
+                <Text style={[styles.filterChipText, activeFilter === f.key && styles.filterChipTextActive]}>
+                  {f.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
           <View style={styles.productsGrid}>
-            <ProductCardSmall
-              name="SunShield Shampoo"
-              price="R$ 39,90"
-              stars="4.8"
-              reviews="234"
-              image={IMAGES.shampoo}
-              delay={200}
-            />
-            <ProductCardSmall
-              name="Solar Repair Mask"
-              price="R$ 59,90"
-              stars="4.9"
-              reviews="189"
-              image={IMAGES.mascara}
-              delay={300}
-            />
-            <ProductCardSmall
-              name="Kit Verão Completo"
-              price="R$ 119,90"
-              stars="4.8"
-              reviews="156"
-              image={IMAGES.kit}
-              delay={400}
-            />
-            <ProductCardSmall
-              name="Summer Protection"
-              price="R$ 49,90"
-              stars="4.7"
-              reviews="102"
-              image={IMAGES.mascara}
-              delay={500}
-            />
+            {[
+              { name: 'SunShield Shampoo',       price: 'R$ 39,90',  stars: '4.8', reviews: '234', image: IMAGES.shampoo,       delay: 100, type: 'produto' },
+              { name: 'Condicionador Verão',      price: 'R$ 44,90',  stars: '4.7', reviews: '198', image: IMAGES.condicionador,  delay: 150, type: 'produto' },
+              { name: 'Solar Repair Mask',        price: 'R$ 59,90',  stars: '4.9', reviews: '189', image: IMAGES.mascara,        delay: 200, type: 'produto' },
+              { name: 'Creme Protetor Solar',     price: 'R$ 49,90',  stars: '4.6', reviews: '142', image: IMAGES.creme,          delay: 250, type: 'produto' },
+              { name: 'Gelatina Modeladora',      price: 'R$ 42,90',  stars: '4.8', reviews: '167', image: IMAGES.gelatina,       delay: 300, type: 'produto' },
+              { name: 'Óleo Protetor Capilar',    price: 'R$ 54,90',  stars: '4.9', reviews: '213', image: IMAGES.oleo,           delay: 350, type: 'produto' },
+              { name: 'Kit Verão Essencial',      price: 'R$ 99,90',  stars: '4.8', reviews: '156', image: IMAGES.kit1,           delay: 400, type: 'kit'     },
+              { name: 'Kit Hidratação Intensa',   price: 'R$ 119,90', stars: '4.7', reviews: '134', image: IMAGES.kit2,           delay: 450, type: 'kit'     },
+              { name: 'Kit Proteção Solar',       price: 'R$ 129,90', stars: '4.9', reviews: '178', image: IMAGES.kit3,           delay: 500, type: 'kit'     },
+              { name: 'Kit Brilho & Definição',   price: 'R$ 109,90', stars: '4.8', reviews: '145', image: IMAGES.kit4,           delay: 550, type: 'kit'     },
+              { name: 'Kit Summer Premium',       price: 'R$ 149,90', stars: '5.0', reviews: '201', image: IMAGES.kit5,           delay: 600, type: 'kit'     },
+              { name: 'Wave Care Kit Summer',     price: 'R$ 249,90', stars: '4.8', reviews: '250', image: IMAGES.kitCompleto,    delay: 650, type: 'kit'     },
+            ]
+              .filter(p => activeFilter === 'todos' || p.type === activeFilter)
+              .map((p, i) => (
+                <ProductCardSmall key={p.name} {...p} />
+              ))
+            }
           </View>
         </View>
 
@@ -439,10 +450,23 @@ export default function SummerScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe:          { flex: 1, backgroundColor: C.bg },
-  scroll:        { flex: 1, backgroundColor: C.bg },
-  scrollContent: { paddingHorizontal: 16, paddingTop: 16, gap: 20 },
 
+  // ─── Layout base ─────────────────────────────────────────────────────────
+  safe: {
+    flex: 1,
+    backgroundColor: C.bg,
+  },
+  scroll: {
+    flex: 1,
+    backgroundColor: C.bg,
+  },
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    gap: 20,
+  },
+
+  // ─── Hero ────────────────────────────────────────────────────────────────
   heroCard: {
     backgroundColor: C.bgCardDark,
     borderRadius: 28,
@@ -470,8 +494,16 @@ const styles = StyleSheet.create({
     lineHeight: 23,
     marginBottom: 26,
   },
-  heroDivider: { height: 1, backgroundColor: C.accent, marginBottom: 22 },
+  heroDivider: {
+    height: 1,
+    backgroundColor: C.accent,
+    marginBottom: 22,
+  },
 
+  // ─── Seções ──────────────────────────────────────────────────────────────
+  section: {
+    gap: 0,
+  },
   sectionTitle: {
     fontFamily: 'PlayfairDisplay_700Bold',
     color: C.accent,
@@ -486,6 +518,126 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 20,
     marginBottom: 14,
+  },
+
+  // ─── Badge ───────────────────────────────────────────────────────────────
+  badge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    backgroundColor: C.accentSoft,
+    borderWidth: 1,
+    borderColor: C.accentBorder,
+    borderRadius: 100,
+    paddingHorizontal: 13,
+    paddingVertical: 5,
+  },
+  badgeDark: {
+    backgroundColor: 'rgba(252,250,247,0.10)',
+    borderColor: 'rgba(252,250,247,0.20)',
+    marginBottom: 18,
+  },
+  badgeText: {
+    fontFamily: 'Poppins_600SemiBold',
+    color: C.accent,
+    fontSize: 10,
+    letterSpacing: 1.3,
+  },
+  badgeTextDark: {
+    color: C.bg,
+  },
+
+  // ─── Stats ───────────────────────────────────────────────────────────────
+  statsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 28,
+  },
+  statItem: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 4,
+  },
+  statValue: {
+    fontFamily: 'Poppins_700Bold',
+    color: C.fg,
+    fontSize: 22,
+    letterSpacing: -0.3,
+  },
+  statLabel: {
+    fontFamily: 'Poppins_600SemiBold',
+    color: C.muted,
+    fontSize: 9,
+    letterSpacing: 1.2,
+  },
+  statDivider: {
+    width: 1,
+    height: 36,
+    backgroundColor: C.border,
+  },
+
+  // ─── Botões CTA ──────────────────────────────────────────────────────────
+  ctaBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    backgroundColor: C.bg,
+    borderRadius: 100,
+    paddingVertical: 12,
+    paddingLeft: 22,
+    paddingRight: 7,
+    gap: 10,
+  },
+  ctaBtnText: {
+    fontFamily: 'Poppins_600SemiBold',
+    color: C.accent,
+    fontSize: 14,
+    letterSpacing: 0.1,
+  },
+  ctaArrow: {
+    width: 30,
+    height: 30,
+    borderRadius: 25,
+    backgroundColor: C.accent,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  ctaBtnLight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    backgroundColor: C.bg,
+    borderRadius: 100,
+    paddingVertical: 12,
+    paddingLeft: 22,
+    paddingRight: 7,
+    gap: 10,
+  },
+  ctaBtnLightText: {
+    fontFamily: 'Poppins_600SemiBold',
+    color: C.accent,
+    fontSize: 14,
+  },
+  ctaArrowDark: {
+    width: 30,
+    height: 30,
+    borderRadius: 16,
+    backgroundColor: C.accent,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  // ─── CTA Card ────────────────────────────────────────────────────────────
+  ctaCard: {
+    backgroundColor: C.bgCardDark,
+    borderRadius: 28,
+    padding: 28,
+    overflow: 'hidden',
+    shadowColor: C.shadow,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 10,
   },
   ctaCardTitle: {
     fontFamily: 'PlayfairDisplay_800ExtraBold',
@@ -504,159 +656,335 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
 
-  badge: {
+  // ─── Chips de benefício ───────────────────────────────────────────────────
+  chipsRow: {
+    flexDirection: 'row',
+    gap: 8,
+    paddingVertical: 4,
+  },
+  chip: {
     flexDirection: 'row',
     alignItems: 'center',
-    alignSelf: 'flex-start',
-    backgroundColor: C.accentSoft,
-    borderWidth: 1,
-    borderColor: C.accentBorder,
-    borderRadius: 100,
-    paddingHorizontal: 13,
-    paddingVertical: 5,
-  },
-  badgeDark: {
-    backgroundColor: 'rgba(252,250,247,0.10)',
-    borderColor: 'rgba(252,250,247,0.20)',
-    marginBottom: 18,
-  },
-  badgeText:     { fontFamily: 'Poppins_600SemiBold', color: C.accent, fontSize: 10, letterSpacing: 1.3 },
-  badgeTextDark: { color: C.bg },
-
-  statsRow:    { flexDirection: 'row', alignItems: 'center', marginBottom: 28 },
-  statItem:    { flex: 1, alignItems: 'center', gap: 4 },
-  statValue:   { fontFamily: 'Poppins_700Bold', color: C.fg, fontSize: 22, letterSpacing: -0.3 },
-  statLabel:   { fontFamily: 'Poppins_600SemiBold', color: C.muted, fontSize: 9, letterSpacing: 1.2 },
-  statDivider: { width: 1, height: 36, backgroundColor: C.border },
-
-  ctaBtn: {
-    flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start',
-    backgroundColor: C.bg, borderRadius: 100,
-    paddingVertical: 12, paddingLeft: 22, paddingRight: 7, gap: 10,
-  },
-  ctaBtnText: { fontFamily: 'Poppins_600SemiBold', color: C.accent, fontSize: 14, letterSpacing: 0.1 },
-  ctaArrow:   { width: 30, height: 30, borderRadius: 25, backgroundColor: C.accent, justifyContent: 'center', alignItems: 'center' },
-
-  ctaBtnLight: {
-    flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start',
-    backgroundColor: C.bg, borderRadius: 100,
-    paddingVertical: 12, paddingLeft: 22, paddingRight: 7, gap: 10,
-  },
-  ctaBtnLightText: { fontFamily: 'Poppins_600SemiBold', color: C.accent, fontSize: 14 },
-  ctaArrowDark:    { width: 30, height: 30, borderRadius: 16, backgroundColor: C.accent, justifyContent: 'center', alignItems: 'center' },
-
-  ctaCard: {
-    backgroundColor: C.bgCardDark,
-    borderRadius: 28, padding: 28, overflow: 'hidden',
-    shadowColor: C.shadow, shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.15, shadowRadius: 20, elevation: 10,
-  },
-
-  section:  { gap: 0 },
-  chipsRow: { flexDirection: 'row', gap: 8, paddingVertical: 4 },
-  chip: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: C.bgCardAlt, borderWidth: 1, borderColor: C.border,
-    borderRadius: 100, paddingHorizontal: 14, paddingVertical: 9, gap: 7,
-  },
-  chipText: { fontFamily: 'Poppins_500Medium', color: C.fg, fontSize: 12 },
-
-  dividerRow:   { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 10, marginBottom: 16 },
-  dividerLine:  { flex: 1, height: 1, backgroundColor: C.border },
-  dividerLabel: { fontFamily: 'Poppins_500Medium', color: C.mutedLight, fontSize: 10, letterSpacing: 1 },
-
-  // Card grande
-  productCard: {
-    backgroundColor: C.bgCard, borderRadius: 20, overflow: 'hidden',
-    borderWidth: 1, borderColor: C.border,
-    shadowColor: C.shadow, shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08, shadowRadius: 12, elevation: 4,
-  },
-  productCardHighlight: { borderColor: C.accentBorder, borderWidth: 1.5 },
-  productThumb: {
-    height: 220,                        // ← aumentado de 180
     backgroundColor: C.bgCardAlt,
-    justifyContent: 'center', alignItems: 'center', overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: C.border,
+    borderRadius: 100,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    gap: 7,
+  },
+  chipText: {
+    fontFamily: 'Poppins_500Medium',
+    color: C.fg,
+    fontSize: 12,
+  },
+
+  // ─── Divider ─────────────────────────────────────────────────────────────
+  dividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginTop: 10,
+    marginBottom: 16,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: C.border,
+  },
+  dividerLabel: {
+    fontFamily: 'Poppins_500Medium',
+    color: C.mutedLight,
+    fontSize: 10,
+    letterSpacing: 1,
+  },
+
+  // ─── Filtro ──────────────────────────────────────────────────────────────
+  filterRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 16,
+  },
+  filterChip: {
+    paddingHorizontal: 18,
+    paddingVertical: 8,
+    borderRadius: 100,
+    backgroundColor: C.bgCard,
+    borderWidth: 1.5,
+    borderColor: C.border,
+  },
+  filterChipActive: {
+    backgroundColor: C.accent,
+    borderColor: C.accent,
+  },
+  filterChipText: {
+    fontFamily: 'Poppins_600SemiBold',
+    color: C.muted,
+    fontSize: 13,
+  },
+  filterChipTextActive: {
+    color: C.bg,
+  },
+
+  // ─── Grid de produtos ─────────────────────────────────────────────────────
+  productsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 14,
+  },
+
+  // ─── Card grande (destaque) ───────────────────────────────────────────────
+  productCard: {
+    backgroundColor: C.bgCard,
+    borderRadius: 20,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: C.border,
+    shadowColor: C.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  productCardHighlight: {
+    borderColor: C.accentBorder,
+    borderWidth: 1.5,
+  },
+  productThumb: {
+    height: 220,
+    backgroundColor: 'transparent',
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden',
   },
   productThumbHighlight: {
-    height: 280,                        // ← aumentado de 220
-    backgroundColor: '#FEF0E6',
+    height: 280,
+    backgroundColor: 'transparent',
   },
-  productImage:            { width: '85%', height: '85%', zIndex: 1 },
-  productImagePlaceholder: { alignItems: 'center', gap: 6, zIndex: 1 },
+  productImage: {
+    width: '100%',
+    height: '100%',
+    zIndex: 1,
+  },
+  productImagePlaceholder: {
+    alignItems: 'center',
+    gap: 6,
+    zIndex: 1,
+  },
   favBtn: {
-    position: 'absolute', top: 10, right: 10,
-    width: 34, height: 34, borderRadius: 17,
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     backgroundColor: 'rgba(252,250,247,0.85)',
-    justifyContent: 'center', alignItems: 'center',
-    zIndex: 2, borderWidth: 1, borderColor: C.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 2,
+    borderWidth: 1,
+    borderColor: C.border,
   },
   featuredBadge: {
-    position: 'absolute', top: 12, left: 12,
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: C.accent, borderRadius: 100,
-    paddingHorizontal: 10, paddingVertical: 4, zIndex: 2,
+    position: 'absolute',
+    top: 12,
+    left: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: C.accent,
+    borderRadius: 100,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    zIndex: 2,
   },
-  featuredBadgeText: { fontFamily: 'Poppins_700Bold', color: C.bg, fontSize: 9, letterSpacing: 1.1 },
-  productInfo:   { padding: 18, gap: 6 },         // ← padding aumentado
-  starsRow:      { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  starsText:     { fontFamily: 'Poppins_500Medium', color: C.gold, fontSize: 12 },
-  productName:   { fontFamily: 'Poppins_600SemiBold', color: C.fg, fontSize: 16, lineHeight: 23 },
-  productDesc:   { fontFamily: 'Poppins_400Regular', color: C.muted, fontSize: 13, lineHeight: 19 },
-  productFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 10 },
-  oldPrice:      { fontFamily: 'Poppins_400Regular', color: C.mutedLight, fontSize: 12, textDecorationLine: 'line-through' },
-  productPrice:  { fontFamily: 'Poppins_700Bold', color: C.fg, fontSize: 20 },
-  productActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  featuredBadgeText: {
+    fontFamily: 'Poppins_700Bold',
+    color: C.bg,
+    fontSize: 9,
+    letterSpacing: 1.1,
+  },
+  productInfo: {
+    padding: 18,
+    gap: 6,
+  },
+  starsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  starsText: {
+    fontFamily: 'Poppins_500Medium',
+    color: C.gold,
+    fontSize: 12,
+  },
+  productName: {
+    fontFamily: 'Poppins_600SemiBold',
+    color: C.fg,
+    fontSize: 16,
+    lineHeight: 23,
+  },
+  productDesc: {
+    fontFamily: 'Poppins_400Regular',
+    color: C.muted,
+    fontSize: 13,
+    lineHeight: 19,
+  },
+  productFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 10,
+  },
+  oldPrice: {
+    fontFamily: 'Poppins_400Regular',
+    color: C.mutedLight,
+    fontSize: 12,
+    textDecorationLine: 'line-through',
+  },
+  productPrice: {
+    fontFamily: 'Poppins_700Bold',
+    color: C.fg,
+    fontSize: 20,
+  },
+  productActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   cartBtn: {
-    width: 42, height: 42, borderRadius: 21,
-    borderWidth: 1, borderColor: C.accentBorder,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    borderWidth: 1,
+    borderColor: C.accentBorder,
     backgroundColor: C.accentSoft,
-    justifyContent: 'center', alignItems: 'center',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  buyBtn:     { backgroundColor: C.accent, borderRadius: 100, paddingHorizontal: 20, paddingVertical: 12 },
-  buyBtnText: { fontFamily: 'Poppins_600SemiBold', color: C.bg, fontSize: 13 },
+  buyBtn: {
+    backgroundColor: C.accent,
+    borderRadius: 100,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+  },
+  buyBtnText: {
+    fontFamily: 'Poppins_600SemiBold',
+    color: C.bg,
+    fontSize: 13,
+  },
 
-  // Grid 2 colunas
-  productsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 14 },
-
-  // Card pequeno — aumentado
+  // ─── Card pequeno ─────────────────────────────────────────────────────────
   productCardSmall: {
     backgroundColor: C.bgCard,
-    borderRadius: 18, overflow: 'hidden',
-    width: (width - 46) / 2,           // ← ligeiramente mais largo
-    borderWidth: 1, borderColor: C.border,
-    shadowColor: C.shadow, shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.07, shadowRadius: 8, elevation: 3,
+    borderRadius: 18,
+    overflow: 'hidden',
+    width: (width - 46) / 2,
+    borderWidth: 1,
+    borderColor: C.border,
+    shadowColor: C.shadow,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.07,
+    shadowRadius: 8,
+    elevation: 3,
   },
   productThumbSmall: {
-    height: 170,                        // ← aumentado de 140
-    backgroundColor: C.bgCardAlt,
-    justifyContent: 'center', alignItems: 'center', overflow: 'hidden',
+    height: 170,
+    backgroundColor: 'transparent',
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden',
   },
-  productImageSmall:  { width: '80%', height: '80%', zIndex: 1 },
-  productInfoSmall:   { padding: 14, gap: 4 },
-  productNameSmall:   { fontFamily: 'Poppins_600SemiBold', color: C.fg, fontSize: 13, lineHeight: 18 },
-  productPriceSmall:  { fontFamily: 'Poppins_700Bold', color: C.fg, fontSize: 16 },
-  smallCardActions:   { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 },
+  productImageSmall: {
+    width: '100%',
+    height: '100%',
+    zIndex: 1,
+  },
+  productInfoSmall: {
+    padding: 14,
+    gap: 4,
+  },
+  productNameSmall: {
+    fontFamily: 'Poppins_600SemiBold',
+    color: C.fg,
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  productPriceSmall: {
+    fontFamily: 'Poppins_700Bold',
+    color: C.fg,
+    fontSize: 16,
+  },
+  smallCardActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 8,
+  },
   smallCartBtn: {
-    width: 36, height: 36, borderRadius: 18,
-    borderWidth: 1, borderColor: C.accentBorder,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: C.accentBorder,
     backgroundColor: C.accentSoft,
-    justifyContent: 'center', alignItems: 'center',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  buyBtnFull: { flex: 1, backgroundColor: C.accent, borderRadius: 100, paddingVertical: 9, alignItems: 'center' },
+  buyBtnFull: {
+    flex: 1,
+    backgroundColor: C.accent,
+    borderRadius: 100,
+    paddingVertical: 9,
+    alignItems: 'center',
+  },
 
-  highlightsRow: { flexDirection: 'row', gap: 10 },
+  // ─── Diferenciais ────────────────────────────────────────────────────────
+  highlightsRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
   highlightCard: {
-    flex: 1, backgroundColor: C.bgCard, borderRadius: 18,
-    padding: 16, gap: 6, alignItems: 'center',
-    borderWidth: 1, borderColor: C.border,
-    shadowColor: C.shadow, shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06, shadowRadius: 6, elevation: 2,
+    flex: 1,
+    backgroundColor: C.bgCard,
+    borderRadius: 18,
+    padding: 16,
+    gap: 6,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: C.border,
+    shadowColor: C.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
   },
-  highlightIconBox: { width: 44, height: 44, borderRadius: 22, backgroundColor: C.accentSoft, justifyContent: 'center', alignItems: 'center' },
-  highlightTitle:   { fontFamily: 'Poppins_600SemiBold', color: C.fg, fontSize: 13, textAlign: 'center' },
-  highlightText:    { fontFamily: 'Poppins_400Regular', color: C.muted, fontSize: 11, lineHeight: 15, textAlign: 'center' },
+  highlightIconBox: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: C.accentSoft,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  highlightTitle: {
+    fontFamily: 'Poppins_600SemiBold',
+    color: C.fg,
+    fontSize: 13,
+    textAlign: 'center',
+  },
+  highlightText: {
+    fontFamily: 'Poppins_400Regular',
+    color: C.muted,
+    fontSize: 11,
+    lineHeight: 15,
+    textAlign: 'center',
+  },
 
-  placeholderText: { fontFamily: 'Poppins_400Regular', color: C.mutedLight, fontSize: 11 },
+  // ─── Misc ─────────────────────────────────────────────────────────────────
+  placeholderText: {
+    fontFamily: 'Poppins_400Regular',
+    color: C.mutedLight,
+    fontSize: 11,
+  },
 });
+  
