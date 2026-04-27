@@ -19,7 +19,7 @@ import MenuMobile from './src/components/MenuMobile';
 const Stack = createNativeStackNavigator();
 
 // Componente que envolve as telas com o menu
-function TelasComMenu({ navigation }) {       // ← adiciona { navigation }
+function TelasComMenu() {   // ← remove o { navigation }
   const [activeTab, setActiveTab] = useState('home');
 
   return (
@@ -35,12 +35,11 @@ function TelasComMenu({ navigation }) {       // ← adiciona { navigation }
       <MenuMobile
         activeTab={activeTab}
         onTabChange={setActiveTab}
-        navigation={navigation}               // ← adiciona essa linha
+        // ← remove navigation={navigation}
       />
     </View>
   );
 }
-
 export default function App() {
   return (
     <UserProvider>

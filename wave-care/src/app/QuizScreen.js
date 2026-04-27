@@ -499,8 +499,10 @@ export default function QuizScreen({ navigation, onTabChange, setActiveTab }) {
       <View style={styles.footer}>
         <View style={styles.footerLine} />
         <Text style={styles.footerText}>Litoral Norte SP</Text>
+        
       </View>
     </SafeAreaView>
+    
   );
 }
 

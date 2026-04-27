@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -6,149 +6,202 @@ import {
   TouchableOpacity,
   ScrollView,
   TextInput,
-  Image,
   SafeAreaView,
-} from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { useUser } from "../contexts/UserContext";
+  Image,
+  Alert,
+  Platform,
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useUser } from '../contexts/UserContext';
 import { useNavigation } from '@react-navigation/native';
 
-const TABS = ["dados", "pedidos", "favoritos", "capilar"];
+const TABS = ['dados', 'pedidos', 'favoritos', 'capilar'];
+const GREEN = '#2D5A45';
 
 export default function PerfilScreen() {
   const { user, logout, updateUser } = useUser();
   const navigation = useNavigation();
-  const [tab, setTab] = useState("dados");
+
+  const [tab, setTab]         = useState('dados');
   const [editing, setEditing] = useState(false);
+  const [avatar, setAvatar]   = useState(user?.avatar ?? null);
 
   const [form, setForm] = useState({
-    name: user?.name || "",
-    email: user?.email || "",
-    phone: user?.phone || "",
-    city: user?.city || "",
+    name:  user?.name  ?? '',
+    email: user?.email ?? '',
+    phone: user?.phone ?? '',
+    city:  user?.city  ?? '',
   });
 
-  if (!user) {
-  return (
-    <View style={styles.center}>
-      <Text style={{ marginBottom: 10 }}>Você precisa estar logado</Text>
-      <TouchableOpacity 
-        style={styles.loginBtn}
-        onPress={() => navigation.navigate('Login')}
-      >
-        <Text style={{ color: '#fff', fontWeight: 'bold' }}>Ir para Login</Text>
-      </TouchableOpacity>
-    </View>
-  );
-}
+  // ─── Tela de convidado ────────────────────────────────────────────────────
+  if (!user || user.guest) {
+    return (
+      <SafeAreaView style={styles.safeGuest}>
+        <View style={styles.guestScreen}>
+          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+            <Ionicons name="chevron-back" size={26} color={GREEN} />
+            <Text style={styles.backText}>Voltar</Text>
+          </TouchableOpacity>
 
-  const getInitials = () => {
-    if (!user.name) return "?";
-    return user.name.slice(0, 2).toUpperCase();
-  };
+          <View style={styles.guestContent}>
+            <View style={styles.guestIconCircle}>
+              <Ionicons name="person-outline" size={48} color={GREEN} />
+            </View>
+            <Text style={styles.guestTitle}>Você está sem conta</Text>
+            <Text style={styles.guestSubtitle}>
+              Faça login para acessar seu perfil, pedidos e favoritos.
+            </Text>
+            <TouchableOpacity style={styles.loginBtn} onPress={() => navigation.navigate('Login')}>
+              <Text style={styles.loginBtnText}>Fazer Login</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.registerBtn} onPress={() => navigation.navigate('Cadastro')}>
+              <Text style={styles.registerBtnText}>Criar Conta</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+      </SafeAreaView>
+    );
+  }
+
+  // ─── Helpers ─────────────────────────────────────────────────────────────
+  const getInitials = () =>
+    user.name ? user.name.slice(0, 2).toUpperCase() : '?';
 
   const STATUS = {
-    aguardando: { label: "Aguardando", color: "#f59e0b", step: 0 },
-    confirmado: { label: "Confirmado", color: "#3b82f6", step: 1 },
-    enviado: { label: "Enviado", color: "#8b5cf6", step: 2 },
-    entregue: { label: "Entregue", color: "#10b981", step: 3 },
+    aguardando: { label: 'Aguardando', color: '#f59e0b', step: 0 },
+    confirmado: { label: 'Confirmado', color: '#3b82f6', step: 1 },
+    enviado:    { label: 'Enviado',    color: '#8b5cf6', step: 2 },
+    entregue:   { label: 'Entregue',   color: '#10b981', step: 3 },
+  };
+  const STEPS = ['Aguardando', 'Confirmado', 'Enviado', 'Entregue'];
+
+  // ─── Troca de foto ────────────────────────────────────────────────────────
+  const handleChangeAvatar = () => {
+    Alert.alert(
+      'Foto de perfil',
+      'Escolha uma opção',
+      [
+        {
+          text: 'Tirar foto',
+          onPress: async () => {
+            const perm = await ImagePicker.requestCameraPermissionsAsync();
+            if (!perm.granted) {
+              Alert.alert('Permissão negada', 'Precisamos de acesso à câmera.');
+              return;
+            }
+            const result = await ImagePicker.launchCameraAsync({
+              allowsEditing: true,
+              aspect: [1, 1],
+              quality: 0.7,
+            });
+            if (!result.canceled) {
+              const uri = result.assets[0].uri;
+              setAvatar(uri);
+              const updated = { ...user, avatar: uri };
+              updateUser(updated);
+              await AsyncStorage.setItem('wavecare_user', JSON.stringify(updated));
+            }
+          },
+        },
+        {
+          text: 'Escolher da galeria',
+          onPress: async () => {
+            const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+            if (!perm.granted) {
+              Alert.alert('Permissão negada', 'Precisamos de acesso à galeria.');
+              return;
+            }
+            const result = await ImagePicker.launchImageLibraryAsync({
+              mediaTypes: ImagePicker.MediaTypeOptions.Images,
+              allowsEditing: true,
+              aspect: [1, 1],
+              quality: 0.7,
+            });
+            if (!result.canceled) {
+              const uri = result.assets[0].uri;
+              setAvatar(uri);
+              const updated = { ...user, avatar: uri };
+              updateUser(updated);
+              await AsyncStorage.setItem('wavecare_user', JSON.stringify(updated));
+            }
+          },
+        },
+        { text: 'Cancelar', style: 'cancel' },
+      ],
+    );
   };
 
-  const steps = ["Aguardando", "Confirmado", "Enviado", "Entregue"];
-
-  const save = () => {
-    updateUser(form);
+  // ─── Salvar dados ─────────────────────────────────────────────────────────
+  const save = async () => {
+    const updated = { ...user, ...form };
+    updateUser(updated);
+    await AsyncStorage.setItem('wavecare_user', JSON.stringify(updated));
     setEditing(false);
   };
 
+  const handleLogout = async () => {
+    await AsyncStorage.multiRemove(['wavecare_guest', 'wavecare_last_email']);
+    logout();
+    navigation.navigate('Welcome');
+  };
+
+  // ─── Aba Dados ────────────────────────────────────────────────────────────
   const renderDadosTab = () => (
     <View style={styles.card}>
-      <View style={styles.fieldGroup}>
-        <Text style={styles.label}>Nome</Text>
-        {editing ? (
-          <TextInput
-            style={styles.input}
-            value={form.name}
-            onChangeText={(text) => setForm({ ...form, name: text })}
-            placeholder="Seu nome"
-          />
-        ) : (
-          <Text style={styles.value}>{user.name || "Não informado"}</Text>
-        )}
-      </View>
-
-      <View style={styles.fieldGroup}>
-        <Text style={styles.label}>Email</Text>
-        {editing ? (
-          <TextInput
-            style={styles.input}
-            value={form.email}
-            onChangeText={(text) => setForm({ ...form, email: text })}
-            placeholder="seu@email.com"
-            keyboardType="email-address"
-            autoCapitalize="none"
-          />
-        ) : (
-          <Text style={styles.value}>{user.email || "Não informado"}</Text>
-        )}
-      </View>
-
-      <View style={styles.fieldGroup}>
-        <Text style={styles.label}>Telefone</Text>
-        {editing ? (
-          <TextInput
-            style={styles.input}
-            value={form.phone}
-            onChangeText={(text) => setForm({ ...form, phone: text })}
-            placeholder="(00) 00000-0000"
-            keyboardType="phone-pad"
-          />
-        ) : (
-          <Text style={styles.value}>{user.phone || "Não informado"}</Text>
-        )}
-      </View>
-
-      <View style={styles.fieldGroup}>
-        <Text style={styles.label}>Cidade</Text>
-        {editing ? (
-          <TextInput
-            style={styles.input}
-            value={form.city}
-            onChangeText={(text) => setForm({ ...form, city: text })}
-            placeholder="Sua cidade"
-          />
-        ) : (
-          <Text style={styles.value}>{user.city || "Não informado"}</Text>
-        )}
-      </View>
+      {[
+        { key: 'name',  label: 'Nome',    placeholder: 'Seu nome',        keyboard: 'default' },
+        { key: 'email', label: 'Email',   placeholder: 'seu@email.com',   keyboard: 'email-address' },
+        { key: 'phone', label: 'Telefone',placeholder: '(00) 00000-0000', keyboard: 'phone-pad' },
+        { key: 'city',  label: 'Cidade',  placeholder: 'Sua cidade',      keyboard: 'default' },
+      ].map(({ key, label, placeholder, keyboard }) => (
+        <View key={key} style={styles.fieldGroup}>
+          <Text style={styles.fieldLabel}>{label}</Text>
+          {editing ? (
+            <TextInput
+              style={styles.input}
+              value={form[key]}
+              onChangeText={(t) => setForm({ ...form, [key]: t })}
+              placeholder={placeholder}
+              keyboardType={keyboard}
+              autoCapitalize={key === 'email' ? 'none' : 'sentences'}
+            />
+          ) : (
+            <Text style={styles.fieldValue}>{user[key] || 'Não informado'}</Text>
+          )}
+        </View>
+      ))}
 
       {editing ? (
         <View style={styles.row}>
           <TouchableOpacity style={[styles.btn, styles.btnSave]} onPress={save}>
             <Text style={styles.btnText}>Salvar</Text>
           </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.btn, styles.btnCancel]}
-            onPress={() => setEditing(false)}
-          >
-            <Text style={styles.btnText}>Cancelar</Text>
+          <TouchableOpacity style={[styles.btn, styles.btnCancel]} onPress={() => setEditing(false)}>
+            <Text style={[styles.btnText, { color: '#555' }]}>Cancelar</Text>
           </TouchableOpacity>
         </View>
       ) : (
-        <TouchableOpacity onPress={() => setEditing(true)}>
-          <Text style={styles.edit}>✏️ Editar</Text>
+        <TouchableOpacity onPress={() => setEditing(true)} style={styles.editBtn}>
+          <Ionicons name="create-outline" size={16} color={GREEN} />
+          <Text style={styles.editText}>Editar dados</Text>
         </TouchableOpacity>
       )}
     </View>
   );
 
+  // ─── Aba Pedidos ──────────────────────────────────────────────────────────
   const renderPedidosTab = () => {
-    if (!user.orders || user.orders.length === 0) {
+    if (!user.orders?.length) {
       return (
         <View style={styles.emptyState}>
           <Ionicons name="bag-outline" size={50} color="#ccc" />
           <Text style={styles.emptyText}>Nenhum pedido encontrado</Text>
+          <TouchableOpacity style={styles.emptyAction} onPress={() => navigation.navigate('Loja')}>
+            <Text style={styles.emptyActionText}>Ir para a loja</Text>
+          </TouchableOpacity>
         </View>
       );
     }
@@ -156,43 +209,34 @@ export default function PerfilScreen() {
     return (
       <View>
         {user.orders.map((order, i) => {
-          const status = order.status || "aguardando";
-          const config = STATUS[status] || STATUS.aguardando;
-          
+          const config = STATUS[order.status ?? 'aguardando'] ?? STATUS.aguardando;
           return (
             <View key={i} style={styles.card}>
               <View style={styles.orderHeader}>
-                <Text style={styles.orderId}>Pedido #{order.id || i + 1}</Text>
+                <Text style={styles.orderId}>Pedido #{order.id ?? i + 1}</Text>
                 <View style={[styles.badge, { backgroundColor: config.color }]}>
                   <Text style={styles.badgeText}>{config.label}</Text>
                 </View>
               </View>
 
-              {/* Timeline */}
               <View style={styles.timeline}>
-                {steps.map((step, idx) => (
-                  <View key={idx} style={styles.step}>
-                    <View
-                      style={[
-                        styles.bar,
-                        {
-                          backgroundColor:
-                            idx <= config.step ? "#2d6a5a" : "#e0e0e0",
-                        },
-                      ]}
-                    />
-                    <Text style={styles.stepText}>{step}</Text>
+                {STEPS.map((step, idx) => (
+                  <View key={idx} style={styles.timelineStep}>
+                    <View style={[
+                      styles.timelineBar,
+                      { backgroundColor: idx <= config.step ? GREEN : '#e0e0e0' },
+                    ]} />
+                    <Text style={styles.timelineLabel}>{step}</Text>
                   </View>
                 ))}
               </View>
 
-              {/* Produtos */}
-              {order.products && order.products.length > 0 && (
-                <View style={styles.productsList}>
+              {order.products?.length > 0 && (
+                <View>
                   <Text style={styles.sectionTitle}>Produtos:</Text>
                   {order.products.map((p, idx) => (
                     <View key={idx} style={styles.productRow}>
-                      <Text style={styles.productName}>{p.name || p}</Text>
+                      <Text style={styles.productName}>{p.name ?? p}</Text>
                       <Text style={styles.productPrice}>
                         R$ {typeof p.price === 'number' ? p.price.toFixed(2) : p.price}
                       </Text>
@@ -214,12 +258,16 @@ export default function PerfilScreen() {
     );
   };
 
+  // ─── Aba Favoritos ────────────────────────────────────────────────────────
   const renderFavoritosTab = () => {
-    if (!user.favorites || user.favorites.length === 0) {
+    if (!user.favorites?.length) {
       return (
         <View style={styles.emptyState}>
           <Ionicons name="heart-outline" size={50} color="#ccc" />
-          <Text style={styles.emptyText}>Nenhum favorito adicionado</Text>
+          <Text style={styles.emptyText}>Nenhum favorito ainda</Text>
+          <TouchableOpacity style={styles.emptyAction} onPress={() => navigation.navigate('Loja')}>
+            <Text style={styles.emptyActionText}>Explorar loja</Text>
+          </TouchableOpacity>
         </View>
       );
     }
@@ -227,430 +275,649 @@ export default function PerfilScreen() {
     return (
       <View style={styles.grid}>
         {user.favorites.map((item, i) => (
-          <View key={i} style={styles.product}>
-            <View style={styles.productImage}>
-              <Ionicons name="image-outline" size={40} color="#ccc" />
-            </View>
-            <Text style={styles.productName}>{item.name || item}</Text>
-            <Text style={styles.productPrice}>
-              R$ {typeof item.price === 'number' ? item.price.toFixed(2) : item.price}
+          <TouchableOpacity
+            key={i}
+            style={styles.favoriteCard}
+            onPress={() => navigation.navigate('Loja', { itemId: item.id })}
+            activeOpacity={0.8}
+          >
+            {item.image ? (
+              <Image source={{ uri: item.image }} style={styles.favoriteImage} />
+            ) : (
+              <View style={styles.favoriteImagePlaceholder}>
+                <Ionicons name="image-outline" size={32} color="#ccc" />
+              </View>
+            )}
+            <Text style={styles.favoriteName} numberOfLines={2}>{item.name ?? item}</Text>
+            <Text style={styles.favoritePrice}>
+              R$ {typeof item.price === 'number' ? item.price.toFixed(2) : item.price ?? '--'}
             </Text>
-          </View>
+          </TouchableOpacity>
         ))}
       </View>
     );
   };
 
+  // ─── Aba Capilar ─────────────────────────────────────────────────────────
   const renderCapilarTab = () => (
     <View style={styles.card}>
       {user.hairProfile ? (
         <>
-          <View style={styles.hairInfo}>
-            <Ionicons name="water-outline" size={24} color="#2d6a5a" />
-            <Text style={styles.hairLabel}>Tipo de cabelo:</Text>
-            <Text style={styles.hairValue}>{user.hairProfile.type}</Text>
-          </View>
-          <View style={styles.hairInfo}>
-            <Ionicons name="git-compare-outline" size={24} color="#2d6a5a" />
-            <Text style={styles.hairLabel}>Porosidade:</Text>
-            <Text style={styles.hairValue}>{user.hairProfile.porosity}</Text>
-          </View>
-          <View style={styles.hairInfo}>
-            <Ionicons name="copy-outline" size={24} color="#2d6a5a" />
-            <Text style={styles.hairLabel}>Densidade:</Text>
-            <Text style={styles.hairValue}>{user.hairProfile.density}</Text>
-          </View>
+          {[
+            { icon: 'water-outline',       label: 'Tipo de cabelo', value: user.hairProfile.type },
+            { icon: 'git-compare-outline', label: 'Porosidade',     value: user.hairProfile.porosity },
+            { icon: 'copy-outline',        label: 'Densidade',      value: user.hairProfile.density },
+          ].map(({ icon, label, value }) => (
+            <View key={label} style={styles.hairRow}>
+              <View style={styles.hairIconWrap}>
+                <Ionicons name={icon} size={20} color={GREEN} />
+              </View>
+              <View style={styles.hairTextWrap}>
+                <Text style={styles.hairLabel}>{label}</Text>
+                <Text style={styles.hairValue}>{value}</Text>
+              </View>
+            </View>
+          ))}
+          <TouchableOpacity
+            style={styles.refazerQuizBtn}
+            onPress={() => navigation.navigate('Quiz')}
+          >
+            <Ionicons name="refresh-outline" size={16} color={GREEN} />
+            <Text style={styles.refazerQuizText}>Refazer quiz</Text>
+          </TouchableOpacity>
         </>
       ) : (
         <View style={styles.quizPrompt}>
-          <Ionicons name="analytics-outline" size={50} color="#2d6a5a" />
-          <Text style={styles.quizText}>Faça o quiz capilar</Text>
-          <TouchableOpacity style={styles.quizBtn}>
-            <Text style={styles.quizBtnText}>Começar Quiz</Text>
+          <View style={styles.quizIconCircle}>
+            <Ionicons name="analytics-outline" size={36} color={GREEN} />
+          </View>
+          <Text style={styles.quizTitle}>Descubra seu perfil capilar</Text>
+          <Text style={styles.quizSubtitle}>
+            Responda algumas perguntas rápidas e receba recomendações personalizadas.
+          </Text>
+          <TouchableOpacity style={styles.quizBtn} onPress={() => navigation.navigate('Quiz')}>
+            <Text style={styles.quizBtnText}>Fazer Quiz</Text>
+            <Ionicons name="arrow-forward" size={16} color="#fff" />
           </TouchableOpacity>
         </View>
       )}
     </View>
   );
 
+  // ─── Render principal ─────────────────────────────────────────────────────
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {/* HEADER */}
+    <SafeAreaView style={styles.safe}>
+      <ScrollView
+        style={styles.scroll}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 100 }}
+      >
+        {/* Header com avatar */}
         <View style={styles.header}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{getInitials()}</Text>
-          </View>
-          <Text style={styles.name}>{user.name || "Usuário"}</Text>
-          <Text style={styles.email}>{user.email || "email@exemplo.com"}</Text>
+          <TouchableOpacity style={styles.avatarWrapper} onPress={handleChangeAvatar} activeOpacity={0.8}>
+            {avatar ? (
+              <Image source={{ uri: avatar }} style={styles.avatarImage} />
+            ) : (
+              <View style={styles.avatarPlaceholder}>
+                <Text style={styles.avatarInitials}>{getInitials()}</Text>
+              </View>
+            )}
+            <View style={styles.cameraOverlay}>
+              <Ionicons name="camera" size={14} color="#fff" />
+            </View>
+          </TouchableOpacity>
+
+          <Text style={styles.userName}>{user.name || 'Usuário'}</Text>
+          <Text style={styles.userEmail}>{user.email || 'email@exemplo.com'}</Text>
         </View>
 
-        {/* TABS */}
+        {/* Tabs */}
         <View style={styles.tabs}>
           {TABS.map((t) => (
-            <TouchableOpacity key={t} onPress={() => setTab(t)}>
-              <Text style={[styles.tab, tab === t && styles.activeTab]}>
+            <TouchableOpacity key={t} style={styles.tabBtn} onPress={() => setTab(t)}>
+              <Text style={[styles.tabText, tab === t && styles.tabTextActive]}>
                 {t.charAt(0).toUpperCase() + t.slice(1)}
               </Text>
+              {tab === t && <View style={styles.tabIndicator} />}
             </TouchableOpacity>
           ))}
         </View>
 
-        {/* TAB CONTENT */}
-        {tab === "dados" && renderDadosTab()}
-        {tab === "pedidos" && renderPedidosTab()}
-        {tab === "favoritos" && renderFavoritosTab()}
-        {tab === "capilar" && renderCapilarTab()}
+        {/* Conteúdo da aba */}
+        {tab === 'dados'     && renderDadosTab()}
+        {tab === 'pedidos'   && renderPedidosTab()}
+        {tab === 'favoritos' && renderFavoritosTab()}
+        {tab === 'capilar'   && renderCapilarTab()}
 
-        {/* LOGOUT */}
-        <TouchableOpacity style={styles.logout} onPress={logout}>
-          <Ionicons name="log-out-outline" size={22} color="#d32f2f" />
+        {/* Logout */}
+        <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
+          <Ionicons name="log-out-outline" size={20} color="#d32f2f" />
           <Text style={styles.logoutText}>Sair da conta</Text>
         </TouchableOpacity>
       </ScrollView>
+
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safe: {
     flex: 1,
-    backgroundColor: "#f5f5f0",
+    backgroundColor: '#f5f5f0',
+  },
+  safeGuest: {
+    flex: 1,
+    backgroundColor: '#f5f5f0',
+  },
+  scroll: {
+    flex: 1,
   },
 
-  header: {
-    alignItems: "center",
-    padding: 24,
-    backgroundColor: "#fff",
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
+  // ─── Guest ────────────────────────────────────────────────────────────────
+  guestScreen: {
+    flex: 1,
+  },
+  backBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 8,
+    gap: 4,
+  },
+  backText: {
+    color: GREEN,
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  guestContent: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 30,
+    paddingBottom: 80,
+  },
+  guestIconCircle: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: '#e8f4f1',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+  },
+  guestTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
     marginBottom: 10,
+    textAlign: 'center',
   },
-
-  avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: "#2d6a5a",
-    alignItems: "center",
-    justifyContent: "center",
+  guestSubtitle: {
+    fontSize: 14,
+    color: '#777',
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 30,
+  },
+  loginBtn: {
+    backgroundColor: GREEN,
+    paddingVertical: 14,
+    borderRadius: 25,
+    width: '100%',
+    alignItems: 'center',
     marginBottom: 12,
   },
+  loginBtnText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 15,
+  },
+  registerBtn: {
+    borderWidth: 1.5,
+    borderColor: GREEN,
+    paddingVertical: 13,
+    borderRadius: 25,
+    width: '100%',
+    alignItems: 'center',
+  },
+  registerBtnText: {
+    color: GREEN,
+    fontWeight: 'bold',
+    fontSize: 15,
+  },
 
-  avatarText: {
-    color: "#fff",
-    fontWeight: "bold",
+  // ─── Header ───────────────────────────────────────────────────────────────
+  header: {
+    alignItems: 'center',
+    paddingTop: 32,
+    paddingBottom: 24,
+    backgroundColor: '#fff',
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    marginBottom: 12,
+  },
+  avatarWrapper: {
+    position: 'relative',
+    marginBottom: 14,
+  },
+  avatarImage: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    borderWidth: 3,
+    borderColor: GREEN,
+  },
+  avatarPlaceholder: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    backgroundColor: GREEN,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 3,
+    borderColor: '#e8f4f1',
+  },
+  avatarInitials: {
+    color: '#fff',
     fontSize: 28,
+    fontWeight: 'bold',
   },
-
-  name: {
-    fontWeight: "bold",
+  cameraOverlay: {
+    position: 'absolute',
+    bottom: 2,
+    right: 2,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: GREEN,
+    borderWidth: 2,
+    borderColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  userName: {
     fontSize: 18,
-    marginTop: 5,
+    fontWeight: 'bold',
+    color: '#222',
   },
-
-  email: {
-    color: "#777",
-    fontSize: 14,
+  userEmail: {
+    fontSize: 13,
+    color: '#888',
     marginTop: 4,
   },
 
+  // ─── Tabs ─────────────────────────────────────────────────────────────────
   tabs: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    backgroundColor: "#fff",
-    paddingVertical: 12,
-    marginHorizontal: 10,
-    borderRadius: 12,
-    marginBottom: 10,
+    flexDirection: 'row',
+    backgroundColor: '#fff',
+    marginHorizontal: 12,
+    borderRadius: 14,
+    marginBottom: 12,
+    overflow: 'hidden',
+  },
+  tabBtn: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 14,
+    position: 'relative',
+  },
+  tabText: {
+    fontSize: 13,
+    color: '#aaa',
+    fontWeight: '500',
+  },
+  tabTextActive: {
+    color: GREEN,
+    fontWeight: '700',
+  },
+  tabIndicator: {
+    position: 'absolute',
+    bottom: 0,
+    left: '20%',
+    right: '20%',
+    height: 3,
+    backgroundColor: GREEN,
+    borderTopLeftRadius: 2,
+    borderTopRightRadius: 2,
   },
 
-  tab: {
-    color: "#777",
-    fontSize: 14,
-    paddingHorizontal: 8,
-  },
-
-  activeTab: {
-    color: "#2d6a5a",
-    fontWeight: "bold",
-  },
-
+  // ─── Card genérico ────────────────────────────────────────────────────────
   card: {
-    backgroundColor: "#fff",
-    margin: 10,
-    padding: 16,
-    borderRadius: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
+    backgroundColor: '#fff',
+    marginHorizontal: 12,
+    marginBottom: 12,
+    padding: 18,
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
     shadowRadius: 4,
     elevation: 2,
   },
 
+  // ─── Dados ────────────────────────────────────────────────────────────────
   fieldGroup: {
-    marginBottom: 12,
+    marginBottom: 14,
   },
-
-  label: {
-    fontSize: 12,
-    color: "#777",
+  fieldLabel: {
+    fontSize: 11,
+    color: '#aaa',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
     marginBottom: 4,
-    textTransform: "uppercase",
   },
-
-  value: {
-    fontSize: 16,
-    marginBottom: 8,
-    color: "#333",
+  fieldValue: {
+    fontSize: 15,
+    color: '#333',
   },
-
   input: {
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: '#ddd',
     padding: 10,
-    borderRadius: 8,
-    marginBottom: 8,
+    borderRadius: 10,
     fontSize: 14,
+    color: '#222',
+    backgroundColor: '#fafafa',
   },
-
-  edit: {
-    color: "#2d6a5a",
-    marginTop: 8,
-    textAlign: "center",
-    fontSize: 14,
-  },
-
   row: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+    flexDirection: 'row',
     gap: 10,
     marginTop: 8,
   },
-
   btn: {
     flex: 1,
     padding: 12,
-    borderRadius: 8,
-    alignItems: "center",
+    borderRadius: 10,
+    alignItems: 'center',
   },
-
   btnSave: {
-    backgroundColor: "#2d6a5a",
+    backgroundColor: GREEN,
   },
-
   btnCancel: {
-    backgroundColor: "#ccc",
+    backgroundColor: '#eee',
   },
-
   btnText: {
-    color: "#fff",
-    fontWeight: "bold",
+    fontWeight: '600',
+    color: '#fff',
+    fontSize: 14,
+  },
+  editBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    marginTop: 10,
+    paddingVertical: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: GREEN + '44',
+    backgroundColor: GREEN + '0A',
+  },
+  editText: {
+    color: GREEN,
+    fontWeight: '600',
+    fontSize: 14,
   },
 
+  // ─── Pedidos ──────────────────────────────────────────────────────────────
   orderHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 12,
   },
-
   orderId: {
-    fontWeight: "bold",
-    fontSize: 16,
+    fontWeight: 'bold',
+    fontSize: 15,
+    color: '#222',
   },
-
   badge: {
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 12,
+    borderRadius: 20,
   },
-
   badgeText: {
-    color: "#fff",
+    color: '#fff',
     fontSize: 11,
-    fontWeight: "bold",
+    fontWeight: 'bold',
   },
-
   timeline: {
-    flexDirection: "row",
-    marginVertical: 16,
+    flexDirection: 'row',
+    marginVertical: 14,
   },
-
-  step: {
+  timelineStep: {
     flex: 1,
-    alignItems: "center",
+    alignItems: 'center',
   },
-
-  bar: {
+  timelineBar: {
     height: 4,
-    width: "100%",
+    width: '100%',
     marginBottom: 6,
     borderRadius: 2,
   },
-
-  stepText: {
+  timelineLabel: {
     fontSize: 9,
-    color: "#666",
-    textAlign: "center",
+    color: '#888',
+    textAlign: 'center',
   },
-
-  productsList: {
-    marginTop: 8,
-  },
-
   sectionTitle: {
-    fontWeight: "bold",
-    fontSize: 14,
+    fontWeight: '600',
+    fontSize: 13,
+    color: '#555',
     marginBottom: 8,
   },
-
   productRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     paddingVertical: 6,
     borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
+    borderBottomColor: '#f0f0f0',
   },
-
   productName: {
     fontSize: 14,
-    color: "#333",
+    color: '#333',
   },
-
   productPrice: {
     fontSize: 14,
-    color: "#2d6a5a",
-    fontWeight: "500",
+    color: GREEN,
+    fontWeight: '500',
   },
-
   totalRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     marginTop: 12,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: "#e0e0e0",
+    borderTopColor: '#eee',
   },
-
   totalLabel: {
-    fontWeight: "bold",
-    fontSize: 16,
+    fontWeight: 'bold',
+    fontSize: 15,
+    color: '#333',
   },
-
   totalValue: {
-    fontWeight: "bold",
-    fontSize: 16,
-    color: "#2d6a5a",
+    fontWeight: 'bold',
+    fontSize: 15,
+    color: GREEN,
   },
 
+  // ─── Favoritos ────────────────────────────────────────────────────────────
   grid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-    padding: 10,
-  },
-
-  product: {
-    width: "48%",
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 12,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    paddingHorizontal: 12,
     marginBottom: 12,
-    alignItems: "center",
   },
-
-  productImage: {
-    width: 80,
-    height: 80,
-    backgroundColor: "#f5f5f5",
-    borderRadius: 40,
-    alignItems: "center",
-    justifyContent: "center",
+  favoriteCard: {
+    width: '47%',
+    backgroundColor: '#fff',
+    borderRadius: 14,
+    padding: 12,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  favoriteImage: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
     marginBottom: 8,
   },
+  favoriteImagePlaceholder: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: '#f0f0f0',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  favoriteName: {
+    fontSize: 13,
+    color: '#333',
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  favoritePrice: {
+    fontSize: 13,
+    color: GREEN,
+    fontWeight: '600',
+  },
 
-  hairInfo: {
-    flexDirection: "row",
-    alignItems: "center",
+  // ─── Capilar ──────────────────────────────────────────────────────────────
+  hairRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: 16,
+    gap: 12,
   },
-
-  hairLabel: {
-    fontSize: 14,
-    color: "#777",
-    marginLeft: 12,
-    width: 80,
+  hairIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: GREEN + '15',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-
-  hairValue: {
-    fontSize: 14,
-    color: "#333",
-    fontWeight: "500",
+  hairTextWrap: {
     flex: 1,
   },
-
+  hairLabel: {
+    fontSize: 11,
+    color: '#aaa',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+  },
+  hairValue: {
+    fontSize: 15,
+    color: '#222',
+    fontWeight: '500',
+    marginTop: 2,
+  },
+  refazerQuizBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    marginTop: 6,
+    paddingVertical: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: GREEN + '44',
+  },
+  refazerQuizText: {
+    color: GREEN,
+    fontWeight: '600',
+    fontSize: 14,
+  },
   quizPrompt: {
-    alignItems: "center",
-    padding: 20,
+    alignItems: 'center',
+    paddingVertical: 16,
   },
-
-  quizText: {
+  quizIconCircle: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: GREEN + '15',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 14,
+  },
+  quizTitle: {
     fontSize: 16,
-    color: "#666",
-    marginVertical: 12,
+    fontWeight: 'bold',
+    color: '#222',
+    marginBottom: 8,
+    textAlign: 'center',
   },
-
+  quizSubtitle: {
+    fontSize: 13,
+    color: '#777',
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 20,
+  },
   quizBtn: {
-    backgroundColor: "#2d6a5a",
-    paddingHorizontal: 24,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: GREEN,
+    paddingHorizontal: 28,
     paddingVertical: 12,
     borderRadius: 25,
   },
-
   quizBtnText: {
-    color: "#fff",
-    fontWeight: "bold",
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 15,
   },
 
+  // ─── Empty states ─────────────────────────────────────────────────────────
   emptyState: {
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 50,
+    paddingHorizontal: 20,
   },
-
   emptyText: {
-    color: "#999",
+    color: '#aaa',
     marginTop: 12,
     fontSize: 14,
   },
+  emptyAction: {
+    marginTop: 16,
+    paddingHorizontal: 24,
+    paddingVertical: 10,
+    borderRadius: 20,
+    backgroundColor: GREEN,
+  },
+  emptyActionText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 14,
+  },
 
-  logout: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 16,
-    marginTop: 20,
-    marginBottom: 30,
+  // ─── Logout ───────────────────────────────────────────────────────────────
+  logoutBtn: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
     gap: 8,
+    paddingVertical: 16,
+    marginHorizontal: 12,
+    marginTop: 8,
+    marginBottom: 8,
+    borderRadius: 12,
+    backgroundColor: '#fff3f3',
   },
-
   logoutText: {
-    color: "#d32f2f",
-    fontWeight: "bold",
-    fontSize: 16,
-  },
-
-  center: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-
-  loginBtn: {
-    backgroundColor: "#2d6a5a",
-    padding: 12,
-    borderRadius: 8,
-    marginTop: 20,
+    color: '#d32f2f',
+    fontWeight: '600',
+    fontSize: 15,
   },
 });
