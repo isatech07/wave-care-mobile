@@ -63,7 +63,7 @@ export default function LoginScreen({ navigation }) {
       setLoading(false);
       loadingProgress.value = 0;
       buttonWidth.value     = withSpring(width * 0.8);
-      navigation.navigate('Home');
+      navigation.navigate('Main');;
     }, 2200);
   };
 
