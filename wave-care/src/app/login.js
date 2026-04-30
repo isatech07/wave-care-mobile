@@ -7,6 +7,7 @@ import {
   Dimensions,
   KeyboardAvoidingView,
   Platform,
+  Alert,
 } from 'react-native';
 import Animated, {
   FadeInDown,
@@ -23,11 +24,14 @@ import { useFonts, Poppins_400Regular, Poppins_500Medium, Poppins_700Bold } from
 import { useRouter } from 'expo-router';
 import AnimatedInput from '../components/AnimatedInput';
 import { Colors } from '../theme/colors';
+import { loginUser } from '../services/userService';
+import { useUser }   from '../contexts/UserContext';
 
 const { width } = Dimensions.get('window');
 
 export default function Login() {
-  const router = useRouter();
+  const router    = useRouter();
+  const { login } = useUser();
 
   const [fontsLoaded] = useFonts({
     Poppins_400Regular,
@@ -35,6 +39,8 @@ export default function Login() {
     Poppins_700Bold,
   });
 
+  const [email,      setEmail]      = useState('');
+  const [senha,      setSenha]      = useState('');
   const [loading,    setLoading]    = useState(false);
   const [secureText, setSecureText] = useState(true);
 
@@ -52,8 +58,19 @@ export default function Login() {
 
   if (!fontsLoaded) return null;
 
-  const handleLogin = () => {
+  const resetButton = () => {
+    setLoading(false);
+    loadingProgress.value = 0;
+    buttonWidth.value     = withSpring(width * 0.8);
+  };
+
+  const handleLogin = async () => {
     if (loading) return;
+
+    if (!email.trim() || !senha.trim()) {
+      Alert.alert('Atenção', 'Preencha e-mail e senha.');
+      return;
+    }
 
     setLoading(true);
     buttonWidth.value     = withSpring(width * 0.7);
@@ -62,12 +79,17 @@ export default function Login() {
       easing: Easing.bezier(0.4, 0, 0.2, 1),
     });
 
-    setTimeout(() => {
-      setLoading(false);
-      loadingProgress.value = 0;
-      buttonWidth.value     = withSpring(width * 0.8);
-      router.replace('/(tabs)/home');
-    }, 2200);
+    try {
+      const res = await loginUser({ email: email.trim(), password: senha });
+      console.log('resposta:', res.data);
+      await login({ ...res.data.user, favorites: [], orders: [] });
+      setTimeout(() => router.replace('/(tabs)/home'), 2200);
+    } catch (e) {
+      console.log('erro status:', e.response?.status);
+      console.log('erro data:', e.response?.data);
+      Alert.alert('Erro', 'E-mail ou senha incorretos.');
+      resetButton();
+    }
   };
 
   return (
@@ -75,7 +97,6 @@ export default function Login() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.container}
     >
-      {/* Header */}
       <LinearGradient colors={[Colors.secondary, Colors.primary]} style={styles.header}>
         <Animated.Text entering={FadeInUp.delay(200)} style={styles.title}>
           Wave Care
@@ -85,12 +106,22 @@ export default function Login() {
         </Animated.Text>
       </LinearGradient>
 
-      {/* Card de Login */}
       <Animated.View entering={FadeInDown.springify()} style={styles.loginCard}>
-        <AnimatedInput placeholder="E-mail" keyboardType="email-address" />
+        <AnimatedInput
+          placeholder="E-mail"
+          keyboardType="email-address"
+          value={email}
+          onChangeText={setEmail}
+          autoCapitalize="none"
+        />
 
         <View style={styles.passwordContainer}>
-          <AnimatedInput placeholder="Senha" secureTextEntry={secureText} />
+          <AnimatedInput
+            placeholder="Senha"
+            secureTextEntry={secureText}
+            value={senha}
+            onChangeText={setSenha}
+          />
           <TouchableOpacity style={styles.eyeIcon} onPress={() => setSecureText(!secureText)}>
             <Ionicons
               name={secureText ? 'eye-off-outline' : 'eye-outline'}
@@ -104,7 +135,6 @@ export default function Login() {
           <Text style={styles.forgotText}>Esqueceu a senha?</Text>
         </TouchableOpacity>
 
-        {/* Botão de Login */}
         <View style={styles.buttonWrapper}>
           <TouchableOpacity activeOpacity={0.9} onPress={handleLogin} disabled={loading}>
             <Animated.View style={[styles.loginButton, animatedButtonStyle]}>
@@ -115,7 +145,6 @@ export default function Login() {
         </View>
       </Animated.View>
 
-      {/* Footer */}
       <TouchableOpacity style={styles.footer} onPress={() => router.push('/cadastro')}>
         <Text style={styles.footerText}>
           Novo por aqui?{' '}
@@ -124,8 +153,9 @@ export default function Login() {
       </TouchableOpacity>
     </KeyboardAvoidingView>
   );
-}
+} // ← fim do componente
 
+// ← styles FORA do componente
 const styles = StyleSheet.create({
   container: {
     flex: 1,

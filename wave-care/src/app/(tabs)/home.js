@@ -21,6 +21,8 @@ const COLORS = {
   accent: '#F0F7F4',
 };
 
+const HERO_IMAGE = require('../../../assets/banner-home.png');
+
 const ESTACOES = [
   {
     key: 'verao',
@@ -84,7 +86,7 @@ export default function Home() {
 
         {/* Hero - usando a primeira imagem das estações como fallback */}
         <View style={styles.heroContainer}>
-          <Image source={ESTACOES[0].image} style={styles.heroImage} />
+          <Image source={HERO_IMAGE} style={styles.heroImage} />
           <LinearGradient colors={['rgba(0,0,0,0.3)', 'transparent']} style={styles.heroOverlay} />
         </View>
 

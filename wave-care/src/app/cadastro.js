@@ -23,9 +23,12 @@ import { useFonts, Poppins_400Regular, Poppins_500Medium, Poppins_700Bold } from
 import { useRouter } from 'expo-router';
 import AnimatedInput from '../components/AnimatedInput';
 import { Colors } from '../theme/colors';
+import { createUser } from '../services/userService';
+import { useUser }    from '../contexts/UserContext';
 
 export default function Cadastro() {
-  const router = useRouter();
+  const router      = useRouter();
+  const { login }   = useUser(); // ← hook aqui dentro
 
   const [fontsLoaded] = useFonts({
     Poppins_400Regular,
@@ -44,9 +47,9 @@ export default function Cadastro() {
     width: `${loadProgress.value}%`,
   }));
 
-  if (!fontsLoaded) return null;
+  if (!fontsLoaded) return null; // ← return condicional depois de todos os hooks
 
-  const handleCadastro = async () => {
+  const handleCadastro = async () => { // ← função aqui dentro, depois do return condicional
     if (!nome.trim() || !email.trim() || !senha.trim()) {
       Alert.alert('Atenção', 'Preencha todos os campos para criar sua conta.');
       return;
@@ -54,29 +57,25 @@ export default function Cadastro() {
 
     setLoading(true);
     loadProgress.value = withTiming(100, { duration: 1500 });
+      try {
+        const res = await createUser({ 
+          name:     nome.trim(), 
+          email:    email.trim(),
+          password: senha.trim(), // ← adiciona aqui
+        });
+        const newUser = { ...res.data, favorites: [], orders: [] };
 
-    try {
-      const newUser = {
-        name:      nome.trim(),
-        email:     email.trim(),
-        phone:     '',
-        city:      '',
-        orders:    [],
-        favorites: [],
-      };
+        await login(newUser);
 
-      await AsyncStorage.setItem('wavecare_user', JSON.stringify(newUser));
-      await AsyncStorage.setItem('wavecare_last_email', email.trim());
-
-      setTimeout(() => {
+        setTimeout(() => {
+          setLoading(false);
+          router.replace('/(tabs)/home');
+        }, 1800);
+      } catch (e) {
         setLoading(false);
-        router.push('/login');
-      }, 1800);
-    } catch (e) {
-      setLoading(false);
-      loadProgress.value = 0;
-      Alert.alert('Erro', 'Não foi possível criar a conta. Tente novamente.');
-    }
+        loadProgress.value = 0;
+        Alert.alert('Erro', 'Não foi possível criar a conta. Tente novamente.');
+      }
   };
 
   return (

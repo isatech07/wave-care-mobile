@@ -29,10 +29,10 @@ export default function perfil() {
   const [avatar, setAvatar]   = useState(user?.avatar ?? null);
 
   const [form, setForm] = useState({
-    name:  user?.name  ?? '',
-    email: user?.email ?? '',
-    phone: user?.phone ?? '',
-    city:  user?.city  ?? '',
+    name:  user?.name     ?? '',
+    email: user?.email    ?? '',
+    phone: user?.telefone ?? '', 
+    city:  user?.cidade   ?? '', 
   });
 
   // ─── Tela de convidado ────────────────────────────────────────────────────
@@ -136,9 +136,14 @@ export default function perfil() {
 
   // ─── Salvar dados ─────────────────────────────────────────────────────────
   const save = async () => {
-    const updated = { ...user, ...form };
+    const updated = {
+      ...user,
+      name:     form.name,
+      email:    form.email,
+      phone:    form.phone,
+      city:     form.city,  
+    };
     updateUser(updated);
-    await AsyncStorage.setItem('wavecare_user', JSON.stringify(updated));
     setEditing(false);
   };
 

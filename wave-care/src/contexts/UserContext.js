@@ -1,6 +1,6 @@
-// contexts/UserContext.js
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { updateUser as updateUserApi } from '../services/userService';
 
 const UserContext = createContext();
 
@@ -8,68 +8,72 @@ export function UserProvider({ children }) {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    loadUser();
+    loadUser(); // ← recarrega o usuário salvo ao iniciar
   }, []);
 
   const loadUser = async () => {
     try {
-      const storedUser = await AsyncStorage.getItem('wavecare_user');
-      if (storedUser) {
-        setUser(JSON.parse(storedUser));
+      const stored = await AsyncStorage.getItem('wavecare_user');
+      if (stored) {
+        setUser(JSON.parse(stored));
       } else {
-        // Usuário convidado padrão
-        setUser({ 
-          id: 'guest', 
-          guest: true, 
-          favorites: [],
-          name: 'Convidado',
-          email: 'convidado@wavecare.com'
-        });
+        setUser({ id: 'guest', guest: true, favorites: [] });
       }
-    } catch (error) {
-      console.error('Erro ao carregar usuário:', error);
+    } catch (e) {
       setUser({ id: 'guest', guest: true, favorites: [] });
     }
   };
 
+  const login = async (userData) => {
+    setUser(userData);
+    await AsyncStorage.setItem('wavecare_user', JSON.stringify(userData));
+  };
+
   const updateUser = async (updatedUser) => {
+    try {
+      await updateUserApi(updatedUser.id, {
+        name:     updatedUser.name,
+        email:    updatedUser.email,
+        telefone: updatedUser.phone,  
+        cidade:   updatedUser.city,   
+      });
+    } catch (e) {
+      console.error('Erro ao atualizar usuário na API:', e);
+    }
+
     setUser(updatedUser);
     await AsyncStorage.setItem('wavecare_user', JSON.stringify(updatedUser));
   };
 
   const toggleFavorite = async (product) => {
-    if (!user || user.guest) {
-      return false;
-    }
+    if (!user || user.guest) return false;
 
     const currentFavorites = user.favorites || [];
     const isFavorite = currentFavorites.some(fav => fav.id === product.id);
-    
-    let newFavorites;
-    if (isFavorite) {
-      newFavorites = currentFavorites.filter(fav => fav.id !== product.id);
-    } else {
-      newFavorites = [...currentFavorites, {
-        id: product.id,
-        name: product.nome,
-        price: product.preco,
-        image: product.image,
-        categoria: product.categoria,
-        estacao: product.estacao
-      }];
-    }
-    
+
+    const newFavorites = isFavorite
+      ? currentFavorites.filter(fav => fav.id !== product.id)
+      : [...currentFavorites, {
+          id:       product.id,
+          name:     product.nome,
+          price:    product.preco,
+          image:    product.image,
+          categoria: product.categoria,
+          estacao:  product.estacao,
+        }];
+
     const updatedUser = { ...user, favorites: newFavorites };
     await updateUser(updatedUser);
     return !isFavorite;
   };
 
-  const logout = () => {
+  const logout = async () => {
+    await AsyncStorage.multiRemove(['wavecare_user', 'wavecare_last_email']);
     setUser({ id: 'guest', guest: true, favorites: [] });
   };
 
   return (
-    <UserContext.Provider value={{ user, updateUser, toggleFavorite, logout }}>
+    <UserContext.Provider value={{ user, login, updateUser, toggleFavorite, logout }}>
       {children}
     </UserContext.Provider>
   );
