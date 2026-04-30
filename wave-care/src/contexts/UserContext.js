@@ -16,9 +16,19 @@ export function UserProvider({ children }) {
       const storedUser = await AsyncStorage.getItem('wavecare_user');
       if (storedUser) {
         setUser(JSON.parse(storedUser));
+      } else {
+        // Usuário convidado padrão
+        setUser({ 
+          id: 'guest', 
+          guest: true, 
+          favorites: [],
+          name: 'Convidado',
+          email: 'convidado@wavecare.com'
+        });
       }
     } catch (error) {
       console.error('Erro ao carregar usuário:', error);
+      setUser({ id: 'guest', guest: true, favorites: [] });
     }
   };
 
@@ -29,7 +39,6 @@ export function UserProvider({ children }) {
 
   const toggleFavorite = async (product) => {
     if (!user || user.guest) {
-      // Se for convidado, redireciona para login
       return false;
     }
 
@@ -52,11 +61,11 @@ export function UserProvider({ children }) {
     
     const updatedUser = { ...user, favorites: newFavorites };
     await updateUser(updatedUser);
-    return !isFavorite; // Retorna true se adicionou, false se removeu
+    return !isFavorite;
   };
 
   const logout = () => {
-    setUser(null);
+    setUser({ id: 'guest', guest: true, favorites: [] });
   };
 
   return (

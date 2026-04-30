@@ -19,16 +19,14 @@ import Animated, {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {
-  useFonts,
-  Poppins_400Regular,
-  Poppins_500Medium,
-  Poppins_700Bold,
-} from '@expo-google-fonts/poppins';
+import { useFonts, Poppins_400Regular, Poppins_500Medium, Poppins_700Bold } from '@expo-google-fonts/poppins';
+import { useRouter } from 'expo-router';
 import AnimatedInput from '../components/AnimatedInput';
 import { Colors } from '../theme/colors';
 
-export default function CadastroScreen({ navigation }) {
+export default function Cadastro() {
+  const router = useRouter();
+
   const [fontsLoaded] = useFonts({
     Poppins_400Regular,
     Poppins_500Medium,
@@ -72,7 +70,7 @@ export default function CadastroScreen({ navigation }) {
 
       setTimeout(() => {
         setLoading(false);
-        navigation.navigate('Login');
+        router.push('/login');
       }, 1800);
     } catch (e) {
       setLoading(false);
@@ -100,7 +98,7 @@ export default function CadastroScreen({ navigation }) {
           <Animated.View entering={FadeInUp.delay(200)} style={styles.header}>
             <TouchableOpacity
               style={styles.backBtn}
-              onPress={() => navigation.goBack()}
+              onPress={() => router.back()}
             >
               <Ionicons name="chevron-back" size={28} color="#FFF" />
             </TouchableOpacity>
@@ -119,7 +117,6 @@ export default function CadastroScreen({ navigation }) {
               value={nome}
               onChangeText={setNome}
             />
-
             <AnimatedInput
               placeholder="E-mail"
               keyboardType="email-address"
@@ -147,7 +144,6 @@ export default function CadastroScreen({ navigation }) {
               </TouchableOpacity>
             </View>
 
-            {/* Botão principal */}
             <TouchableOpacity
               style={styles.btnPrimary}
               onPress={handleCadastro}
@@ -161,10 +157,9 @@ export default function CadastroScreen({ navigation }) {
               </View>
             </TouchableOpacity>
 
-            {/* Footer */}
             <TouchableOpacity
               style={styles.footerLink}
-              onPress={() => navigation.navigate('Login')}
+              onPress={() => router.push('/login')}
             >
               <Text style={styles.footerText}>
                 Já tem uma conta?{' '}
@@ -185,7 +180,6 @@ const styles = StyleSheet.create({
   scroll: {
     paddingBottom: 40,
   },
-
   header: {
     height: 180,
     justifyContent: 'center',
@@ -203,7 +197,6 @@ const styles = StyleSheet.create({
     fontSize: 40,
     color: '#FFF',
   },
-
   card: {
     backgroundColor: '#F7F5F0',
     marginHorizontal: 20,
@@ -221,7 +214,6 @@ const styles = StyleSheet.create({
     color: Colors.secondary,
     marginBottom: 20,
   },
-
   passwordContainer: {
     position: 'relative',
   },
@@ -231,7 +223,6 @@ const styles = StyleSheet.create({
     top: 18,
     zIndex: 10,
   },
-
   btnPrimary: {
     backgroundColor: Colors.secondary,
     borderRadius: 18,
@@ -257,7 +248,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#FFF',
   },
-
   footerLink: {
     marginTop: 25,
     alignItems: 'center',

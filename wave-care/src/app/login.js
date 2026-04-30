@@ -20,12 +20,15 @@ import Animated, {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useFonts, Poppins_400Regular, Poppins_500Medium, Poppins_700Bold } from '@expo-google-fonts/poppins';
+import { useRouter } from 'expo-router';
 import AnimatedInput from '../components/AnimatedInput';
 import { Colors } from '../theme/colors';
 
 const { width } = Dimensions.get('window');
 
-export default function LoginScreen({ navigation }) {
+export default function Login() {
+  const router = useRouter();
+
   const [fontsLoaded] = useFonts({
     Poppins_400Regular,
     Poppins_500Medium,
@@ -63,7 +66,7 @@ export default function LoginScreen({ navigation }) {
       setLoading(false);
       loadingProgress.value = 0;
       buttonWidth.value     = withSpring(width * 0.8);
-      navigation.navigate('Main');;
+      router.replace('/(tabs)/home');
     }, 2200);
   };
 
@@ -113,7 +116,7 @@ export default function LoginScreen({ navigation }) {
       </Animated.View>
 
       {/* Footer */}
-      <TouchableOpacity style={styles.footer} onPress={() => navigation.navigate('Cadastro')}>
+      <TouchableOpacity style={styles.footer} onPress={() => router.push('/cadastro')}>
         <Text style={styles.footerText}>
           Novo por aqui?{' '}
           <Text style={styles.footerLink}>Criar Conta</Text>
@@ -124,13 +127,10 @@ export default function LoginScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  // ─── Layout ────────────────────────────────────────────────────────────────
   container: {
     flex: 1,
     backgroundColor: Colors.background,
   },
-
-  // ─── Header ────────────────────────────────────────────────────────────────
   header: {
     height: '35%',
     justifyContent: 'center',
@@ -140,7 +140,7 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: 'serif',
     fontSize: 42,
-    fontWeight:'600',
+    fontWeight: '600',
     color: '#FFF',
   },
   subtitle: {
@@ -149,8 +149,6 @@ const styles = StyleSheet.create({
     color: '#FFF',
     opacity: 0.8,
   },
-
-  // ─── Card de Login ─────────────────────────────────────────────────────────
   loginCard: {
     backgroundColor: '#FFF',
     marginHorizontal: 25,
@@ -159,8 +157,6 @@ const styles = StyleSheet.create({
     padding: 25,
     elevation: 10,
   },
-
-  // ─── Input de Senha ────────────────────────────────────────────────────────
   passwordContainer: {
     position: 'relative',
   },
@@ -170,8 +166,6 @@ const styles = StyleSheet.create({
     top: 15,
     zIndex: 10,
   },
-
-  // ─── Esqueceu a Senha ──────────────────────────────────────────────────────
   forgotPass: {
     alignSelf: 'flex-end',
     marginBottom: 25,
@@ -181,8 +175,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: Colors.primary,
   },
-
-  // ─── Botão de Login ────────────────────────────────────────────────────────
   buttonWrapper: {
     alignItems: 'center',
   },
@@ -206,8 +198,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#FFF',
   },
-
-  // ─── Footer ────────────────────────────────────────────────────────────────
   footer: {
     marginTop: 40,
     alignItems: 'center',

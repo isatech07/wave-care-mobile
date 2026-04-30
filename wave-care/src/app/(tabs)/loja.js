@@ -29,7 +29,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
-import { useUser } from '../contexts/UserContext';
+import { useUser } from '../../contexts/UserContext';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -68,7 +68,7 @@ const PRODUCTS = [
     precoOriginal: 119.90,
     rating: 4.8,
     reviews: 234,
-    image: require('../../assets/products/inverno-produtos/inverno-shampoo.png'),
+    image: require('../../../assets/products/inverno-produtos/inverno-shampoo.png'),
     badge: 'Novo',
   },
   {
@@ -81,7 +81,7 @@ const PRODUCTS = [
     precoOriginal: null,
     rating: 4.9,
     reviews: 189,
-    image: require('../../assets/products/inverno-produtos/inverno-condicionador.png'),
+    image: require('../../../assets/products/inverno-produtos/inverno-condicionador.png'),
     badge: 'Popular',
   },
   {
@@ -94,7 +94,7 @@ const PRODUCTS = [
     precoOriginal: 159.90,
     rating: 4.7,
     reviews: 312,
-    image: require('../../assets/products/verao-produtos/verao-mascara.png'),
+    image: require('../../../assets/products/verao-produtos/verao-mascara.png'),
     badge: 'Verão',
   },
   {
@@ -107,7 +107,7 @@ const PRODUCTS = [
     precoOriginal: 189.90,
     rating: 4.9,
     reviews: 456,
-    image: require('../../assets/products/primavera-produtos/primavera-oleo.png'),
+    image: require('../../../assets/products/primavera-produtos/primavera-oleo.png'),
     badge: 'Premium',
   },
   {
@@ -120,7 +120,7 @@ const PRODUCTS = [
     precoOriginal: 359.90,
     rating: 4.8,
     reviews: 178,
-    image: require('../../assets/products/outono-produtos/Autumn-kit-completo.png'),
+    image: require('../../../assets/products/outono-produtos/Autumn-kit-completo.png'),
     badge: 'Kit',
   },
   {
@@ -133,7 +133,7 @@ const PRODUCTS = [
     precoOriginal: null,
     rating: 4.6,
     reviews: 267,
-    image: require('../../assets/products/inverno-produtos/inverno-creme.png'),
+    image: require('../../../assets/products/inverno-produtos/inverno-creme.png'),
     badge: null,
   },
   {
@@ -146,7 +146,7 @@ const PRODUCTS = [
     precoOriginal: 89.90,
     rating: 4.5,
     reviews: 143,
-    image: require('../../assets/products/verao-produtos/verao-shampoo.png'),
+    image: require('../../../assets/products/verao-produtos/verao-shampoo.png'),
     badge: 'Oferta',
   },
   {
@@ -159,7 +159,7 @@ const PRODUCTS = [
     precoOriginal: 109.90,
     rating: 4.7,
     reviews: 389,
-    image: require('../../assets/products/primavera-produtos/primavera-creme.png'),
+    image: require('../../../assets/products/primavera-produtos/primavera-creme.png'),
     badge: null,
   },
   {
@@ -172,7 +172,7 @@ const PRODUCTS = [
     precoOriginal: null,
     rating: 4.8,
     reviews: 201,
-    image: require('../../assets/products/primavera-produtos/primavera-condicionador.png'),
+    image: require('../../../assets/products/primavera-produtos/primavera-condicionador.png'),
     badge: 'Novo',
   },
   {
@@ -185,7 +185,7 @@ const PRODUCTS = [
     precoOriginal: 149.90,
     rating: 4.9,
     reviews: 523,
-    image: require('../../assets/products/outono-produtos/outono-mascara.png'),
+    image: require('../../../assets/products/outono-produtos/outono-mascara.png'),
     badge: 'Best Seller',
   },
   {
@@ -198,7 +198,7 @@ const PRODUCTS = [
     precoOriginal: 249.90,
     rating: 5.0,
     reviews: 89,
-    image: require('../../assets/products/primavera-produtos/primavera-oleo.png'),
+    image: require('../../../assets/products/primavera-produtos/primavera-oleo.png'),
     badge: 'Exclusivo',
   },
   {
@@ -211,7 +211,7 @@ const PRODUCTS = [
     precoOriginal: 459.90,
     rating: 4.9,
     reviews: 156,
-    image: require('../../assets/products/inverno-produtos/inverno-kit-completo.png'),
+    image: require('../../../assets/products/inverno-produtos/inverno-kit-completo.png'),
     badge: 'Luxo',
   },
 ];
@@ -591,7 +591,7 @@ function FloatingCartButton({ cartCount, onPress }) {
   );
 }
 
-export default function LojaScreen() {
+export default function loja() {
   const navigation = useNavigation();
   const route = useRoute();
   const { user, toggleFavorite } = useUser();

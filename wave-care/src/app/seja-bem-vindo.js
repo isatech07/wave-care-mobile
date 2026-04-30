@@ -1,35 +1,23 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import { useRouter } from 'expo-router';
 import { useFonts, Poppins_400Regular, Poppins_500Medium, Poppins_700Bold } from '@expo-google-fonts/poppins';
 import { LinearGradient } from 'expo-linear-gradient';
-import Animated, {
-  FadeInDown,
-  FadeInUp,
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-} from 'react-native-reanimated';
 import { Colors } from '../theme/colors';
 
 const { width } = Dimensions.get('window');
 
-export default function WelcomeScreen({ navigation }) {
+export default function SejaBemVindo() {
+  const router = useRouter();
+
   const [fontsLoaded] = useFonts({
     Poppins_400Regular,
     Poppins_500Medium,
     Poppins_700Bold,
   });
 
-  const scaleBtn = useSharedValue(1);
-  const animatedBtnStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scaleBtn.value }],
-  }));
-
   if (!fontsLoaded) return null;
-
-  const pressIn  = () => (scaleBtn.value = withSpring(0.96));
-  const pressOut = () => (scaleBtn.value = withSpring(1));
 
   return (
     <View style={styles.container}>
@@ -43,33 +31,30 @@ export default function WelcomeScreen({ navigation }) {
       <View style={styles.content}>
 
         {/* Header */}
-        <Animated.View entering={FadeInUp.duration(1000).springify()} style={styles.header}>
+        <View style={styles.header}>
           <Text style={styles.logo}>Wave Care</Text>
           <View style={styles.divider} />
-        </Animated.View>
+        </View>
 
         {/* Subtitle */}
-        <Animated.Text entering={FadeInDown.delay(400).duration(800)} style={styles.subtitle}>
-          Bem‑vindo à Wave Care
-        </Animated.Text>
+        <Text style={styles.subtitle}>
+          Bem‑vinda à Wave Care
+        </Text>
 
         {/* Description */}
-        <Animated.Text entering={FadeInDown.delay(600).duration(800)} style={styles.description}>
+        <Text style={styles.description}>
           Crie sua conta e comece sua jornada de cuidados capilares com produtos e rotinas para manter seus fios saudáveis.
-        </Animated.Text>
+        </Text>
 
         {/* Buttons */}
-        <Animated.View entering={FadeInDown.delay(800).duration(800)} style={styles.buttonsContainer}>
+        <View style={styles.buttonsContainer}>
 
           <TouchableOpacity
-            activeOpacity={1}
-            onPressIn={pressIn}
-            onPressOut={pressOut}
-            onPress={() => navigation?.navigate('Cadastro')}
+            style={styles.btnPrimary}
+            activeOpacity={0.8}
+            onPress={() => router.push('/cadastro')}
           >
-            <Animated.View style={[styles.btnPrimary, animatedBtnStyle]}>
-              <Text style={styles.btnPrimaryText}>Criar Conta</Text>
-            </Animated.View>
+            <Text style={styles.btnPrimaryText}>Criar Conta</Text>
           </TouchableOpacity>
 
           <View style={styles.orRow}>
@@ -80,20 +65,19 @@ export default function WelcomeScreen({ navigation }) {
 
           <TouchableOpacity
             activeOpacity={0.8}
-            onPress={() => navigation?.navigate('Login')}
+            onPress={() => router.push('/login')}
             style={styles.btnSecondary}
           >
             <Text style={styles.btnSecondaryText}>Entrar</Text>
           </TouchableOpacity>
 
-        </Animated.View>
+        </View>
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  // ─── Layout ────────────────────────────────────────────────────────────────
   container: {
     flex: 1,
     alignItems: 'center',
@@ -104,19 +88,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingTop: 50,
   },
-
-  // ─── Header ────────────────────────────────────────────────────────────────
   header: {
     alignItems: 'center',
     marginBottom: 20,
   },
   logo: {
     fontFamily: 'serif',
-    fontWeight:'600',
+    fontWeight: '600',
     fontSize: 54,
     color: '#FFFFFF',
     letterSpacing: -1,
-    textAlign: 'center'
+    textAlign: 'center',
   },
   divider: {
     height: 4,
@@ -125,8 +107,6 @@ const styles = StyleSheet.create({
     borderRadius: 2,
     marginTop: -5,
   },
-
-  // ─── Textos ────────────────────────────────────────────────────────────────
   subtitle: {
     fontFamily: 'serif',
     fontSize: 24,
@@ -144,8 +124,6 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     marginBottom: 40,
   },
-
-  // ─── Botões ────────────────────────────────────────────────────────────────
   buttonsContainer: {
     width: '100%',
   },
@@ -167,8 +145,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.secondary,
   },
-
-  // ─── Separador "Ou" ────────────────────────────────────────────────────────
   orRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -186,8 +162,6 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     marginHorizontal: 15,
   },
-
-  // ─── Botão Secundário ──────────────────────────────────────────────────────
   btnSecondary: {
     width: '100%',
     height: 60,

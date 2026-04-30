@@ -1,67 +1,70 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { Ionicons } from '@expo/vector-icons';
 import { UserProvider } from './src/contexts/UserContext';
-import { View, StyleSheet } from 'react-native';
-import { navigationRef } from './src/navigationRef';
-
-import WelcomeScreen from './src/app/WelcomeScreen';
-import CadastroScreen from './src/app/CadastroScreen';
-import LoginScreen from './src/app/LoginScreen';
-import HomeScreen from './src/app/HomeScreen';
-import QuizScreen from './src/app/QuizScreen';
-import PerfilScreen from './src/app/PerfilScreen';
-import SummerScreen from './src/app/SummerScreen';
-import LojaScreen from './src/app/LojaScreen';
-import MenuMobile from './src/components/MenuMobile';
+import home from './src/app/home';
+import quiz from './src/app/quiz';
+import loja from './src/app/loja';
+import perfil from './src/app/perfil';
+import estacoes from './src/app/estacoes';
+import verao from './src/app/verao';
+import outono from './src/app/outono';
+import inverno from './src/app/inverno';
+import primavera from './src/app/primavera';
+import sejaBemVindo from './src/app/seja-bem-vindo';
+import login from './src/app/login';
+import cadastro from './src/app/cadastro';
 
 const Stack = createNativeStackNavigator();
+const Tab = createBottomTabNavigator();
 
-// Componente que envolve as telas com o menu
-function TelasComMenu() {   // ← remove o { navigation }
-  const [activeTab, setActiveTab] = useState('home');
-
+function tabs() {
   return (
-    <View style={styles.container}>
-      <Stack.Navigator screenOptions={{ headerShown: false, animation: 'fade_from_bottom' }}>
-        <Stack.Screen name="Home" component={HomeScreen} />
-        <Stack.Screen name="Loja" component={LojaScreen} />
-        <Stack.Screen name="Quiz" component={QuizScreen} />
-        <Stack.Screen name="Perfil" component={PerfilScreen} />
-        <Stack.Screen name="Summer" component={SummerScreen} />
-      </Stack.Navigator>
-
-      <MenuMobile
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-        // ← remove navigation={navigation}
-      />
-    </View>
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        headerShown: false,
+        tabBarIcon: ({ color, size }) => {
+          const icons = {
+            home: 'home-outline',
+            quiz: 'help-circle-outline',
+            loja: 'bag-outline',
+            estacoes: 'leaf-outline',
+            perfil: 'person-outline',
+          };
+          return <Ionicons name={icons[route.name]} size={size} color={color} />;
+        },
+      })}
+    >
+      <Tab.Screen name="home" component={home} />
+      <Tab.Screen name="quiz" component={quiz} />
+      <Tab.Screen name="loja" component={loja} />
+      <Tab.Screen name="estacoes" component={estacoes} />
+      <Tab.Screen name="perfil" component={perfil} />
+    </Tab.Navigator>
   );
 }
+
 export default function App() {
   return (
     <UserProvider>
       <GestureHandlerRootView style={{ flex: 1 }}>
-        <NavigationContainer ref={navigationRef}>  {/* ← adiciona ref={navigationRef} */}
-          <Stack.Navigator
-            initialRouteName="Welcome"
-            screenOptions={{ headerShown: false, animation: 'fade_from_bottom' }}
-          >
-            <Stack.Screen name="Welcome" component={WelcomeScreen} />
-            <Stack.Screen name="Cadastro" component={CadastroScreen} />
-            <Stack.Screen name="Login" component={LoginScreen} />
-            <Stack.Screen name="Main" component={TelasComMenu} />
+        <NavigationContainer>
+          <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName="home">
+            <Stack.Screen name="home" component={tabs} />
+            <Stack.Screen name="seja-bem-vindo" component={sejaBemVindo} />
+            <Stack.Screen name="estacoes" component={estacoes} />
+            <Stack.Screen name="verao" component={verao} />
+            <Stack.Screen name="outono" component={outono} />
+            <Stack.Screen name="inverno" component={inverno} />
+            <Stack.Screen name="primavera" component={primavera} />
+            <Stack.Screen name="login" component={login} />
+            <Stack.Screen name="cadastro" component={cadastro} />
           </Stack.Navigator>
         </NavigationContainer>
       </GestureHandlerRootView>
     </UserProvider>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-});

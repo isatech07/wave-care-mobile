@@ -14,13 +14,13 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useUser } from '../contexts/UserContext';
+import { useUser } from '../../contexts/UserContext';
 import { useNavigation } from '@react-navigation/native';
 
 const TABS = ['dados', 'pedidos', 'favoritos', 'capilar'];
 const GREEN = '#2D5A45';
 
-export default function PerfilScreen() {
+export default function perfil() {
   const { user, logout, updateUser } = useUser();
   const navigation = useNavigation();
 
