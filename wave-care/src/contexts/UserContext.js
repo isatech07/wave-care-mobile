@@ -1,6 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { updateUser as updateUserApi } from '../services/userService';
+import { updateUser as updateUserApi, deleteUser as deleteUserApi } from '../services/userService';
 
 const UserContext = createContext();
 
@@ -72,10 +72,17 @@ export function UserProvider({ children }) {
     setUser({ id: 'guest', guest: true, favorites: [] });
   };
 
+  const deleteAccount = async () => {
+  if (user?.id && !user.guest) {
+    await deleteUserApi(user.id);
+  }
+  await AsyncStorage.multiRemove(['wavecare_user', 'wavecare_last_email']);
+  setUser({ id: 'guest', guest: true, favorites: [] });
+  };
+
   return (
-    <UserContext.Provider value={{ user, login, updateUser, toggleFavorite, logout }}>
-      {children}
-    </UserContext.Provider>
+<UserContext.Provider value={{ user, login, updateUser, toggleFavorite, logout, deleteAccount }}>{children}</UserContext.Provider>
+
   );
 }
 

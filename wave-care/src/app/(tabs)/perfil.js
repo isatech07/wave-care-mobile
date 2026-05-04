@@ -21,7 +21,7 @@ const TABS = ['dados', 'pedidos', 'favoritos', 'capilar'];
 const GREEN = '#2D5A45';
 
 export default function perfil() {
-  const { user, logout, updateUser } = useUser();
+  const { user, logout, updateUser, deleteAccount } = useUser();
   const navigation = useNavigation();
 
   const [tab, setTab]         = useState('dados');
@@ -395,10 +395,46 @@ export default function perfil() {
         {tab === 'capilar'   && renderCapilarTab()}
 
         {/* Logout */}
-        <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
-          <Ionicons name="log-out-outline" size={20} color="#d32f2f" />
-          <Text style={styles.logoutText}>Sair da conta</Text>
-        </TouchableOpacity>
+        <View style={styles.accountActions}>
+          <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
+            <Ionicons name="log-out-outline" size={20} color="#d32f2f" />
+            <Text style={styles.logoutText}>Sair</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.deleteBtn}
+            onPress={() =>
+              Alert.alert(
+                'Excluir conta',
+                'Esta ação é permanente e irreversível. Todos os seus dados serão apagados.',
+                [
+                  { text: 'Cancelar', style: 'cancel' },
+                  {
+                    text: 'Excluir',
+                    style: 'destructive',
+                    onPress: async () => {
+                      try {
+                        console.log('1 - iniciando delete, user:', user?.id);
+                        await deleteAccount();
+                        console.log('2 - deleteAccount concluído');
+                        navigation.reset({
+                          index: 0,
+                          routes: [{ name: 'Welcome' }],
+                        });
+                      } catch (e) {
+                        console.log('3 - erro:', e);
+                        Alert.alert('Erro', 'Não foi possível excluir a conta. Tente novamente.');
+                      }
+                    },
+                  },
+                ]
+              )
+            }
+          >
+            <Ionicons name="trash-outline" size={20} color="#d32f2f" />
+            <Text style={styles.logoutText}>Excluir conta</Text>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
 
     </SafeAreaView>
@@ -908,21 +944,33 @@ const styles = StyleSheet.create({
   },
 
   // ─── Logout ───────────────────────────────────────────────────────────────
+  accountActions: {
+    flexDirection: 'row',
+    gap: 10,
+    marginHorizontal: 12,
+    marginTop: 8,
+    marginBottom: 8,
+  },
   logoutBtn: {
+    flex: 1,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
     gap: 8,
     paddingVertical: 16,
-    marginHorizontal: 12,
-    marginTop: 8,
-    marginBottom: 8,
     borderRadius: 12,
     backgroundColor: '#fff3f3',
   },
-  logoutText: {
-    color: '#d32f2f',
-    fontWeight: '600',
-    fontSize: 15,
+  deleteBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 16,
+    borderRadius: 12,
+    backgroundColor: '#fff3f3',
+    borderWidth: 1.5,
+    borderColor: '#d32f2f',
   },
 });
