@@ -538,8 +538,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   logoText: {
+    fontFamily: "PlayfairDisplay_700Bold",
     fontSize: 18,
-    fontWeight: "600",
     color: COLORS.primary,
     letterSpacing: 1,
   },
@@ -548,9 +548,9 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
   },
   stepText: {
+    fontFamily: "Poppins_500Medium",
     fontSize: 14,
     color: COLORS.textMuted,
-    fontWeight: "500",
   },
   progressBar: {
     height: 2,
@@ -571,14 +571,15 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
   questionText: {
+    fontFamily: "PlayfairDisplay_700Bold",
     fontSize: 28,
-    fontWeight: "700",
     color: COLORS.text,
     lineHeight: 36,
     marginBottom: 12,
     letterSpacing: -0.5,
   },
   questionSubtitle: {
+    fontFamily: "Poppins_400Regular",
     fontSize: 16,
     color: COLORS.textSecondary,
     lineHeight: 24,
@@ -613,22 +614,22 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
   },
   optionLetterText: {
+    fontFamily: "Poppins_600SemiBold",
     fontSize: 15,
-    fontWeight: "600",
     color: COLORS.textSecondary,
   },
   optionLetterTextSelected: {
     color: COLORS.surface,
   },
   optionText: {
+    fontFamily: "Poppins_500Medium",
     flex: 1,
     fontSize: 16,
-    fontWeight: "500",
     color: COLORS.text,
   },
   optionTextSelected: {
     color: COLORS.primary,
-    fontWeight: "600",
+    fontFamily: "Poppins_600SemiBold",
   },
   radioOuter: {
     width: 22,
@@ -659,6 +660,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   footerText: {
+    fontFamily: "Poppins_400Regular",
     fontSize: 13,
     color: COLORS.textMuted,
     letterSpacing: 2,
@@ -678,26 +680,28 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 28,
   },
   resultBadge: {
+    fontFamily: "Poppins_600SemiBold",
     fontSize: 12,
-    fontWeight: "600",
     color: "rgba(255,255,255,0.8)",
     textTransform: "uppercase",
     letterSpacing: 1.5,
     marginBottom: 8,
   },
   resultProductName: {
+    fontFamily: "PlayfairDisplay_700Bold",
     fontSize: 32,
-    fontWeight: "700",
     color: "#FFFFFF",
     marginBottom: 4,
     letterSpacing: -0.5,
   },
   resultSeason: {
+    fontFamily: "Poppins_400Regular",
     fontSize: 16,
     color: "rgba(255,255,255,0.8)",
     marginBottom: 16,
   },
   resultDescription: {
+    fontFamily: "Poppins_400Regular",
     fontSize: 14,
     color: "rgba(255,255,255,0.7)",
     lineHeight: 20,
@@ -707,8 +711,8 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   sectionTitle: {
+    fontFamily: "PlayfairDisplay_700Bold",
     fontSize: 18,
-    fontWeight: "700",
     color: COLORS.text,
     marginBottom: 20,
     letterSpacing: -0.3,
@@ -737,13 +741,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   benefitIconText: {
+    fontFamily: "Poppins_700Bold",
     color: "#FFFFFF",
     fontSize: 12,
-    fontWeight: "700",
   },
   benefitText: {
+    fontFamily: "Poppins_500Medium",
     fontSize: 14,
-    fontWeight: "500",
     color: COLORS.text,
   },
   productsSection: {
@@ -770,6 +774,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
   },
   productItemText: {
+    fontFamily: "Poppins_400Regular",
     fontSize: 15,
     color: COLORS.text,
   },
@@ -787,8 +792,8 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   shopButtonText: {
+    fontFamily: "Poppins_700Bold",
     fontSize: 16,
-    fontWeight: "700",
     color: "#FFFFFF",
   },
   shopButtonArrow: {
@@ -812,8 +817,8 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   storeButtonText: {
+    fontFamily: "Poppins_600SemiBold",
     fontSize: 15,
-    fontWeight: "600",
     color: COLORS.primary,
   },
   storeButtonArrow: {
@@ -825,9 +830,9 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
   },
   restartText: {
+    fontFamily: "Poppins_500Medium",
     fontSize: 15,
     color: COLORS.textSecondary,
-    fontWeight: "500",
     textDecorationLine: "underline",
   },
 });

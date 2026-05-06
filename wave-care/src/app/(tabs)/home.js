@@ -101,7 +101,7 @@ export default function Home() {
             renderItem={({ item }) => (
               <TouchableOpacity
                 style={styles.estacaoCard}
-                onPress={() => router.push({ pathname: '/(tabs)/loja', params: { estacaoFilter: item.label } })}
+                onPress={() => router.push({ pathname: '/(tabs)/estacoes', params: { season: item.key } })}
               >
                 <Image source={item.image} style={styles.estacaoImg} />
                 <LinearGradient colors={['transparent', 'rgba(0,0,0,0.7)']} style={styles.estacaoGradient}>
@@ -173,8 +173,8 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
   },
   headerTitle: {
+    fontFamily: 'PlayfairDisplay_700Bold',
     fontSize: 22,
-    fontWeight: '700',
     color: COLORS.primary,
   },
   iconButton: {
@@ -203,8 +203,8 @@ const styles = StyleSheet.create({
     marginBottom: 25,
   },
   sectionTitle: {
+    fontFamily: 'PlayfairDisplay_700Bold',
     fontSize: 18,
-    fontWeight: '700',
     color: COLORS.text,
     marginLeft: 20,
     marginBottom: 15,
@@ -232,11 +232,12 @@ const styles = StyleSheet.create({
     padding: 15,
   },
   estacaoLabel: {
+    fontFamily: 'Poppins_700Bold',
     color: '#FFF',
     fontSize: 18,
-    fontWeight: '700',
   },
   estacaoSub: {
+    fontFamily: 'Poppins_400Regular',
     color: 'rgba(255,255,255,0.8)',
     fontSize: 12,
   },
@@ -267,11 +268,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   quizCardTitle: {
+    fontFamily: 'Poppins_700Bold',
     fontSize: 15,
-    fontWeight: '700',
     color: COLORS.text,
   },
   quizCardSub: {
+    fontFamily: 'Poppins_400Regular',
     fontSize: 12,
     color: COLORS.muted,
   },
@@ -298,12 +300,13 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   produtoNome: {
+    fontFamily: 'Poppins_600SemiBold',
     fontSize: 14,
-    fontWeight: '600',
     color: COLORS.text,
     marginBottom: 4,
   },
   produtoDesc: {
+    fontFamily: 'Poppins_400Regular',
     fontSize: 12,
     color: COLORS.muted,
     marginBottom: 8,
@@ -314,8 +317,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   produtoPreco: {
+    fontFamily: 'Poppins_700Bold',
     fontSize: 15,
-    fontWeight: '700',
     color: COLORS.primary,
   },
   addBtn: {

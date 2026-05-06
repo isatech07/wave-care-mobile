@@ -488,6 +488,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   guestTitle: {
+    fontFamily: 'PlayfairDisplay_700Bold',
     fontSize: 20,
     fontWeight: 'bold',
     color: '#333',
@@ -495,6 +496,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   guestSubtitle: {
+    fontFamily: 'Poppins_400Regular',
     fontSize: 14,
     color: '#777',
     textAlign: 'center',
@@ -578,11 +580,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   userName: {
+    fontFamily: 'PlayfairDisplay_700Bold',
     fontSize: 18,
     fontWeight: 'bold',
     color: '#222',
   },
   userEmail: {
+    fontFamily: 'Poppins_400Regular',
     fontSize: 13,
     color: '#888',
     marginTop: 4,
@@ -604,6 +608,7 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   tabText: {
+    fontFamily: 'Poppins_500Medium',
     fontSize: 13,
     color: '#aaa',
     fontWeight: '500',
@@ -649,6 +654,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   fieldValue: {
+    fontFamily: 'Poppins_400Regular',
     fontSize: 15,
     color: '#333',
   },
@@ -743,6 +749,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   sectionTitle: {
+    fontFamily: 'Poppins_600SemiBold',
     fontWeight: '600',
     fontSize: 13,
     color: '#555',
@@ -890,6 +897,7 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   quizTitle: {
+    fontFamily: 'PlayfairDisplay_700Bold',
     fontSize: 16,
     fontWeight: 'bold',
     color: '#222',
@@ -897,6 +905,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   quizSubtitle: {
+    fontFamily: 'Poppins_400Regular',
     fontSize: 13,
     color: '#777',
     textAlign: 'center',

@@ -2,7 +2,6 @@ import { Dimensions, PixelRatio } from 'react-native';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
-// Baseado no tamanho padrão do iPhone 11/13
 const widthBaseScale = SCREEN_WIDTH / 375;
 const heightBaseScale = SCREEN_HEIGHT / 812;
 

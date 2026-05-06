@@ -28,7 +28,7 @@ import { useUser }    from '../contexts/UserContext';
 
 export default function Cadastro() {
   const router      = useRouter();
-  const { login }   = useUser(); // ← hook aqui dentro
+  const { login }   = useUser(); 
 
   const [fontsLoaded] = useFonts({
     Poppins_400Regular,
@@ -47,9 +47,9 @@ export default function Cadastro() {
     width: `${loadProgress.value}%`,
   }));
 
-  if (!fontsLoaded) return null; // ← return condicional depois de todos os hooks
+  if (!fontsLoaded) return null; 
 
-  const handleCadastro = async () => { // ← função aqui dentro, depois do return condicional
+  const handleCadastro = async () => { 
     if (!nome.trim() || !email.trim() || !senha.trim()) {
       Alert.alert('Atenção', 'Preencha todos os campos para criar sua conta.');
       return;
@@ -61,7 +61,7 @@ export default function Cadastro() {
         const res = await createUser({ 
           name:     nome.trim(), 
           email:    email.trim(),
-          password: senha.trim(), // ← adiciona aqui
+          password: senha.trim(), 
         });
         const newUser = { ...res.data, favorites: [], orders: [] };
 
@@ -191,8 +191,7 @@ const styles = StyleSheet.create({
     top: 50,
   },
   logo: {
-    fontFamily: 'serif',
-    fontWeight: '600',
+    fontFamily: 'PlayfairDisplay_700Bold',
     fontSize: 40,
     color: '#FFF',
   },
@@ -208,7 +207,7 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
   title: {
-    fontFamily: 'Poppins_700Bold',
+    fontFamily: 'PlayfairDisplay_700Bold',
     fontSize: 26,
     color: Colors.secondary,
     marginBottom: 20,

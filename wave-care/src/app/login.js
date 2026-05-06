@@ -168,9 +168,8 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 60,
   },
   title: {
-    fontFamily: 'serif',
+    fontFamily: 'PlayfairDisplay_700Bold',
     fontSize: 42,
-    fontWeight: '600',
     color: '#FFF',
   },
   subtitle: {

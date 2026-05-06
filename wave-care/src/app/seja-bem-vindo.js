@@ -93,8 +93,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   logo: {
-    fontFamily: 'serif',
-    fontWeight: '600',
+    fontFamily: 'PlayfairDisplay_700Bold',
     fontSize: 54,
     color: '#FFFFFF',
     letterSpacing: -1,
@@ -108,7 +107,7 @@ const styles = StyleSheet.create({
     marginTop: -5,
   },
   subtitle: {
-    fontFamily: 'serif',
+    fontFamily: 'PlayfairDisplay_700Bold',
     fontSize: 24,
     fontStyle: 'italic',
     color: '#FFFFFF',

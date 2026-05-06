@@ -1,7 +1,36 @@
 import { Stack } from 'expo-router';
+import {
+  useFonts as usePoppinsFonts,
+  Poppins_400Regular,
+  Poppins_500Medium,
+  Poppins_600SemiBold,
+  Poppins_700Bold,
+  Poppins_800ExtraBold,
+  Poppins_900Black,
+} from '@expo-google-fonts/poppins';
+import {
+  useFonts as usePlayfairFonts,
+  PlayfairDisplay_700Bold,
+  PlayfairDisplay_800ExtraBold,
+} from '@expo-google-fonts/playfair-display';
 import { UserProvider } from '../contexts/UserContext';
 
 export default function RootLayout() {
+  const [poppinsLoaded] = usePoppinsFonts({
+    Poppins_400Regular,
+    Poppins_500Medium,
+    Poppins_600SemiBold,
+    Poppins_700Bold,
+    Poppins_800ExtraBold,
+    Poppins_900Black,
+  });
+  const [playfairLoaded] = usePlayfairFonts({
+    PlayfairDisplay_700Bold,
+    PlayfairDisplay_800ExtraBold,
+  });
+
+  if (!poppinsLoaded || !playfairLoaded) return null;
+
   return (
     <UserProvider>
       <Stack>

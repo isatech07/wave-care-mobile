@@ -48,6 +48,7 @@ const styles = StyleSheet.create({
     shadowRadius: 5,
   },
   input: { 
+    fontFamily: 'Poppins_400Regular',
     fontSize: 16, 
     color: '#333',
     outlineStyle: 'none', // Remove a borda azul padrão do navegador no Web
