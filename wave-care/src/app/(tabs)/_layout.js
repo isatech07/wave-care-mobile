@@ -10,10 +10,10 @@ export default function TabLayout() {
   const [seasonModalOpen, setSeasonModalOpen] = useState(false);
 
   const seasonOptions = [
-    { key: 'verao', label: 'Verão', icon: 'sunny', color: '#F59E0B', route: '/(tabs)/verao' },
-    { key: 'outono', label: 'Outono', icon: 'leaf', color: '#B45309', route: '/(tabs)/outono' },
-    { key: 'inverno', label: 'Inverno', icon: 'snow', color: '#60A5FA', route: '/(tabs)/inverno' },
-    { key: 'primavera', label: 'Primavera', icon: 'flower', color: '#EC4899', route: '/(tabs)/primavera' },
+    { key: 'verao', label: 'Verão', icon: 'sunny', color: '#F59E0B', route: '/(tabs)/estacoes?season=verao' },
+    { key: 'outono', label: 'Outono', icon: 'leaf', color: '#B45309', route: '/(tabs)/estacoes?season=outono' },
+    { key: 'inverno', label: 'Inverno', icon: 'snow', color: '#60A5FA', route: '/(tabs)/estacoes?season=inverno' },
+    { key: 'primavera', label: 'Primavera', icon: 'flower', color: '#EC4899', route: '/(tabs)/estacoes?season=primavera' },
   ];
 
   const handleSeasonSelect = (route) => {
@@ -50,7 +50,7 @@ export default function TabLayout() {
           options={{
             title: 'Loja',
             tabBarIcon: ({ color }) => (
-              <FontAwesome size={20} name="shopping-bag" color={color} />
+              <FontAwesome size={25} name="shopping-bag" color={color} />
             ),
           }}
         />
@@ -60,7 +60,7 @@ export default function TabLayout() {
           options={{
             title: 'Quiz',
             tabBarIcon: ({ color }) => (
-              <FontAwesome size={20} name="question-circle" color={color} />
+              <FontAwesome size={25} name="question-circle" color={color} />
             ),
           }}
         />
@@ -70,7 +70,7 @@ export default function TabLayout() {
           options={{
             title: 'Home',
             tabBarIcon: ({ color }) => (
-              <FontAwesome size={20} name="home" color={color} />
+              <FontAwesome size={25} name="home" color={color} />
             ),
           }}
         />
@@ -86,7 +86,7 @@ export default function TabLayout() {
           options={{
             title: 'Estações',
             tabBarIcon: ({ color }) => (
-              <FontAwesome size={20} name="leaf" color={color} />
+              <FontAwesome size={25} name="leaf" color={color} />
             ),
           }}
         />
@@ -96,7 +96,7 @@ export default function TabLayout() {
           options={{
             title: 'Perfil',
             tabBarIcon: ({ color }) => (
-              <FontAwesome size={20} name="user" color={color} />
+              <FontAwesome size={25} name="user" color={color} />
             ),
           }}
         />

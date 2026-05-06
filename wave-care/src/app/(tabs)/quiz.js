@@ -63,13 +63,13 @@ const COLORS = {
 const QUESTIONS = [
   {
     id: 1,
-    question: "Em qual cidade do Litoral Norte você mora?",
-    subtitle: "Cada região tem características climáticas únicas",
+    question: "Como você descreveria o ambiente onde você vive ou passa mais tempo?",
+    subtitle: "Isso ajuda a entender os desafios diários do seu cabelo",
     options: [
-      { label: "Caraguatatuba", value: "caraguatatuba" },
-      { label: "São Sebastião", value: "sao-sebastiao" },
-      { label: "Ilhabela", value: "ilhabela" },
-      { label: "Ubatuba", value: "ubatuba" },
+      { label: "Quente e úmido", value: "quente-umido" },
+      { label: "Quente e seco", value: "quente-seco" },
+      { label: "Frio e úmido", value: "frio-umido" },
+      { label: "Frio e seco", value: "frio-seco" },
     ],
   },
   {
@@ -85,13 +85,13 @@ const QUESTIONS = [
   },
   {
     id: 3,
-    question: "Com que frequência você vai à praia?",
-    subtitle: "A exposição ao mar afeta diretamente a saúde do cabelo",
+    question: "Com que frequência seu cabelo fica exposto ao sol, vento ou umidade?",
+    subtitle: "A exposição ao clima impacta diretamente a saúde dos fios",
     options: [
-      { label: "Quase todos os dias", value: "diario" },
-      { label: "Fins de semana", value: "semanal" },
-      { label: "Algumas vezes por mês", value: "mensal" },
-      { label: "Raramente", value: "raro" },
+      { label: "Quase todo dia", value: "quase-todo-dia" },
+      { label: "Algumas vezes por semana", value: "algumas-semana" },
+      { label: "Raramente", value: "raramente" },
+      { label: "Quase nunca", value: "quase-nunca" },
     ],
   },
   {
@@ -158,6 +158,17 @@ const QUESTIONS = [
       { label: "Outono", value: "outono", season: "outono" },
       { label: "Inverno", value: "inverno", season: "inverno" },
       { label: "Primavera", value: "primavera", season: "primavera" },
+    ],
+  },
+  {
+    id: 10,
+    question: "Qual estação do ano você acha mais difícil de cuidar do seu cabelo?",
+    subtitle: "Queremos entender sua maior dificuldade ao longo do ano",
+    options: [
+      { label: "Verão", value: "verao-dificil" },
+      { label: "Outono", value: "outono-dificil" },
+      { label: "Inverno", value: "inverno-dificil" },
+      { label: "Primavera", value: "primavera-dificil" },
     ],
   },
 ];
@@ -301,7 +312,8 @@ export default function QuizScreen({ navigation, onTabChange, setActiveTab }) {
         setStep(step + 1);
         setSelectedOption(null);
       } else {
-        const selectedSeason = option.season || option.value;
+        const seasonAnswer = newAnswers[9];
+        const selectedSeason = seasonAnswer?.season || seasonAnswer?.value || 'verao';
         const product = SEASONAL_PRODUCTS[selectedSeason];
         setResult({ season: selectedSeason, product, answers: newAnswers });
         setFinished(true);

@@ -350,7 +350,7 @@ function CartSheet({ visible, cart, onClose, onAdd, onRemove, onDelete }) {
         {cart.length === 0 ? (
           <View style={styles.cartEmpty}>
             <View style={styles.cartEmptyIcon}>
-              <Ionicons name="bag-outline" size={40} color={COLORS.lightGray} />
+              <Ionicons name="cart-outline" size={40} color={COLORS.lightGray} />
             </View>
             <Text style={styles.cartEmptyTitle}>Sua sacola está vazia</Text>
             <Text style={styles.cartEmptyText}>Adicione produtos para começar</Text>
@@ -492,8 +492,7 @@ function ProductCard({ item, viewMode, onAddToCart, isFavorite, onToggleFavorite
               )}
             </View>
             <TouchableOpacity style={styles.addBtn} onPress={() => onAddToCart(item)} activeOpacity={0.8}>
-              <LinearGradient colors={[COLORS.green, COLORS.greenLight]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.addBtnGradient}>
-                <Ionicons name="bag-add-outline" size={14} color={COLORS.white} />
+              <LinearGradient colors={[COLORS.greenLight, COLORS.greenMuted]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.addBtnGradient}>
                 <Text style={styles.addBtnText}>Adicionar</Text>
               </LinearGradient>
             </TouchableOpacity>
@@ -537,8 +536,8 @@ function ProductCard({ item, viewMode, onAddToCart, isFavorite, onToggleFavorite
                 <Ionicons name={isFavorite ? 'heart' : 'heart-outline'} size={16} color={isFavorite ? COLORS.red : COLORS.darkSoft} />
               </AnimatedTouchable>
               <TouchableOpacity style={styles.addBtnSmall} onPress={() => onAddToCart(item)} activeOpacity={0.8}>
-                <LinearGradient colors={[COLORS.green, COLORS.greenLight]} style={styles.addBtnSmallGradient}>
-                  <Ionicons name="bag-add-outline" size={16} color={COLORS.white} />
+                <LinearGradient colors={[COLORS.greenLight, COLORS.greenMuted]} style={styles.addBtnSmallGradient}>
+                  <Ionicons name="cart-outline" size={16} color={COLORS.white} />
                 </LinearGradient>
               </TouchableOpacity>
             </View>
@@ -578,8 +577,8 @@ function FloatingCartButton({ cartCount, onPress }) {
   return (
     <Animated.View entering={ZoomIn.delay(600).springify()} style={[styles.fab, fabStyle]}>
       <TouchableOpacity onPress={onPress} activeOpacity={0.85}>
-        <LinearGradient colors={[COLORS.green, '#034a3e']} style={styles.fabBtn}>
-          <Ionicons name="bag-handle-outline" size={24} color={COLORS.white} />
+        <LinearGradient colors={[COLORS.greenLight, COLORS.greenMuted]} style={styles.fabBtn}>
+          <Ionicons name="cart-outline" size={24} color={COLORS.white} />
           {cartCount > 0 && (
             <Animated.View entering={ZoomIn.springify()} style={styles.cartBadge}>
               <Text style={styles.cartBadgeText}>{cartCount}</Text>
@@ -648,7 +647,7 @@ export default function loja() {
       if (existing) return prev.map(i => i.id === item.id ? { ...i, qty: i.qty + 1 } : i);
       return [...prev, { ...item, qty: 1 }];
     });
-    showToast(item.nome + ' adicionado!', 'bag-check-outline');
+    showToast(item.nome + ' adicionado!', 'cart-outline');
   }, [showToast]);
 
   const handleRemoveFromCart = useCallback((id) => {
@@ -847,16 +846,16 @@ const styles = StyleSheet.create({
   heroCircle1: { position: 'absolute', top: -60, right: -40, width: 200, height: 200, borderRadius: 100, backgroundColor: 'rgba(201, 185, 154, 0.06)' },
   heroCircle2: { position: 'absolute', bottom: -30, left: -50, width: 160, height: 160, borderRadius: 80, backgroundColor: 'rgba(255, 255, 255, 0.03)' },
   heroBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: COLORS.gold, alignSelf: 'flex-start', paddingHorizontal: 14, paddingVertical: 7, borderRadius: 24, marginBottom: 22 },
-  heroBadgeText: { color: COLORS.green, fontSize: 10, fontWeight: '800', letterSpacing: 1.2, textTransform: 'uppercase' },
+  heroBadgeText: { fontFamily: 'Poppins_700Bold', color: COLORS.green, fontSize: 10, fontWeight: '800', letterSpacing: 1.2, textTransform: 'uppercase' },
   heroTitle: { fontFamily: 'PlayfairDisplay_700Bold', fontSize: 36, color: COLORS.white, lineHeight: 44, marginBottom: 18, letterSpacing: -0.8 },
   heroSubtitle: { fontFamily: 'Poppins_400Regular', fontSize: 14, color: 'rgba(255,255,255,0.6)', lineHeight: 22, marginBottom: 32, letterSpacing: 0.2 },
   heroStats: { flexDirection: 'row', gap: 28, marginBottom: 28 },
   heroStat: { alignItems: 'center' },
   heroStatIcon: { width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(201, 185, 154, 0.15)', alignItems: 'center', justifyContent: 'center', marginBottom: 6 },
-  heroStatValue: { fontSize: 20, fontWeight: '900', color: COLORS.gold, letterSpacing: -0.3 },
-  heroStatLabel: { fontSize: 10, color: 'rgba(255,255,255,0.5)', marginTop: 2, fontWeight: '500', letterSpacing: 0.5, textTransform: 'uppercase' },
+  heroStatValue: { fontFamily: 'Poppins_700Bold', fontSize: 20, fontWeight: '900', color: COLORS.gold, letterSpacing: -0.3 },
+  heroStatLabel: { fontFamily: 'Poppins_500Medium', fontSize: 10, color: 'rgba(255,255,255,0.5)', marginTop: 2, fontWeight: '500', letterSpacing: 0.5, textTransform: 'uppercase' },
   heroCta: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', gap: 8, backgroundColor: COLORS.gold, paddingHorizontal: 22, paddingVertical: 13, borderRadius: 28 },
-  heroCtaText: { color: COLORS.green, fontSize: 13, fontWeight: '800', letterSpacing: 0.3 },
+  heroCtaText: { fontFamily: 'Poppins_700Bold', color: COLORS.green, fontSize: 13, fontWeight: '800', letterSpacing: 0.3 },
   toolbar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 14, backgroundColor: COLORS.background, borderBottomWidth: 1, borderBottomColor: COLORS.lighterGray },
   filterBtn: { flexDirection: 'row', alignItems: 'center', gap: 7, backgroundColor: COLORS.white, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 24, borderWidth: 1, borderColor: COLORS.lightGray, shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 1, shadowRadius: 8, elevation: 3 },
   filterBtnText: { fontFamily: 'Poppins_700Bold', fontSize: 13, color: COLORS.green, fontWeight: '700' },
@@ -891,14 +890,14 @@ const styles = StyleSheet.create({
   cardName: { fontFamily: 'Poppins_700Bold', fontSize: 13, color: COLORS.dark, fontWeight: '700', lineHeight: 18, marginBottom: 6, letterSpacing: -0.2 },
   ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 8 },
   ratingStars: { flexDirection: 'row', gap: 1 },
-  ratingText: { fontSize: 11, color: COLORS.dark, fontWeight: '800', marginLeft: 2 },
-  reviewText: { fontSize: 10, color: COLORS.grayLight, fontWeight: '500' },
+  ratingText: { fontFamily: 'Poppins_700Bold', fontSize: 11, color: COLORS.dark, fontWeight: '800', marginLeft: 2 },
+  reviewText: { fontFamily: 'Poppins_400Regular', fontSize: 10, color: COLORS.grayLight, fontWeight: '500' },
   priceRow: { flexDirection: 'row', alignItems: 'baseline', gap: 6, marginBottom: 12 },
-  price: { fontSize: 16, color: COLORS.green, fontWeight: '900', letterSpacing: -0.3 },
-  originalPrice: { fontSize: 11, color: COLORS.grayLight, textDecorationLine: 'line-through', fontWeight: '500' },
+  price: { fontFamily: 'Poppins_700Bold', fontSize: 16, color: COLORS.green, fontWeight: '900', letterSpacing: -0.3 },
+  originalPrice: { fontFamily: 'Poppins_400Regular', fontSize: 11, color: COLORS.grayLight, textDecorationLine: 'line-through', fontWeight: '500' },
   addBtn: { borderRadius: 14, overflow: 'hidden' },
   addBtnGradient: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 10, borderRadius: 14 },
-  addBtnText: { color: COLORS.white, fontSize: 12, fontWeight: '800', letterSpacing: 0.3 },
+  addBtnText: { fontFamily: 'Poppins_700Bold', color: COLORS.white, fontSize: 12, fontWeight: '800', letterSpacing: 0.3 },
   compactCard: { backgroundColor: COLORS.white, borderRadius: 22, marginHorizontal: 20, marginTop: 14, overflow: 'hidden', shadowColor: COLORS.shadowDark, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.07, shadowRadius: 14, elevation: 4 },
   compactInner: { flexDirection: 'row' },
   compactImageContainer: { position: 'relative', overflow: 'hidden' },
@@ -914,14 +913,14 @@ const styles = StyleSheet.create({
   emptyTitle: { fontFamily: 'PlayfairDisplay_700Bold', fontSize: 16, fontWeight: '700', color: COLORS.dark, marginTop: 8 },
   emptyText: { fontFamily: 'Poppins_400Regular', fontSize: 13, color: COLORS.gray },
   fab: { position: 'absolute', bottom: 36, right: 24 },
-  fabBtn: { width: 62, height: 62, borderRadius: 31, alignItems: 'center', justifyContent: 'center', shadowColor: COLORS.green, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.45, shadowRadius: 20, elevation: 12 },
+  fabBtn: { width: 62, height: 62, borderRadius: 31, alignItems: 'center', justifyContent: 'center', shadowColor: COLORS.greenLight, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.35, shadowRadius: 20, elevation: 12 },
   cartBadge: { position: 'absolute', top: -3, right: -3, minWidth: 22, height: 22, borderRadius: 11, backgroundColor: COLORS.red, alignItems: 'center', justifyContent: 'center', borderWidth: 2.5, borderColor: COLORS.white, paddingHorizontal: 4 },
-  cartBadgeText: { color: COLORS.white, fontSize: 10, fontWeight: '900' },
+  cartBadgeText: { fontFamily: 'Poppins_700Bold', color: COLORS.white, fontSize: 10, fontWeight: '900' },
   toastContainer: { position: 'absolute', top: Platform.OS === 'ios' ? 64 : 44, left: 0, right: 0, alignItems: 'center', zIndex: 9999 },
   toast: { borderRadius: 28, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.25, shadowRadius: 16, elevation: 10 },
   toastGradient: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 22, paddingVertical: 14, borderRadius: 28 },
   toastIconWrap: { width: 26, height: 26, borderRadius: 13, backgroundColor: 'rgba(201, 185, 154, 0.2)', alignItems: 'center', justifyContent: 'center' },
-  toastText: { color: COLORS.white, fontSize: 13, fontWeight: '700', letterSpacing: 0.2 },
+  toastText: { fontFamily: 'Poppins_600SemiBold', color: COLORS.white, fontSize: 13, fontWeight: '700', letterSpacing: 0.2 },
   filterOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1000, flexDirection: 'row', justifyContent: 'flex-end' },
   filterBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)' },
   filterPanel: { width: SCREEN_WIDTH * 0.82, backgroundColor: COLORS.background },
@@ -936,13 +935,13 @@ const styles = StyleSheet.create({
   filterChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   filterChip: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 24, backgroundColor: COLORS.white, borderWidth: 1.5, borderColor: COLORS.lighterGray },
   filterChipActive: { backgroundColor: COLORS.green, borderColor: COLORS.green },
-  filterChipText: { fontSize: 13, color: COLORS.dark, fontWeight: '600' },
+  filterChipText: { fontFamily: 'Poppins_600SemiBold', fontSize: 13, color: COLORS.dark, fontWeight: '600' },
   filterChipTextActive: { color: COLORS.white, fontWeight: '700' },
   filterFooter: { flexDirection: 'row', gap: 12, paddingVertical: 20, borderTopWidth: 1, borderTopColor: COLORS.lighterGray },
   clearButton: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 14, borderRadius: 18, borderWidth: 1.5, borderColor: COLORS.green },
-  clearButtonText: { color: COLORS.green, fontSize: 13, fontWeight: '700' },
+  clearButtonText: { fontFamily: 'Poppins_600SemiBold', color: COLORS.green, fontSize: 13, fontWeight: '700' },
   applyButton: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: COLORS.green, paddingVertical: 14, borderRadius: 18 },
-  applyButtonText: { color: COLORS.white, fontSize: 13, fontWeight: '800' },
+  applyButtonText: { fontFamily: 'Poppins_700Bold', color: COLORS.white, fontSize: 13, fontWeight: '800' },
   cartOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1000, justifyContent: 'flex-end' },
   cartBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.55)' },
   cartSheet: { backgroundColor: COLORS.offWhite, borderTopLeftRadius: 32, borderTopRightRadius: 32, maxHeight: SCREEN_HEIGHT * 0.82, paddingBottom: Platform.OS === 'ios' ? 38 : 24 },
@@ -961,28 +960,28 @@ const styles = StyleSheet.create({
   cartItem: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 24, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: COLORS.lighterGray },
   cartItemImage: { width: 64, height: 64, borderRadius: 16, backgroundColor: COLORS.lighterGray },
   cartItemInfo: { flex: 1, marginLeft: 14 },
-  cartItemName: { fontSize: 13, fontWeight: '700', color: COLORS.dark, marginBottom: 2, letterSpacing: -0.1 },
-  cartItemCategory: { fontSize: 10, color: COLORS.grayLight, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 },
-  cartItemPrice: { fontSize: 15, fontWeight: '900', color: COLORS.green, marginBottom: 10, letterSpacing: -0.2 },
+  cartItemName: { fontFamily: 'Poppins_600SemiBold', fontSize: 13, fontWeight: '700', color: COLORS.dark, marginBottom: 2, letterSpacing: -0.1 },
+  cartItemCategory: { fontFamily: 'Poppins_500Medium', fontSize: 10, color: COLORS.grayLight, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 },
+  cartItemPrice: { fontFamily: 'Poppins_700Bold', fontSize: 15, fontWeight: '900', color: COLORS.green, marginBottom: 10, letterSpacing: -0.2 },
   cartQtyRow: { flexDirection: 'row', alignItems: 'center', gap: 0 },
   qtyBtn: { width: 30, height: 30, borderRadius: 15, backgroundColor: COLORS.goldLight, alignItems: 'center', justifyContent: 'center' },
   qtyDisplay: { minWidth: 32, alignItems: 'center' },
-  qtyText: { fontSize: 14, fontWeight: '900', color: COLORS.dark },
+  qtyText: { fontFamily: 'Poppins_700Bold', fontSize: 14, fontWeight: '900', color: COLORS.dark },
   deleteBtn: { width: 38, height: 38, borderRadius: 19, backgroundColor: COLORS.redLight, alignItems: 'center', justifyContent: 'center', marginLeft: 10 },
   cartFooter: { paddingHorizontal: 24, paddingTop: 8 },
   cartFooterDivider: { height: 1, backgroundColor: COLORS.lighterGray, marginBottom: 16 },
   subtotalRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
-  subtotalLabel: { fontSize: 13, color: COLORS.gray, fontWeight: '500' },
-  subtotalValue: { fontSize: 14, color: COLORS.dark, fontWeight: '600' },
+  subtotalLabel: { fontFamily: 'Poppins_400Regular', fontSize: 13, color: COLORS.gray, fontWeight: '500' },
+  subtotalValue: { fontFamily: 'Poppins_600SemiBold', fontSize: 14, color: COLORS.dark, fontWeight: '600' },
   shippingRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  shippingLabel: { fontSize: 13, color: COLORS.gray, fontWeight: '500' },
-  shippingFree: { fontSize: 13, color: COLORS.greenMuted, fontWeight: '700' },
+  shippingLabel: { fontFamily: 'Poppins_400Regular', fontSize: 13, color: COLORS.gray, fontWeight: '500' },
+  shippingFree: { fontFamily: 'Poppins_600SemiBold', fontSize: 13, color: COLORS.greenMuted, fontWeight: '700' },
   totalDivider: { height: 1, backgroundColor: COLORS.lightGray, marginBottom: 14 },
   totalRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-  totalLabel: { fontSize: 16, color: COLORS.dark, fontWeight: '700' },
-  totalValue: { fontSize: 24, fontWeight: '900', color: COLORS.green, letterSpacing: -0.5 },
+  totalLabel: { fontFamily: 'Poppins_700Bold', fontSize: 16, color: COLORS.dark, fontWeight: '700' },
+  totalValue: { fontFamily: 'Poppins_700Bold', fontSize: 24, fontWeight: '900', color: COLORS.green, letterSpacing: -0.5 },
   checkoutBtn: { borderRadius: 20, overflow: 'hidden' },
   checkoutGradient: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, paddingVertical: 17, borderRadius: 20 },
-  checkoutBtnText: { color: COLORS.white, fontSize: 15, fontWeight: '900', letterSpacing: 0.3 },
+  checkoutBtnText: { fontFamily: 'Poppins_700Bold', color: COLORS.white, fontSize: 15, fontWeight: '900', letterSpacing: 0.3 },
   checkoutArrow: { width: 28, height: 28, borderRadius: 14, backgroundColor: COLORS.gold, alignItems: 'center', justifyContent: 'center' },
 });

@@ -17,7 +17,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useUser } from '../../contexts/UserContext';
 import { useNavigation } from '@react-navigation/native';
 
-const TABS = ['dados', 'pedidos', 'favoritos', 'capilar'];
+const TABS = ['dados', 'pedidos', 'favoritos', 'capilar', 'configuracoes'];
 const GREEN = '#2D5A45';
 
 export default function perfil() {
@@ -151,6 +151,42 @@ export default function perfil() {
     await AsyncStorage.multiRemove(['wavecare_guest', 'wavecare_last_email']);
     logout();
     navigation.navigate('Welcome');
+  };
+
+  const confirmLogout = () => {
+    Alert.alert(
+      'Sair da conta',
+      'Deseja realmente sair da sua conta?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Sair', style: 'destructive', onPress: handleLogout },
+      ]
+    );
+  };
+
+  const confirmDeleteAccount = () => {
+    Alert.alert(
+      'Excluir conta',
+      'Esta ação é permanente e irreversível. Todos os seus dados serão apagados.',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Excluir',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteAccount();
+              navigation.reset({
+                index: 0,
+                routes: [{ name: 'Welcome' }],
+              });
+            } catch (e) {
+              Alert.alert('Erro', 'Não foi possível excluir a conta. Tente novamente.');
+            }
+          },
+        },
+      ]
+    );
   };
 
   // ─── Aba Dados ────────────────────────────────────────────────────────────
@@ -349,6 +385,35 @@ export default function perfil() {
     </View>
   );
 
+  const renderConfiguracoesTab = () => (
+    <View style={styles.card}>
+      <TouchableOpacity style={styles.configItem} activeOpacity={0.8} onPress={() => setTab('dados')}>
+        <Ionicons name="settings-outline" size={20} color={GREEN} />
+        <Text style={styles.configText}>Editar perfil</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.configItem} activeOpacity={0.8}>
+        <Ionicons name="notifications-outline" size={20} color={GREEN} />
+        <Text style={styles.configText}>Notificações</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.configItem} activeOpacity={0.8}>
+        <Ionicons name="lock-closed-outline" size={20} color={GREEN} />
+        <Text style={styles.configText}>Privacidade</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.configItem} activeOpacity={0.8} onPress={confirmLogout}>
+        <Ionicons name="log-out-outline" size={20} color="#d32f2f" />
+        <Text style={[styles.configText, styles.configDangerText]}>Sair da conta</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.configItem} activeOpacity={0.8} onPress={confirmDeleteAccount}>
+        <Ionicons name="trash-outline" size={20} color="#d32f2f" />
+        <Text style={[styles.configText, styles.configDangerText]}>Excluir conta</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
   // ─── Render principal ─────────────────────────────────────────────────────
   return (
     <SafeAreaView style={styles.safe}>
@@ -393,48 +458,7 @@ export default function perfil() {
         {tab === 'pedidos'   && renderPedidosTab()}
         {tab === 'favoritos' && renderFavoritosTab()}
         {tab === 'capilar'   && renderCapilarTab()}
-
-        {/* Logout */}
-        <View style={styles.accountActions}>
-          <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
-            <Ionicons name="log-out-outline" size={20} color="#d32f2f" />
-            <Text style={styles.logoutText}>Sair</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.deleteBtn}
-            onPress={() =>
-              Alert.alert(
-                'Excluir conta',
-                'Esta ação é permanente e irreversível. Todos os seus dados serão apagados.',
-                [
-                  { text: 'Cancelar', style: 'cancel' },
-                  {
-                    text: 'Excluir',
-                    style: 'destructive',
-                    onPress: async () => {
-                      try {
-                        console.log('1 - iniciando delete, user:', user?.id);
-                        await deleteAccount();
-                        console.log('2 - deleteAccount concluído');
-                        navigation.reset({
-                          index: 0,
-                          routes: [{ name: 'Welcome' }],
-                        });
-                      } catch (e) {
-                        console.log('3 - erro:', e);
-                        Alert.alert('Erro', 'Não foi possível excluir a conta. Tente novamente.');
-                      }
-                    },
-                  },
-                ]
-              )
-            }
-          >
-            <Ionicons name="trash-outline" size={20} color="#d32f2f" />
-            <Text style={styles.logoutText}>Excluir conta</Text>
-          </TouchableOpacity>
-        </View>
+        {tab === 'configuracoes' && renderConfiguracoesTab()}
       </ScrollView>
 
     </SafeAreaView>
@@ -953,33 +977,20 @@ const styles = StyleSheet.create({
   },
 
   // ─── Logout ───────────────────────────────────────────────────────────────
-  accountActions: {
+  configItem: {
     flexDirection: 'row',
-    gap: 10,
-    marginHorizontal: 12,
-    marginTop: 8,
-    marginBottom: 8,
-  },
-  logoutBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    justifyContent: 'center',
     alignItems: 'center',
-    gap: 8,
-    paddingVertical: 16,
-    borderRadius: 12,
-    backgroundColor: '#fff3f3',
+    gap: 12,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
   },
-  deleteBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 8,
-    paddingVertical: 16,
-    borderRadius: 12,
-    backgroundColor: '#fff3f3',
-    borderWidth: 1.5,
-    borderColor: '#d32f2f',
+  configText: {
+    fontFamily: 'Poppins_500Medium',
+    fontSize: 15,
+    color: '#333',
+  },
+  configDangerText: {
+    color: '#d32f2f',
   },
 });

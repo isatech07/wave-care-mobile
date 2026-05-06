@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -12,6 +12,7 @@ import {
   Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import {
   useFonts,
   PlayfairDisplay_700Bold,
@@ -236,8 +237,20 @@ function Divider({ label }) {
 }
 
 export default function SummerScreen() {
+  const router = useRouter();
   const scrollViewRef = useRef(null);
   const [activeFilter, setActiveFilter] = useState('todos');
+  const [benefitIndex, setBenefitIndex] = useState(0);
+  const summerBenefits = useMemo(
+    () => [
+      { iconName: 'sunny-outline', text: 'Proteção UV' },
+      { iconName: 'water-outline', text: 'Hidratação profunda' },
+      { iconName: 'sparkles-outline', text: 'Brilho intenso' },
+      { iconName: 'waves-outline', text: 'Anti-maresia' },
+      { iconName: 'leaf-outline', text: 'Ingredientes naturais' },
+    ],
+    []
+  );
 
   const [fontsLoaded] = useFonts({
     PlayfairDisplay_700Bold,
@@ -251,22 +264,17 @@ export default function SummerScreen() {
   const badgeAnim = useFadeSlide(60,  0);
   const titleAnim = useFadeSlide(180, 36);
   const subAnim   = useFadeSlide(340, 20);
-  const btnFade   = useRef(new Animated.Value(0)).current;
-  const btnScale  = useRef(new Animated.Value(0.90)).current;
-
   useEffect(() => {
-    Animated.parallel([
-      Animated.timing(btnFade,  { toValue: 1, duration: 480, delay: 680, useNativeDriver: true }),
-      Animated.spring(btnScale, { toValue: 1, tension: 80, friction: 7, delay: 680, useNativeDriver: true }),
-    ]).start();
+    scrollViewRef.current?.scrollTo({ y: 0, animated: false });
   }, []);
 
-  const animatePress = (animValue) => {
-    Animated.sequence([
-      Animated.timing(animValue, { toValue: 0.94, duration: 80, useNativeDriver: true }),
-      Animated.spring(animValue, { toValue: 1, tension: 120, friction: 5, useNativeDriver: true }),
-    ]).start();
-  };
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setBenefitIndex((prev) => (prev + 1) % summerBenefits.length);
+    }, 3500);
+
+    return () => clearInterval(interval);
+  }, [summerBenefits.length]);
 
   if (!fontsLoaded) return null;
 
@@ -309,35 +317,17 @@ export default function SummerScreen() {
             <Stat iconName="people"    value="5K+"  label="CLIENTES"  delay={760} />
           </View>
 
-          <Animated.View style={{ opacity: btnFade, transform: [{ scale: btnScale }], alignSelf: 'flex-start' }}>
-            <TouchableOpacity
-              style={styles.ctaBtn}
-              activeOpacity={0.85}
-              onPress={() => animatePress(btnScale)}
-            >
-              <Text style={styles.ctaBtnText}>Ver novidades</Text>
-              <View style={styles.ctaArrow}>
-                <Ionicons name="arrow-forward" size={16} color={C.bg} />
-              </View>
-            </TouchableOpacity>
-          </Animated.View>
         </View>
 
         {/* ===== BENEFÍCIOS ===== */}
         <View style={styles.section}>
           <Badge iconName="water" label="POR QUE SUMMER?" />
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.chipsRow}
-            style={{ marginTop: 12 }}
-          >
-            <BenefitChip iconName="sunny-outline"    text="Proteção UV" />
-            <BenefitChip iconName="water-outline"    text="Hidratação profunda" />
-            <BenefitChip iconName="sparkles-outline" text="Brilho intenso" />
-            <BenefitChip iconName="waves-outline"    text="Anti-maresia" />
-            <BenefitChip iconName="leaf-outline"     text="Ingredientes naturais" />
-          </ScrollView>
+          <View style={styles.autoCarouselWrap}>
+            <BenefitChip
+              iconName={summerBenefits[benefitIndex].iconName}
+              text={summerBenefits[benefitIndex].text}
+            />
+          </View>
         </View>
 
         {/* ===== PRODUTO DESTAQUE ===== */}
@@ -435,7 +425,11 @@ export default function SummerScreen() {
             Combine produtos e ganhe até 20% de desconto na sua linha Summer personalizada.
           </Text>
 
-          <TouchableOpacity style={styles.ctaBtnLight} activeOpacity={0.85}>
+          <TouchableOpacity
+            style={styles.ctaBtnLight}
+            activeOpacity={0.85}
+            onPress={() => router.push('/(tabs)/loja')}
+          >
             <Text style={styles.ctaBtnLightText}>Montar kit</Text>
             <View style={styles.ctaArrowDark}>
               <Ionicons name="arrow-forward" size={16} color={C.bg} />
@@ -445,6 +439,13 @@ export default function SummerScreen() {
 
         <View style={{ height: 20 }} />
       </ScrollView>
+      <TouchableOpacity
+        style={styles.floatingCartBtn}
+        activeOpacity={0.85}
+        onPress={() => router.push('/(tabs)/loja')}
+      >
+        <Ionicons name="cart-outline" size={22} color="#FFFFFF" />
+      </TouchableOpacity>
     </SafeAreaView>
   );
 }
@@ -577,31 +578,6 @@ const styles = StyleSheet.create({
   },
 
   // ─── Botões CTA ──────────────────────────────────────────────────────────
-  ctaBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    backgroundColor: C.bg,
-    borderRadius: 100,
-    paddingVertical: 12,
-    paddingLeft: 22,
-    paddingRight: 7,
-    gap: 10,
-  },
-  ctaBtnText: {
-    fontFamily: 'Poppins_600SemiBold',
-    color: C.accent,
-    fontSize: 14,
-    letterSpacing: 0.1,
-  },
-  ctaArrow: {
-    width: 30,
-    height: 30,
-    borderRadius: 25,
-    backgroundColor: C.accent,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   ctaBtnLight: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -657,10 +633,11 @@ const styles = StyleSheet.create({
   },
 
   // ─── Chips de benefício ───────────────────────────────────────────────────
-  chipsRow: {
-    flexDirection: 'row',
-    gap: 8,
-    paddingVertical: 4,
+  autoCarouselWrap: {
+    marginTop: 12,
+    minHeight: 42,
+    justifyContent: 'center',
+    alignItems: 'flex-start',
   },
   chip: {
     flexDirection: 'row',
@@ -981,6 +958,22 @@ const styles = StyleSheet.create({
   },
 
   // ─── Misc ─────────────────────────────────────────────────────────────────
+  floatingCartBtn: {
+    position: 'absolute',
+    right: 22,
+    bottom: 28,
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    backgroundColor: C.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: C.shadow,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.24,
+    shadowRadius: 14,
+    elevation: 10,
+  },
   placeholderText: {
     fontFamily: 'Poppins_400Regular',
     color: C.mutedLight,
