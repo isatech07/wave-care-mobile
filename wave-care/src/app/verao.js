@@ -49,7 +49,7 @@ const C = {
 
 // Imagens dos produtos de verão
 const IMAGES = {
-  kitCompleto:    require('../../assets/products/verao-produtos/Summer-Protection-kit.png'),
+  kitCompleto:    require('../../assets/products/verao-produtos/Summer-Protection-mobile.png'),
   condicionador:  require('../../assets/products/verao-produtos/verao-condicionador.png'),
   creme:          require('../../assets/products/verao-produtos/verao-creme.png'),
   gelatina:       require('../../assets/products/verao-produtos/verao-gelatina.png'),
@@ -295,7 +295,7 @@ export default function SummerScreen() {
           <Circle size={200} color="rgba(194,65,12,0.06)" style={{ bottom: -50, left: -70 }} />
 
           <Animated.View style={badgeAnim}>
-            <Badge iconName="sunny" label="NOVA COLEÇÃO VERÃO 2025" />
+            <Badge iconName="sunny" label="NOVA COLEÇÃO DE VERÃO 2026" />
           </Animated.View>
 
           <Animated.Text style={[styles.heroTitle, titleAnim]}>
@@ -340,10 +340,10 @@ export default function SummerScreen() {
             O kit mais completo da estação para proteção total dos seus fios
           </Text>
           <ProductCard
-            name="Wave Care Kit Summer"
+            name="Kit Summer Protection"
             desc="Kit completo com shampoo, condicionador, máscara e óleo protetor solar para fios"
-            price="R$ 249,90"
-            oldPrice="R$ 299,90"
+            price="R$ 229,90"
+            oldPrice="R$ 249,90"
             stars="4.8"
             reviews="250"
             highlight
@@ -382,18 +382,18 @@ export default function SummerScreen() {
 
           <View style={styles.productsGrid}>
             {[
-              { name: 'SunShield Shampoo',       price: 'R$ 39,90',  stars: '4.8', reviews: '234', image: IMAGES.shampoo,       delay: 100, type: 'produto' },
-              { name: 'Condicionador Verão',      price: 'R$ 44,90',  stars: '4.7', reviews: '198', image: IMAGES.condicionador,  delay: 150, type: 'produto' },
-              { name: 'Solar Repair Mask',        price: 'R$ 59,90',  stars: '4.9', reviews: '189', image: IMAGES.mascara,        delay: 200, type: 'produto' },
-              { name: 'Creme Protetor Solar',     price: 'R$ 49,90',  stars: '4.6', reviews: '142', image: IMAGES.creme,          delay: 250, type: 'produto' },
-              { name: 'Gelatina Modeladora',      price: 'R$ 42,90',  stars: '4.8', reviews: '167', image: IMAGES.gelatina,       delay: 300, type: 'produto' },
-              { name: 'Óleo Protetor Capilar',    price: 'R$ 54,90',  stars: '4.9', reviews: '213', image: IMAGES.oleo,           delay: 350, type: 'produto' },
-              { name: 'Kit Verão Essencial',      price: 'R$ 99,90',  stars: '4.8', reviews: '156', image: IMAGES.kit1,           delay: 400, type: 'kit'     },
-              { name: 'Kit Hidratação Intensa',   price: 'R$ 119,90', stars: '4.7', reviews: '134', image: IMAGES.kit2,           delay: 450, type: 'kit'     },
-              { name: 'Kit Proteção Solar',       price: 'R$ 129,90', stars: '4.9', reviews: '178', image: IMAGES.kit3,           delay: 500, type: 'kit'     },
-              { name: 'Kit Brilho & Definição',   price: 'R$ 109,90', stars: '4.8', reviews: '145', image: IMAGES.kit4,           delay: 550, type: 'kit'     },
-              { name: 'Kit Summer Premium',       price: 'R$ 149,90', stars: '5.0', reviews: '201', image: IMAGES.kit5,           delay: 600, type: 'kit'     },
-              { name: 'Wave Care Kit Summer',     price: 'R$ 249,90', stars: '4.8', reviews: '250', image: IMAGES.kitCompleto,    delay: 650, type: 'kit'     },
+              { name: 'SunShield Conditioner',    desc: 'Restaura a hidratação após exposição solar.',      price: 'R$ 42,80',  stars: '4.6', reviews: '156', image: IMAGES.condicionador, delay: 150, type: 'produto' },
+              { name: 'Summer Repair Mask',       desc: 'Recupera fios danificados pelo sol e maresia.',    price: 'R$ 54,90',  stars: '4.3', reviews: '116', image: IMAGES.mascara,       delay: 200, type: 'produto' },
+              { name: 'Heat & Sun Leave-In',      desc: 'Proteção UV invisível com definição duradoura.',   price: 'R$ 49,90',  stars: '4.7', reviews: '205', image: IMAGES.creme,         delay: 250, type: 'produto' },
+              { name: 'Summer Definition Jelly',  desc: 'Definição natural com toque leve no calor.',       price: 'R$ 46,90',  stars: '4.8', reviews: '250', image: IMAGES.gelatina,      delay: 300, type: 'produto' },
+              { name: 'Golden Shine Oil',         desc: 'Óleo leve que sela, brilha e controla o frizz.',  price: 'R$ 44,90',  stars: '4.2', reviews: '98',  image: IMAGES.oleo,          delay: 350, type: 'produto' },
+              { name: 'Summer Essential Kit',     desc: 'Protege, hidrata e ilumina os fios no verão.',     price: 'R$ 129,90', stars: '4.8', reviews: '250', image: IMAGES.kit1,          delay: 400, type: 'kit' },
+              { name: 'Summer Full Protection',   desc: 'Proteção térmica, solar e hidratação profunda.',   price: 'R$ 189,90', stars: '4.8', reviews: '250', image: IMAGES.kit2,          delay: 450, type: 'kit' },
+              { name: 'Summer Definition Duo',    desc: 'Definição duradoura e controle do frizz.',         price: 'R$ 89,90',  stars: '4.8', reviews: '250', image: IMAGES.kit3,          delay: 500, type: 'kit' },
+              { name: 'Summer Finishing Trio',    desc: 'Trio indispensável para finalizar no verão.',      price: 'R$ 109,90', stars: '4.8', reviews: '250', image: IMAGES.kit4,          delay: 550, type: 'kit' },
+              { name: 'Summer Styling Duo',       desc: 'Modela e nutre os fios no verão.',                 price: 'R$ 74,90',  stars: '4.8', reviews: '250', image: IMAGES.kit5,          delay: 600, type: 'kit' },
+              { name: 'Summer Total Protection',  desc: 'Experiência completa de cuidado para o verão.',   price: 'R$ 249,90', stars: '4.9', reviews: '300', image: IMAGES.kitCompleto,   delay: 650, type: 'kit' },
+              { name: 'SunShield Shampoo',        desc: 'Limpeza suave com proteção UV capilar.',          price: 'R$ 39,90',  stars: '4.8', reviews: '204', image: IMAGES.shampoo,      delay: 100, type: 'produto' },
             ]
               .filter(p => activeFilter === 'todos' || p.type === activeFilter)
               .map((p, i) => (
