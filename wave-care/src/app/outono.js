@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useUser } from '../contexts/UserContext';
 import {
   useFonts,
   PlayfairDisplay_700Bold,
@@ -118,9 +119,8 @@ function BenefitChip({ iconName, text }) {
   );
 }
 
-function ProductCard({ name, desc, price, oldPrice, stars, reviews, highlight, image, delay }) {
+function ProductCard({ name, desc, price, oldPrice, stars, reviews, highlight, image, delay, onAddToCart, isFavorite, onToggleFavorite }) {
   const anim = useFadeSlide(delay, 20);
-  const [fav, setFav] = useState(false);
 
   return (
     <Animated.View style={[styles.productCard, highlight && styles.productCardHighlight, anim]}>
@@ -133,8 +133,8 @@ function ProductCard({ name, desc, price, oldPrice, stars, reviews, highlight, i
           </View>
         )}
 
-        <TouchableOpacity style={styles.favBtn} onPress={() => setFav(!fav)} activeOpacity={0.8}>
-          <Ionicons name={fav ? 'heart' : 'heart-outline'} size={18} color={fav ? '#E53E3E' : C.muted} />
+        <TouchableOpacity style={styles.favBtn} onPress={() => onToggleFavorite && onToggleFavorite({ id: name, nome: name, preco: parseFloat(price.replace('R$ ', '').replace(',', '.')), image, categoria: 'Produto', estacao: 'Outono' })} activeOpacity={0.8}>
+          <Ionicons name={isFavorite ? 'heart' : 'heart-outline'} size={18} color={isFavorite ? '#E53E3E' : C.muted} />
         </TouchableOpacity>
 
         {highlight && (
@@ -159,10 +159,10 @@ function ProductCard({ name, desc, price, oldPrice, stars, reviews, highlight, i
             <Text style={styles.productPrice}>{price}</Text>
           </View>
           <View style={styles.productActions}>
-            <TouchableOpacity style={styles.cartBtn} activeOpacity={0.8}>
+            <TouchableOpacity style={styles.cartBtn} onPress={() => onAddToCart && onAddToCart({ name, price, image })} activeOpacity={0.8}>
               <Ionicons name="cart-outline" size={18} color={C.accent} />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.buyBtn} activeOpacity={0.8}>
+            <TouchableOpacity style={styles.buyBtn} onPress={() => onAddToCart && onAddToCart({ name, price, image })} activeOpacity={0.8}>
               <Text style={styles.buyBtnText}>Comprar</Text>
             </TouchableOpacity>
           </View>
@@ -172,9 +172,8 @@ function ProductCard({ name, desc, price, oldPrice, stars, reviews, highlight, i
   );
 }
 
-function ProductCardSmall({ name, price, stars, reviews, image, delay, type }) {
+function ProductCardSmall({ name, price, stars, reviews, image, delay, type, onAddToCart, isFavorite, onToggleFavorite }) {
   const anim = useFadeSlide(delay, 20);
-  const [fav, setFav] = useState(false);
 
   return (
     <Animated.View style={[styles.productCardSmall, anim]}>
@@ -187,8 +186,8 @@ function ProductCardSmall({ name, price, stars, reviews, image, delay, type }) {
           </View>
         )}
 
-        <TouchableOpacity style={styles.favBtn} onPress={() => setFav(!fav)} activeOpacity={0.8}>
-          <Ionicons name={fav ? 'heart' : 'heart-outline'} size={15} color={fav ? '#E53E3E' : C.muted} />
+        <TouchableOpacity style={styles.favBtn} onPress={() => onToggleFavorite && onToggleFavorite({ id: name, nome: name, preco: parseFloat(price.replace('R$ ', '').replace(',', '.')), image, categoria: 'Produto', estacao: 'Outono' })} activeOpacity={0.8}>
+          <Ionicons name={isFavorite ? 'heart' : 'heart-outline'} size={15} color={isFavorite ? '#E53E3E' : C.muted} />
         </TouchableOpacity>
       </View>
 
@@ -201,10 +200,10 @@ function ProductCardSmall({ name, price, stars, reviews, image, delay, type }) {
         <Text style={styles.productPriceSmall}>{price}</Text>
 
         <View style={styles.smallCardActions}>
-          <TouchableOpacity style={styles.smallCartBtn} activeOpacity={0.8}>
+          <TouchableOpacity style={styles.smallCartBtn} onPress={() => onAddToCart && onAddToCart({ name, price, image })} activeOpacity={0.8}>
             <Ionicons name="cart-outline" size={16} color={C.accent} />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.buyBtnFull} activeOpacity={0.8}>
+          <TouchableOpacity style={styles.buyBtnFull} onPress={() => onAddToCart && onAddToCart({ name, price, image })} activeOpacity={0.8}>
             <Text style={styles.buyBtnText}>Comprar</Text>
           </TouchableOpacity>
         </View>
@@ -236,11 +235,29 @@ function Divider({ label }) {
   );
 }
 
+function Toast({ visible, message, icon }) {
+  if (!visible) return null;
+  return (
+    <View style={styles.toast}>
+      <View style={styles.toastIconWrap}>
+        <Ionicons name={icon || 'checkmark-circle'} size={16} color={C.accent} />
+      </View>
+      <Text style={styles.toastText}>{message}</Text>
+    </View>
+  );
+}
+
 export default function AutumnScreen() {
   const router = useRouter();
   const scrollViewRef = useRef(null);
+  const { user, toggleFavorite } = useUser();
   const [activeFilter, setActiveFilter] = useState('todos');
   const [benefitIndex, setBenefitIndex] = useState(0);
+  const [cart, setCart] = useState([]);
+  const [toastVisible, setToastVisible] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastIcon, setToastIcon] = useState('checkmark-circle');
+  const toastTimeout = useRef(null);
   const autumnBenefits = useMemo(
     () => [
       { iconName: 'leaf-outline', text: 'Nutrição sazonal' },
@@ -276,6 +293,41 @@ export default function AutumnScreen() {
     return () => clearInterval(interval);
   }, [autumnBenefits.length]);
 
+  const showToast = useCallback((message, icon = 'checkmark-circle') => {
+    if (toastTimeout.current) clearTimeout(toastTimeout.current);
+    setToastMessage(message);
+    setToastIcon(icon);
+    setToastVisible(true);
+    toastTimeout.current = setTimeout(() => setToastVisible(false), 2200);
+  }, []);
+
+  const handleAddToCart = useCallback((product) => {
+    setCart(prev => {
+      const existing = prev.find(i => i.name === product.name);
+      if (existing) return prev.map(i => i.name === product.name ? { ...i, qty: i.qty + 1 } : i);
+      return [...prev, { ...product, qty: 1 }];
+    });
+    showToast(product.name + ' adicionado!', 'cart-outline');
+  }, [showToast]);
+
+  const handleToggleFavorite = useCallback(async (product) => {
+    if (!user || user.guest) {
+      showToast('Faça login para favoritar produtos', 'log-in-outline');
+      setTimeout(() => {
+        router.push('/login');
+      }, 1500);
+      return;
+    }
+
+    const wasAdded = await toggleFavorite(product);
+
+    if (wasAdded) {
+      showToast(product.name + ' adicionado aos favoritos', 'heart');
+    } else {
+      showToast(product.name + ' removido dos favoritos', 'heart-dislike-outline');
+    }
+  }, [user, toggleFavorite, showToast, router]);
+
   if (!fontsLoaded) return null;
 
   return (
@@ -299,12 +351,12 @@ export default function AutumnScreen() {
           </Animated.View>
 
           <Animated.Text style={[styles.heroTitle, titleAnim]}>
-            Abrace a{'\n'}transicao dos{'\n'}fios no outono
+            Abrace a{'\n'}transição dos{'\n'}fios no outono
           </Animated.Text>
 
           <Animated.Text style={[styles.heroSub, subAnim]}>
             Ativos nutritivos pensados para dias de vento frio,
-            folhas caindo e mudancas de clima, com brilho terroso e leveza.
+            folhas caindo e mudanças de clima, com brilho terroso e leveza.
           </Animated.Text>
 
           <View style={styles.heroDivider} />
@@ -336,11 +388,11 @@ export default function AutumnScreen() {
             Autumn Total{'\n'}Transition
           </Text>
           <Text style={styles.sectionSub}>
-            O kit mais completo da estacao para nutricao e equilibrio dos seus fios
+            O kit mais completo da estação para nutrição e equilíbrio dos seus fios
           </Text>
           <ProductCard
             name="Kit Autumn Total Nutrition"
-            desc="Kit completo com shampoo, condicionador, mascara e oleo nutritivo para dias frios"
+            desc="Kit completo com shampoo, condicionador, máscara e óleo nutritivo para dias frios"
             price="R$ 229,90"
             oldPrice="R$ 249,90"
             stars="4.8"
@@ -348,6 +400,9 @@ export default function AutumnScreen() {
             highlight
             image={IMAGES.kitCompleto}
             delay={200}
+            onAddToCart={handleAddToCart}
+            isFavorite={user?.favorites?.some(f => f.name === 'Kit Autumn Total Nutrition')}
+            onToggleFavorite={handleToggleFavorite}
           />
         </View>
 
@@ -395,7 +450,13 @@ export default function AutumnScreen() {
             ]
               .filter((p) => activeFilter === 'todos' || p.type === activeFilter)
               .map((p) => (
-                <ProductCardSmall key={p.name} {...p} />
+                <ProductCardSmall 
+                  key={p.name} 
+                  {...p} 
+                  onAddToCart={handleAddToCart}
+                  isFavorite={user?.favorites?.some(f => f.name === p.name)}
+                  onToggleFavorite={handleToggleFavorite}
+                />
               ))}
           </View>
         </View>
@@ -404,9 +465,9 @@ export default function AutumnScreen() {
         <View style={styles.section}>
           <Badge iconName="bulb" label="DIFERENCIAIS" />
           <View style={[styles.highlightsRow, { marginTop: 14 }]}>
-            <HighlightCard iconName="leaf" title="Sazonal" text="Ativos da estacao de colheita" delay={200} />
-            <HighlightCard iconName="flask" title="Clinico" text="Testes para climas de transicao" delay={350} />
-            <HighlightCard iconName="refresh" title="Consciente" text="Embalagens com foco sustentavel" delay={500} />
+            <HighlightCard iconName="leaf" title="Sazonal" text="Ativos da estação de colheita" delay={200} />
+            <HighlightCard iconName="flask" title="Clinico" text="Testes para climas de transição" delay={350} />
+            <HighlightCard iconName="refresh" title="Consciente" text="Embalagens com foco sustentável" delay={500} />
           </View>
         </View>
 
@@ -419,7 +480,7 @@ export default function AutumnScreen() {
 
           <Text style={styles.ctaCardTitle}>Monte seu{'\n'}kit outono</Text>
           <Text style={styles.ctaCardSub}>
-            Combine produtos e ganhe ate 20% de desconto na sua linha Autumn personalizada.
+            Combine produtos e ganhe até 20% de desconto na sua linha Autumn personalizada.
           </Text>
 
           <TouchableOpacity
@@ -436,12 +497,18 @@ export default function AutumnScreen() {
 
         <View style={{ height: 20 }} />
       </ScrollView>
+      <Toast visible={toastVisible} message={toastMessage} icon={toastIcon} />
       <TouchableOpacity
         style={styles.floatingCartBtn}
         activeOpacity={0.85}
         onPress={() => router.push('/(tabs)/loja')}
       >
         <Ionicons name="cart-outline" size={22} color="#FFFFFF" />
+        {cart.reduce((sum, i) => sum + i.qty, 0) > 0 && (
+          <View style={styles.cartBadge}>
+            <Text style={styles.cartBadgeText}>{cart.reduce((sum, i) => sum + i.qty, 0)}</Text>
+          </View>
+        )}
       </TouchableOpacity>
     </SafeAreaView>
   );
@@ -954,6 +1021,56 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.24,
     shadowRadius: 14,
     elevation: 10,
+  },
+  cartBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    backgroundColor: '#E53E3E',
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    paddingHorizontal: 4,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  cartBadgeText: {
+    fontFamily: 'Poppins_700Bold',
+    color: '#FFFFFF',
+    fontSize: 10,
+    lineHeight: 12,
+  },
+  toast: {
+    position: 'absolute',
+    top: 60,
+    left: 16,
+    right: 16,
+    backgroundColor: C.accent,
+    borderRadius: 12,
+    padding: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    shadowColor: C.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 5,
+    zIndex: 1000,
+  },
+  toastIconWrap: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
+  },
+  toastText: {
+    fontFamily: 'Poppins_500Medium',
+    color: C.bg,
+    fontSize: 13,
+    flex: 1,
   },
   placeholderText: {
     fontFamily: 'Poppins_400Regular',

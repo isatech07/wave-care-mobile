@@ -20,6 +20,7 @@ import Animated, {
   SlideOutLeft,
 } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
+import { useRouter } from "expo-router";
 
 const { width, height } = Dimensions.get("window");
 
@@ -284,7 +285,8 @@ function ProductItem({ product, index }) {
   );
 }
 
-export default function QuizScreen({ navigation, onTabChange, setActiveTab }) {
+export default function QuizScreen() {
+  const router = useRouter();
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState({});
   const [finished, setFinished] = useState(false);
@@ -338,15 +340,10 @@ export default function QuizScreen({ navigation, onTabChange, setActiveTab }) {
   }
 
   function goToLoja(seasonFilter = null) {
-    if (setActiveTab) {
-      setActiveTab('loja');
-      if (seasonFilter && onTabChange) {
-        onTabChange('loja', seasonFilter);
-      } else if (onTabChange) {
-        onTabChange('loja');
-      }
-    } else if (navigation) {
-      navigation.navigate('Home', { screen: 'Loja', params: { estacaoFilter: seasonFilter } });
+    if (seasonFilter) {
+      router.push('/(tabs)/loja');
+    } else {
+      router.push('/(tabs)/loja');
     }
   }
 

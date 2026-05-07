@@ -15,14 +15,14 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useUser } from '../../contexts/UserContext';
-import { useNavigation } from '@react-navigation/native';
+import { useRouter } from 'expo-router';
 
 const TABS = ['dados', 'pedidos', 'favoritos', 'capilar', 'configuracoes'];
 const GREEN = '#2D5A45';
 
 export default function perfil() {
   const { user, logout, updateUser, deleteAccount } = useUser();
-  const navigation = useNavigation();
+  const router = useRouter();
 
   const [tab, setTab]         = useState('dados');
   const [editing, setEditing] = useState(false);
@@ -40,7 +40,7 @@ export default function perfil() {
     return (
       <SafeAreaView style={styles.safeGuest}>
         <View style={styles.guestScreen}>
-          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+          <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
             <Ionicons name="chevron-back" size={26} color={GREEN} />
             <Text style={styles.backText}>Voltar</Text>
           </TouchableOpacity>
@@ -53,10 +53,10 @@ export default function perfil() {
             <Text style={styles.guestSubtitle}>
               Faça login para acessar seu perfil, pedidos e favoritos.
             </Text>
-            <TouchableOpacity style={styles.loginBtn} onPress={() => navigation.navigate('Login')}>
+            <TouchableOpacity style={styles.loginBtn} onPress={() => router.push('/login')}>
               <Text style={styles.loginBtnText}>Fazer Login</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.registerBtn} onPress={() => navigation.navigate('Cadastro')}>
+            <TouchableOpacity style={styles.registerBtn} onPress={() => router.push('/cadastro')}>
               <Text style={styles.registerBtnText}>Criar Conta</Text>
             </TouchableOpacity>
           </View>
@@ -150,7 +150,7 @@ export default function perfil() {
   const handleLogout = async () => {
     await AsyncStorage.multiRemove(['wavecare_guest', 'wavecare_last_email']);
     logout();
-    navigation.navigate('Welcome');
+    router.push('/welcome');
   };
 
   const confirmLogout = () => {
@@ -176,10 +176,7 @@ export default function perfil() {
           onPress: async () => {
             try {
               await deleteAccount();
-              navigation.reset({
-                index: 0,
-                routes: [{ name: 'Welcome' }],
-              });
+              router.replace('/welcome');
             } catch (e) {
               Alert.alert('Erro', 'Não foi possível excluir a conta. Tente novamente.');
             }
@@ -240,7 +237,7 @@ export default function perfil() {
         <View style={styles.emptyState}>
           <Ionicons name="bag-outline" size={50} color="#ccc" />
           <Text style={styles.emptyText}>Nenhum pedido encontrado</Text>
-          <TouchableOpacity style={styles.emptyAction} onPress={() => navigation.navigate('Loja')}>
+          <TouchableOpacity style={styles.emptyAction} onPress={() => router.push('/(tabs)/loja')}>
             <Text style={styles.emptyActionText}>Ir para a loja</Text>
           </TouchableOpacity>
         </View>
@@ -306,7 +303,7 @@ export default function perfil() {
         <View style={styles.emptyState}>
           <Ionicons name="heart-outline" size={50} color="#ccc" />
           <Text style={styles.emptyText}>Nenhum favorito ainda</Text>
-          <TouchableOpacity style={styles.emptyAction} onPress={() => navigation.navigate('Loja')}>
+          <TouchableOpacity style={styles.emptyAction} onPress={() => router.push('/(tabs)/loja')}>
             <Text style={styles.emptyActionText}>Explorar loja</Text>
           </TouchableOpacity>
         </View>
@@ -319,7 +316,7 @@ export default function perfil() {
           <TouchableOpacity
             key={i}
             style={styles.favoriteCard}
-            onPress={() => navigation.navigate('Loja', { itemId: item.id })}
+            onPress={() => router.push('/(tabs)/loja')}
             activeOpacity={0.8}
           >
             {item.image ? (
@@ -361,7 +358,7 @@ export default function perfil() {
           ))}
           <TouchableOpacity
             style={styles.refazerQuizBtn}
-            onPress={() => navigation.navigate('quiz')}
+            onPress={() => router.push('/(tabs)/quiz')}
           >
             <Ionicons name="refresh-outline" size={16} color={GREEN} />
             <Text style={styles.refazerQuizText}>Refazer quiz</Text>
@@ -376,7 +373,7 @@ export default function perfil() {
           <Text style={styles.quizSubtitle}>
             Responda algumas perguntas rápidas e receba recomendações personalizadas.
           </Text>
-          <TouchableOpacity style={styles.quizBtn} onPress={() => navigation.navigate('Quiz')}>
+          <TouchableOpacity style={styles.quizBtn} onPress={() => router.push('/(tabs)/quiz')}>
             <Text style={styles.quizBtnText}>Fazer Quiz</Text>
             <Ionicons name="arrow-forward" size={16} color="#fff" />
           </TouchableOpacity>

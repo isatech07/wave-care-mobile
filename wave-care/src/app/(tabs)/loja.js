@@ -28,7 +28,7 @@ import Animated, {
   ZoomIn,
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { useUser } from '../../contexts/UserContext';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -591,17 +591,13 @@ function FloatingCartButton({ cartCount, onPress }) {
 }
 
 export default function loja() {
-  const navigation = useNavigation();
-  const route = useRoute();
-  const { user, toggleFavorite } = useUser();
+  const router = useRouter();
 
-  // Lê o filtro de estação passado via navigation.navigate('Loja', { estacaoFilter: '...' })
-  const estacaoParam = route.params?.estacaoFilter ?? null;
-
-  const [selectedSeason, setSelectedSeason] = useState(estacaoParam || 'Todos');
+  const [selectedSeason, setSelectedSeason] = useState('Todos');
   const [viewMode, setViewMode] = useState('grid');
   const [cart, setCart] = useState([]);
   const [favorites, setFavorites] = useState([]);
+  const { user, toggleFavorite } = useUser();
   const [filterVisible, setFilterVisible] = useState(false);
   const [cartVisible, setCartVisible] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('Todos');
@@ -611,15 +607,6 @@ export default function loja() {
   const [toastIcon, setToastIcon] = useState('checkmark-circle');
   const toastTimeout = useRef(null);
 
-  // Atualiza o filtro de estação sempre que a tela receber foco com novo parâmetro
-  useFocusEffect(
-    useCallback(() => {
-      const param = route.params?.estacaoFilter ?? null;
-      if (param) {
-        setSelectedSeason(param);
-      }
-    }, [route.params?.estacaoFilter])
-  );
 
   // Carrega favoritos do usuário quando a tela ganha foco
   useFocusEffect(
@@ -666,7 +653,7 @@ export default function loja() {
     if (!user || user.guest) {
       showToast('Faça login para favoritar produtos', 'log-in-outline');
       setTimeout(() => {
-        navigation.navigate('Login');
+        router.push('/login');
       }, 1500);
       return;
     }
@@ -680,7 +667,7 @@ export default function loja() {
       setFavorites(prev => prev.filter(id => id !== product.id));
       showToast(product.nome + ' removido dos favoritos', 'heart-dislike-outline');
     }
-  }, [user, toggleFavorite, showToast, navigation]);
+  }, [user, toggleFavorite, showToast, router]);
 
   const filteredProducts = PRODUCTS
     .filter(p => {
