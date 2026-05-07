@@ -14,6 +14,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useUser } from '../contexts/UserContext';
+import CartSheet from '../components/CartSheet';
 import {
   useFonts,
   PlayfairDisplay_700Bold,
@@ -254,6 +255,7 @@ export default function SummerScreen() {
   const [activeFilter, setActiveFilter] = useState('todos');
   const [benefitIndex, setBenefitIndex] = useState(0);
   const [cart, setCart] = useState([]);
+  const [cartVisible, setCartVisible] = useState(false);
   const [toastVisible, setToastVisible] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [toastIcon, setToastIcon] = useState('checkmark-circle');
@@ -302,13 +304,38 @@ export default function SummerScreen() {
   }, []);
 
   const handleAddToCart = useCallback((product) => {
+    const priceNum = typeof product.price === 'string' 
+      ? parseFloat(product.price.replace('R$ ', '').replace(',', '.'))
+      : (product.price || 0);
+    
+    const productWithPrice = {
+      ...product,
+      preco: priceNum,
+      price: priceNum,
+      nome: product.name,
+      categoria: 'Produto',
+      id: product.name
+    };
+    
     setCart(prev => {
       const existing = prev.find(i => i.name === product.name);
       if (existing) return prev.map(i => i.name === product.name ? { ...i, qty: i.qty + 1 } : i);
-      return [...prev, { ...product, qty: 1 }];
+      return [...prev, { ...productWithPrice, qty: 1 }];
     });
     showToast(product.name + ' adicionado!', 'cart-outline');
   }, [showToast]);
+
+  const handleRemoveFromCart = useCallback((id) => {
+    setCart(prev => {
+      const existing = prev.find(i => i.name === id || i.id === id);
+      if (existing && existing.qty === 1) return prev.filter(i => i.name !== id && i.id !== id);
+      return prev.map(i => i.name === id || i.id === id ? { ...i, qty: i.qty - 1 } : i);
+    });
+  }, []);
+
+  const handleDeleteFromCart = useCallback((id) => {
+    setCart(prev => prev.filter(i => i.name !== id && i.id !== id));
+  }, []);
 
   const handleToggleFavorite = useCallback(async (product) => {
     if (!user || user.guest) {
@@ -504,7 +531,7 @@ export default function SummerScreen() {
       <TouchableOpacity
         style={styles.floatingCartBtn}
         activeOpacity={0.85}
-        onPress={() => router.push('/(tabs)/loja')}
+        onPress={() => setCartVisible(true)}
       >
         <Ionicons name="cart-outline" size={22} color="#FFFFFF" />
         {cart.reduce((sum, i) => sum + i.qty, 0) > 0 && (
@@ -513,6 +540,14 @@ export default function SummerScreen() {
           </View>
         )}
       </TouchableOpacity>
+      <CartSheet
+        visible={cartVisible}
+        cart={cart}
+        onClose={() => setCartVisible(false)}
+        onAdd={handleAddToCart}
+        onRemove={handleRemoveFromCart}
+        onDelete={handleDeleteFromCart}
+      />
     </SafeAreaView>
   );
 }
