@@ -361,7 +361,7 @@ export default function perfil() {
           ))}
           <TouchableOpacity
             style={styles.refazerQuizBtn}
-            onPress={() => navigation.navigate('Quiz')}
+            onPress={() => navigation.navigate('quiz')}
           >
             <Ionicons name="refresh-outline" size={16} color={GREEN} />
             <Text style={styles.refazerQuizText}>Refazer quiz</Text>
