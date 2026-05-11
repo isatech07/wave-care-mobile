@@ -14,6 +14,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useUser } from '../contexts/UserContext';
+import { useProducts } from '../contexts/ProductContext';
 import CartSheet from '../components/CartSheet';
 import {
   useFonts,
@@ -127,7 +128,7 @@ function ProductCard({ name, desc, price, oldPrice, stars, reviews, highlight, i
     <Animated.View style={[styles.productCard, highlight && styles.productCardHighlight, anim]}>
       <View style={[styles.productThumb, highlight && styles.productThumbHighlight]}>
         {image ? (
-          <Image source={image} style={styles.productImage} resizeMode="cover" />
+          <Image source={{ uri: image.uri || image }} style={styles.productImage} resizeMode="cover" />
         ) : (
           <View style={styles.productImagePlaceholder}>
             <Ionicons name="image-outline" size={44} color={C.mutedLight} />
@@ -180,14 +181,14 @@ function ProductCardSmall({ name, price, stars, reviews, image, delay, type, onA
     <Animated.View style={[styles.productCardSmall, anim]}>
       <View style={styles.productThumbSmall}>
         {image ? (
-          <Image source={image} style={styles.productImageSmall} resizeMode="cover" />
+          <Image source={{ uri: image.uri || image }} style={styles.productImageSmall} resizeMode="cover" />
         ) : (
           <View style={styles.productImagePlaceholder}>
             <Ionicons name="image-outline" size={32} color={C.mutedLight} />
           </View>
         )}
 
-        <TouchableOpacity style={styles.favBtn} onPress={() => onToggleFavorite && onToggleFavorite({ id: name, nome: name, preco: parseFloat(price.replace('R$ ', '').replace(',', '.')), image, categoria: 'Produto', estacao: 'Outono' })} activeOpacity={0.8}>
+        <TouchableOpacity style={styles.favBtn} onPress={() => onToggleFavorite && onToggleFavorite({ id: name, nome: name, preco: parseFloat(price?.replace('R$ ', '').replace(',', '.') ?? '0'), image, categoria: 'Produto', estacao: 'Outono' })} activeOpacity={0.8}>
           <Ionicons name={isFavorite ? 'heart' : 'heart-outline'} size={15} color={isFavorite ? '#E53E3E' : C.muted} />
         </TouchableOpacity>
       </View>
@@ -249,9 +250,13 @@ function Toast({ visible, message, icon }) {
 }
 
 export default function AutumnScreen() {
+  const { getBySeason, loading } = useProducts();
+  if (loading) return null;
+  
   const router = useRouter();
   const scrollViewRef = useRef(null);
   const { user, toggleFavorite } = useUser();
+  const seasonProducts = getBySeason('outono');
   const [activeFilter, setActiveFilter] = useState('todos');
   const [benefitIndex, setBenefitIndex] = useState(0);
   const [cart, setCart] = useState([]);
@@ -461,30 +466,28 @@ export default function AutumnScreen() {
           </View>
 
           <View style={styles.productsGrid}>
-            {[
-              { name: 'Autumn Nourish Conditioner', desc: 'Restaura a hidratação após o frio e o vento.',    price: 'R$ 42,80',  stars: '4.6', reviews: '156', image: IMAGES.condicionador, delay: 150, type: 'produto' },
-              { name: 'Autumn Repair Mask',         desc: 'Tratamento intensivo para fios ressecados.',       price: 'R$ 54,90',  stars: '4.3', reviews: '116', image: IMAGES.mascara,       delay: 200, type: 'produto' },
-              { name: 'Autumn Leave-In Cream',      desc: 'Barreira protetora contra o ressecamento.',        price: 'R$ 49,90',  stars: '4.7', reviews: '205', image: IMAGES.creme,         delay: 250, type: 'produto' },
-              { name: 'Autumn Curl Styling Jelly',  desc: 'Definição duradoura com toque leve.',              price: 'R$ 46,90',  stars: '4.8', reviews: '250', image: IMAGES.gelatina,      delay: 300, type: 'produto' },
-              { name: 'Autumn Shine Hair Oil',      desc: 'Controla o frizz e sela as pontas.',               price: 'R$ 34,90',  stars: '4.2', reviews: '98',  image: IMAGES.oleo,          delay: 350, type: 'produto' },
-              { name: 'Autumn Essential Care Kit',  desc: 'Protege, hidrata e ilumina os fios.',              price: 'R$ 119,90', stars: '4.8', reviews: '250', image: IMAGES.kit1,          delay: 400, type: 'kit' },
-              { name: 'Autumn Full Nutrition',      desc: 'Nutrição profunda e proteção contra o frio.',      price: 'R$ 159,90', stars: '4.8', reviews: '250', image: IMAGES.kit2,          delay: 450, type: 'kit' },
-              { name: 'Autumn Definition Duo',      desc: 'Definição duradoura e controle do frizz.',         price: 'R$ 89,90',  stars: '4.8', reviews: '250', image: IMAGES.kit3,          delay: 500, type: 'kit' },
-              { name: 'Autumn Finishing Trio',      desc: 'Trio indispensável para finalizar no outono.',     price: 'R$ 109,90', stars: '4.8', reviews: '250', image: IMAGES.kit4,          delay: 550, type: 'kit' },
-              { name: 'Autumn Styling Duo',         desc: 'Modela e nutre os fios no outono.',                price: 'R$ 74,90',  stars: '4.8', reviews: '250', image: IMAGES.kit5,          delay: 600, type: 'kit' },
-              { name: 'Autumn Total Nutrition',     desc: 'Experiência completa de cuidado da estação.',      price: 'R$ 249,90', stars: '4.9', reviews: '300', image: IMAGES.kitCompleto,   delay: 650, type: 'kit' },
-              { name: 'Autumn Nourish Shampoo',     desc: 'Limpeza suave com nutrição profunda.',            price: 'R$ 39,90',  stars: '4.8', reviews: '204', image: IMAGES.shampoo,      delay: 100, type: 'produto' },
-            ]
-              .filter((p) => activeFilter === 'todos' || p.type === activeFilter)
-              .map((p) => (
-                <ProductCardSmall 
-                  key={p.name} 
-                  {...p} 
-                  onAddToCart={handleAddToCart}
-                  isFavorite={user?.favorites?.some(f => f.name === p.name)}
-                  onToggleFavorite={handleToggleFavorite}
-                />
-              ))}
+            {seasonProducts
+              .filter((p) => activeFilter === 'todos' || (p.categoria?.toLowerCase() === 'produtos' ? 'produto' : p.categoria?.toLowerCase()) === activeFilter)
+              .map((p) => {
+                const delay = 150;
+                const type = p.categoria?.toLowerCase() === 'produtos' ? 'produto' : p.categoria?.toLowerCase();
+                return (
+                  <ProductCardSmall 
+                    key={p.id} 
+                    name={p.name}
+                    desc={p.description}
+                    price={`R$ ${p.price?.toFixed(2).replace('.', ',')}`}
+                    stars="4.8"
+                    reviews="200"
+                    image={{ uri: p.imageUrl }}
+                    delay={delay}
+                    type={p.category}
+                    onAddToCart={handleAddToCart}
+                    isFavorite={user?.favorites?.some(f => f.id === p.id)}
+                    onToggleFavorite={handleToggleFavorite}
+                  />
+                );
+              })}
           </View>
         </View>
 

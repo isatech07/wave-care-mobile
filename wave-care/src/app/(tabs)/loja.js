@@ -30,6 +30,7 @@ import Animated, {
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useUser } from '../../contexts/UserContext';
+import { useProducts } from '../../contexts/ProductContext';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -56,165 +57,6 @@ const COLORS = {
   shadow: 'rgba(2, 60, 51, 0.08)',
   shadowDark: 'rgba(0, 0, 0, 0.12)',
 };
-
-const PRODUCTS = [
-  {
-    id: '1',
-    nome: 'Shampoo Hidratação Profunda',
-    descricao: 'Fórmula enriquecida com óleos essenciais para máxima hidratação e brilho incomparável',
-    categoria: 'Shampoo',
-    estacao: 'Inverno',
-    preco: 89.90,
-    precoOriginal: 119.90,
-    rating: 4.8,
-    reviews: 234,
-    image: require('../../../assets/products/inverno-produtos/inverno-shampoo.png'),
-    badge: 'Novo',
-  },
-  {
-    id: '2',
-    nome: 'Condicionador Reparador',
-    descricao: 'Restaura a fibra capilar danificada com proteínas de seda e queratina vegetal',
-    categoria: 'Condicionador',
-    estacao: 'Inverno',
-    preco: 79.90,
-    precoOriginal: null,
-    rating: 4.9,
-    reviews: 189,
-    image: require('../../../assets/products/inverno-produtos/inverno-condicionador.png'),
-    badge: 'Popular',
-  },
-  {
-    id: '3',
-    nome: 'Máscara Nutritiva Verão',
-    descricao: 'Proteção solar e nutrição intensa para cabelos expostos ao sol e mar',
-    categoria: 'Tratamento',
-    estacao: 'Verão',
-    preco: 124.90,
-    precoOriginal: 159.90,
-    rating: 4.7,
-    reviews: 312,
-    image: require('../../../assets/products/verao-produtos/verao-mascara.png'),
-    badge: 'Verão',
-  },
-  {
-    id: '4',
-    nome: 'Óleo Finalizador Serum',
-    descricao: 'Brilho intenso e controle de frizz para todos os tipos de cabelo',
-    categoria: 'Finalização',
-    estacao: 'Primavera',
-    preco: 149.90,
-    precoOriginal: 189.90,
-    rating: 4.9,
-    reviews: 456,
-    image: require('../../../assets/products/primavera-produtos/primavera-oleo.png'),
-    badge: 'Premium',
-  },
-  {
-    id: '5',
-    nome: 'Kit Outono Completo',
-    descricao: 'Shampoo, condicionador e máscara para a estação mais seca do ano',
-    categoria: 'Kits',
-    estacao: 'Outono',
-    preco: 249.90,
-    precoOriginal: 359.90,
-    rating: 4.8,
-    reviews: 178,
-    image: require('../../../assets/products/outono-produtos/Autumn-kit-completo.png'),
-    badge: 'Kit',
-  },
-  {
-    id: '6',
-    nome: 'Creme de Nutrição Intensiva',
-    descricao: 'Nutrição profunda com manteiga de karité e óleo de argan puro',
-    categoria: 'Nutrição',
-    estacao: 'Inverno',
-    preco: 99.90,
-    precoOriginal: null,
-    rating: 4.6,
-    reviews: 267,
-    image: require('../../../assets/products/inverno-produtos/inverno-creme.png'),
-    badge: null,
-  },
-  {
-    id: '7',
-    nome: 'Shampoo Leveza Verão',
-    descricao: 'Leveza e frescor para o verão com proteção UV e hidratação leve',
-    categoria: 'Shampoo',
-    estacao: 'Verão',
-    preco: 69.90,
-    precoOriginal: 89.90,
-    rating: 4.5,
-    reviews: 143,
-    image: require('../../../assets/products/verao-produtos/verao-shampoo.png'),
-    badge: 'Oferta',
-  },
-  {
-    id: '8',
-    nome: 'Spray Proteção Térmica',
-    descricao: 'Proteção até 230°C com brilho extraordinário e toque sedoso',
-    categoria: 'Finalização',
-    estacao: 'Primavera',
-    preco: 89.90,
-    precoOriginal: 109.90,
-    rating: 4.7,
-    reviews: 389,
-    image: require('../../../assets/products/primavera-produtos/primavera-creme.png'),
-    badge: null,
-  },
-  {
-    id: '9',
-    nome: 'Condicionador Primavera',
-    descricao: 'Leveza e maciez com extratos florais da primavera e vitaminas',
-    categoria: 'Condicionador',
-    estacao: 'Primavera',
-    preco: 74.90,
-    precoOriginal: null,
-    rating: 4.8,
-    reviews: 201,
-    image: require('../../../assets/products/primavera-produtos/primavera-condicionador.png'),
-    badge: 'Novo',
-  },
-  {
-    id: '10',
-    nome: 'Máscara Capilar Outono',
-    descricao: 'Recupera o brilho e força nos meses de transição climática',
-    categoria: 'Tratamento',
-    estacao: 'Outono',
-    preco: 119.90,
-    precoOriginal: 149.90,
-    rating: 4.9,
-    reviews: 523,
-    image: require('../../../assets/products/outono-produtos/outono-mascara.png'),
-    badge: 'Best Seller',
-  },
-  {
-    id: '11',
-    nome: 'Elixir de Nutrição Premium',
-    descricao: 'Fórmula exclusiva com ingredientes raros para cabelos especiais',
-    categoria: 'Nutrição',
-    estacao: 'Primavera',
-    preco: 199.90,
-    precoOriginal: 249.90,
-    rating: 5.0,
-    reviews: 89,
-    image: require('../../../assets/products/primavera-produtos/primavera-oleo.png'),
-    badge: 'Exclusivo',
-  },
-  {
-    id: '12',
-    nome: 'Kit Inverno Luxo',
-    descricao: 'A linha completa para cabelos nutridos e brilhantes no inverno',
-    categoria: 'Kits',
-    estacao: 'Inverno',
-    preco: 329.90,
-    precoOriginal: 459.90,
-    rating: 4.9,
-    reviews: 156,
-    image: require('../../../assets/products/inverno-produtos/inverno-kit-completo.png'),
-    badge: 'Luxo',
-  },
-];
 
 const BADGE_COLORS = {
   'Novo':       { bg: '#e8f5e9', text: '#2e7d32' },
@@ -363,11 +205,11 @@ function CartSheet({ visible, cart, onClose, onAdd, onRemove, onDelete }) {
             <ScrollView style={styles.cartList} showsVerticalScrollIndicator={false}>
               {cart.map((item, index) => (
                 <Animated.View key={item.id} entering={FadeInDown.delay(index * 80).springify()} style={styles.cartItem}>
-                  <Image source={item.image} style={styles.cartItemImage} contentFit="cover" />
+                  <Image source={{ uri: item.imageUrl }} style={styles.cartItemImage} contentFit="cover" />
                   <View style={styles.cartItemInfo}>
-                    <Text style={styles.cartItemName} numberOfLines={1}>{item.nome}</Text>
-                    <Text style={styles.cartItemCategory}>{item.categoria}</Text>
-                    <Text style={styles.cartItemPrice}>R$ {(item.preco * item.qty).toFixed(2)}</Text>
+                    <Text style={styles.cartItemName} numberOfLines={1}>{item.name}</Text>
+                    <Text style={styles.cartItemCategory}>{item.category}</Text>
+                    <Text style={styles.cartItemPrice}>R$ {(Number(item.price ?? 0) * item.qty).toFixed(2).replace('.', ',')}</Text>
                     <View style={styles.cartQtyRow}>
                       <TouchableOpacity style={styles.qtyBtn} onPress={() => onRemove(item.id)} activeOpacity={0.7}>
                         <Ionicons name="remove" size={14} color={COLORS.green} />
@@ -391,7 +233,7 @@ function CartSheet({ visible, cart, onClose, onAdd, onRemove, onDelete }) {
               <View style={styles.cartFooterDivider} />
               <View style={styles.subtotalRow}>
                 <Text style={styles.subtotalLabel}>Subtotal</Text>
-                <Text style={styles.subtotalValue}>R$ {total.toFixed(2)}</Text>
+                <Text style={styles.subtotalValue}>R$ {(total ?? 0).toFixed(2)}</Text>
               </View>
               <View style={styles.shippingRow}>
                 <Text style={styles.shippingLabel}>Frete</Text>
@@ -400,7 +242,7 @@ function CartSheet({ visible, cart, onClose, onAdd, onRemove, onDelete }) {
               <View style={styles.totalDivider} />
               <View style={styles.totalRow}>
                 <Text style={styles.totalLabel}>Total</Text>
-                <Text style={styles.totalValue}>R$ {total.toFixed(2)}</Text>
+                <Text style={styles.totalValue}>R$ {(total ?? 0).toFixed(2)}</Text>
               </View>
               <TouchableOpacity style={styles.checkoutBtn} activeOpacity={0.85}>
                 <LinearGradient colors={[COLORS.green, COLORS.greenLight]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.checkoutGradient}>
@@ -448,7 +290,7 @@ function ProductCard({ item, viewMode, onAddToCart, isFavorite, onToggleFavorite
   };
 
   const badgeStyle = item.badge && BADGE_COLORS[item.badge] ? BADGE_COLORS[item.badge] : { bg: COLORS.green, text: COLORS.white };
-  const discount = item.precoOriginal ? Math.round((1 - item.preco / item.precoOriginal) * 100) : 0;
+  const discount = (item.precoOriginal ?? 0) > 0 ? Math.round((1 - Number(item.price ?? 0) / Number(item.precoOriginal ?? 0)) * 100) : 0;
 
   const isGrid = viewMode === 'grid';
 
@@ -457,7 +299,7 @@ function ProductCard({ item, viewMode, onAddToCart, isFavorite, onToggleFavorite
       <Animated.View entering={FadeInDown.delay(index * 70).springify().damping(16)} style={[styles.gridCard, cardStyle]}>
         <TouchableOpacity activeOpacity={1} onPressIn={handlePressIn} onPressOut={handlePressOut}>
           <View style={styles.cardImageContainer}>
-            <Image source={item.image} style={styles.gridImage} contentFit="cover" transition={300} />
+            <Image source={{ uri: item.imageUrl }} style={styles.gridImage} contentFit="cover" transition={300} />
             <LinearGradient colors={['transparent', 'rgba(0,0,0,0.03)']} style={styles.imageOverlay} />
             {item.badge && (
               <View style={[styles.badge, { backgroundColor: badgeStyle.bg }]}>
@@ -474,8 +316,8 @@ function ProductCard({ item, viewMode, onAddToCart, isFavorite, onToggleFavorite
             </AnimatedTouchable>
           </View>
           <View style={styles.cardInfo}>
-            <Text style={styles.cardCategory}>{item.categoria}</Text>
-            <Text style={styles.cardName} numberOfLines={2}>{item.nome}</Text>
+            <Text style={styles.cardCategory}>{item.category}</Text>
+            <Text style={styles.cardName} numberOfLines={2}>{item.name}</Text>
             <View style={styles.ratingRow}>
               <View style={styles.ratingStars}>
                 {[1, 2, 3, 4, 5].map(s => (
@@ -486,9 +328,9 @@ function ProductCard({ item, viewMode, onAddToCart, isFavorite, onToggleFavorite
               <Text style={styles.reviewText}>({item.reviews})</Text>
             </View>
             <View style={styles.priceRow}>
-              <Text style={styles.price}>R$ {item.preco.toFixed(2)}</Text>
-              {item.precoOriginal && (
-                <Text style={styles.originalPrice}>R$ {item.precoOriginal.toFixed(2)}</Text>
+              <Text style={styles.price}>R$ {Number(item.price ?? 0).toFixed(2)}</Text>
+              {(item.precoOriginal ?? 0) > 0 && (
+                <Text style={styles.originalPrice}>R$ {Number(item.precoOriginal ?? 0).toFixed(2)}</Text>
               )}
             </View>
             <TouchableOpacity style={styles.addBtn} onPress={() => onAddToCart(item)} activeOpacity={0.8}>
@@ -506,7 +348,7 @@ function ProductCard({ item, viewMode, onAddToCart, isFavorite, onToggleFavorite
     <Animated.View entering={FadeInDown.delay(index * 70).springify().damping(16)} style={[styles.compactCard, cardStyle]}>
       <TouchableOpacity activeOpacity={1} onPressIn={handlePressIn} onPressOut={handlePressOut} style={styles.compactInner}>
         <View style={styles.compactImageContainer}>
-          <Image source={item.image} style={styles.compactImage} contentFit="cover" transition={300} />
+          <Image source={{ uri: item.imageUrl }} style={styles.compactImage} contentFit="cover" transition={300} />
           {item.badge && (
             <View style={[styles.badgeCompact, { backgroundColor: badgeStyle.bg }]}>
               <Text style={[styles.badgeTextCompact, { color: badgeStyle.text }]}>{item.badge}</Text>
@@ -520,15 +362,15 @@ function ProductCard({ item, viewMode, onAddToCart, isFavorite, onToggleFavorite
         </View>
         <View style={styles.compactInfo}>
           <View>
-            <Text style={styles.cardCategory}>{item.categoria} · {item.estacao}</Text>
-            <Text style={styles.cardName} numberOfLines={1}>{item.nome}</Text>
-            <Text style={styles.compactDesc} numberOfLines={2}>{item.descricao}</Text>
+            <Text style={styles.cardCategory}>{item.category} · {item.season}</Text>
+            <Text style={styles.cardName} numberOfLines={1}>{item.name}</Text>
+            <Text style={styles.compactDesc} numberOfLines={2}>{item.description}</Text>
           </View>
           <View style={styles.compactBottom}>
             <View>
-              <Text style={styles.price}>R$ {item.preco.toFixed(2)}</Text>
-              {item.precoOriginal && (
-                <Text style={styles.originalPrice}>R$ {item.precoOriginal.toFixed(2)}</Text>
+              <Text style={styles.price}>R$ {Number(item.price ?? 0).toFixed(2)}</Text>
+              {(item.precoOriginal ?? 0) > 0 && (
+                <Text style={styles.originalPrice}>R$ {Number(item.precoOriginal ?? 0).toFixed(2)}</Text>
               )}
             </View>
             <View style={styles.compactActions}>
@@ -592,12 +434,13 @@ function FloatingCartButton({ cartCount, onPress }) {
 
 export default function loja() {
   const router = useRouter();
-
+  const { products, loading } = useProducts();
+  const { user, toggleFavorite } = useUser();
+  
   const [selectedSeason, setSelectedSeason] = useState('Todos');
   const [viewMode, setViewMode] = useState('grid');
   const [cart, setCart] = useState([]);
   const [favorites, setFavorites] = useState([]);
-  const { user, toggleFavorite } = useUser();
   const [filterVisible, setFilterVisible] = useState(false);
   const [cartVisible, setCartVisible] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('Todos');
@@ -662,22 +505,22 @@ export default function loja() {
 
     if (wasAdded) {
       setFavorites(prev => [...prev, product.id]);
-      showToast(product.nome + ' adicionado aos favoritos', 'heart');
+      showToast(product.name + ' adicionado aos favoritos', 'heart');
     } else {
       setFavorites(prev => prev.filter(id => id !== product.id));
-      showToast(product.nome + ' removido dos favoritos', 'heart-dislike-outline');
+      showToast(product.name + ' removido dos favoritos', 'heart-dislike-outline');
     }
   }, [user, toggleFavorite, showToast, router]);
 
-  const filteredProducts = PRODUCTS
+  const filteredProducts = products
     .filter(p => {
-      const matchSeason = selectedSeason === 'Todos' || p.estacao === selectedSeason;
-      const matchCat = selectedCategory === 'Todos' || p.categoria === selectedCategory;
+      const matchSeason = selectedSeason === 'Todos' || p.season === selectedSeason;
+      const matchCat = selectedCategory === 'Todos' || p.category === selectedCategory;
       return matchSeason && matchCat;
     })
     .sort((a, b) => {
-      if (sortOrder === 'priceAsc') return a.preco - b.preco;
-      if (sortOrder === 'priceDesc') return b.preco - a.preco;
+      if (sortOrder === 'priceAsc') return a.price - b.price;
+      if (sortOrder === 'priceDesc') return b.price - a.price;
       if (sortOrder === 'rating') return b.rating - a.rating;
       return 0;
     });
@@ -694,6 +537,8 @@ export default function loja() {
       onToggleFavorite={handleToggleFavorite}
     />
   ), [viewMode, handleAddToCart, favorites, handleToggleFavorite]);
+
+  if (loading) return null;
 
   const ListHeader = (
     <View>

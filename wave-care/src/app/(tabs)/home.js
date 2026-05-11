@@ -7,6 +7,8 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
+import { useProducts } from '../../contexts/ProductContext';
+
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_WIDTH = SCREEN_WIDTH * 0.75;
@@ -50,25 +52,12 @@ const ESTACOES = [
   },
 ];
 
-const PRODUTOS = [
-  {
-    id: '1',
-    nome: 'Wave Care kit Summer',
-    preco: 'R$44,90',
-    desc: 'Brilho e proteção térmica.',
-    image: require('../../../assets/products/verao-produtos/verao-kit-1.png'),
-  },
-  {
-    id: '2',
-    nome: 'Wave Care kit Autumn',
-    preco: 'R$36,90',
-    desc: 'Definição para ondas e cachos.',
-    image: require('../../../assets/products/outono-produtos/Autumn-kit-1.png'),
-  },
-];
-
 export default function Home() {
   const router = useRouter();
+  const { products, loading } = useProducts();
+  const destaques = products.slice(0, 2);
+  
+  if (loading) return null;
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -132,14 +121,14 @@ export default function Home() {
         {/* Mais Amados */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Mais Amados</Text>
-          {PRODUTOS.map((p) => (
+          {destaques.map((p) => (
             <View key={p.id} style={styles.produtoCard}>
-              <Image source={p.image} style={styles.produtoImg} />
+              <Image source={{ uri: p.imageUrl }} style={styles.produtoImg} />
               <View style={styles.produtoInfo}>
                 <Text style={styles.produtoNome}>{p.nome}</Text>
-                <Text style={styles.produtoDesc}>{p.desc}</Text>
+                <Text style={styles.produtoDesc}>{p.descricao}</Text>
                 <View style={styles.produtoFooter}>
-                  <Text style={styles.produtoPreco}>{p.preco}</Text>
+                  <Text style={styles.produtoPreco}>R$ {p.price ? p.price.toFixed(2).replace('.', ',') : '0,00'}</Text>
                   <TouchableOpacity
                     style={styles.addBtn}
                     onPress={() => router.push('/(tabs)/loja')}

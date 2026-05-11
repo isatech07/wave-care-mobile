@@ -14,6 +14,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useUser } from '../contexts/UserContext';
+import { useProducts } from '../contexts/ProductContext';
 import CartSheet from '../components/CartSheet';
 import {
   useFonts,
@@ -129,14 +130,14 @@ function ProductCard({ name, desc, price, oldPrice, stars, reviews, highlight, i
     <Animated.View style={[styles.productCard, highlight && styles.productCardHighlight, anim]}>
       <View style={[styles.productThumb, highlight && styles.productThumbHighlight]}>
         {image ? (
-          <Image source={image} style={styles.productImage} resizeMode="cover" />
+          <Image source={{ uri: image.uri || image }} style={styles.productImage} resizeMode="cover" />
         ) : (
           <View style={styles.productImagePlaceholder}>
             <Ionicons name="image-outline" size={44} color={C.mutedLight} />
           </View>
         )}
 
-        <TouchableOpacity style={styles.favBtn} onPress={() => onToggleFavorite && onToggleFavorite({ id: name, nome: name, preco: parseFloat(price.replace('R$ ', '').replace(',', '.')), image, categoria: 'Produto', estacao: 'Primavera' })} activeOpacity={0.8}>
+        <TouchableOpacity style={styles.favBtn} onPress={() => onToggleFavorite && onToggleFavorite({ id: name, nome: name, preco: parseFloat(price?.replace('R$ ', '').replace(',', '.') ?? '0'), image, categoria: 'Produto', estacao: 'Primavera' })} activeOpacity={0.8}>
           <Ionicons name={isFavorite ? 'heart' : 'heart-outline'} size={18} color={isFavorite ? '#E53E3E' : C.muted} />
         </TouchableOpacity>
 
@@ -182,14 +183,14 @@ function ProductCardSmall({ name, price, stars, reviews, image, delay, type, onA
     <Animated.View style={[styles.productCardSmall, anim]}>
       <View style={styles.productThumbSmall}>
         {image ? (
-          <Image source={image} style={styles.productImageSmall} resizeMode="cover" />
+          <Image source={{ uri: image.uri || image }} style={styles.productImageSmall} resizeMode="cover" />
         ) : (
           <View style={styles.productImagePlaceholder}>
             <Ionicons name="image-outline" size={32} color={C.mutedLight} />
           </View>
         )}
 
-        <TouchableOpacity style={styles.favBtn} onPress={() => onToggleFavorite && onToggleFavorite({ id: name, nome: name, preco: parseFloat(price.replace('R$ ', '').replace(',', '.')), image, categoria: 'Produto', estacao: 'Primavera' })} activeOpacity={0.8}>
+        <TouchableOpacity style={styles.favBtn} onPress={() => onToggleFavorite && onToggleFavorite({ id: name, nome: name, preco: parseFloat(price?.replace('R$ ', '').replace(',', '.') ?? '0'), image, categoria: 'Produto', estacao: 'Primavera' })} activeOpacity={0.8}>
           <Ionicons name={isFavorite ? 'heart' : 'heart-outline'} size={15} color={isFavorite ? '#E53E3E' : C.muted} />
         </TouchableOpacity>
       </View>
@@ -251,9 +252,13 @@ function Toast({ visible, message, icon }) {
 }
 
 export default function SpringScreen() {
+  const { getBySeason, loading } = useProducts();
+  if (loading) return null;
+  
   const router = useRouter();
   const scrollViewRef = useRef(null);
   const { user, toggleFavorite } = useUser();
+  const seasonProducts = getBySeason('primavera');
   const [activeFilter, setActiveFilter] = useState('todos');
   const [benefitIndex, setBenefitIndex] = useState(0);
   const [cart, setCart] = useState([]);
@@ -459,30 +464,28 @@ export default function SpringScreen() {
           </View>
 
           <View style={styles.productsGrid}>
-            {[
-              { name: 'Bloom Conditioner',      desc: 'Maciez e brilho com fragrância floral suave.',    price: 'R$ 45,80',  stars: '4.7', reviews: '162', image: IMAGES.condicionador, delay: 150, type: 'produto' },
-              { name: 'Bloom Repair Mask',      desc: 'Revitaliza fios ressecados com nutrição floral.', price: 'R$ 56,90',  stars: '4.5', reviews: '134', image: IMAGES.mascara,       delay: 200, type: 'produto' },
-              { name: 'Bloom Leave-In',  desc: 'Véu leve floral que controla o frizz.',           price: 'R$ 49,90',  stars: '4.7', reviews: '211', image: IMAGES.creme,         delay: 250, type: 'produto' },
-              { name: 'Bloom Definition Jelly', desc: 'Definição leve com perfume floral duradouro.',    price: 'R$ 48,90',  stars: '4.8', reviews: '243', image: IMAGES.gelatina,      delay: 300, type: 'produto' },
-              { name: 'Bloom Hair Oil',         desc: 'Óleo floral ultraleve que sela e ilumina.',        price: 'R$ 41,90',  stars: '4.3', reviews: '107', image: IMAGES.oleo,          delay: 350, type: 'produto' },
-              { name: 'Spring Essential Kit',   desc: 'Limpeza, condicionamento e tratamento floral.',   price: 'R$ 129,90', stars: '4.8', reviews: '250', image: IMAGES.kit1,          delay: 400, type: 'kit' },
-              { name: 'Spring Full Bloom',      desc: 'Proteção botânica e hidratação profunda.',        price: 'R$ 189,90', stars: '4.8', reviews: '250', image: IMAGES.kit2,          delay: 450, type: 'kit' },
-              { name: 'Spring Definition Duo',  desc: 'Definição duradoura e controle do frizz.',        price: 'R$ 89,90',  stars: '4.8', reviews: '250', image: IMAGES.kit3,          delay: 500, type: 'kit' },
-              { name: 'Spring Finishing Trio',  desc: 'Finalização floral com brilho na primavera.',     price: 'R$ 109,90', stars: '4.8', reviews: '250', image: IMAGES.kit4,          delay: 550, type: 'kit' },
-              { name: 'Spring Styling Duo',     desc: 'Modela e nutre com fragrância floral.',           price: 'R$ 69,90',  stars: '4.8', reviews: '250', image: IMAGES.kit5,          delay: 600, type: 'kit' },
-              { name: 'Spring Total Bloom',     desc: 'Experiência completa de florescimento capilar.',  price: 'R$ 249,90', stars: '4.9', reviews: '300', image: IMAGES.kitCompleto,   delay: 650, type: 'kit' },
-              { name: 'Bloom Shampoo',          desc: 'Limpeza suave com extrato de flores.',            price: 'R$ 42,90',  stars: '4.8', reviews: '198', image: IMAGES.shampoo,      delay: 100, type: 'produto' },
-            ]
-              .filter((p) => activeFilter === 'todos' || p.type === activeFilter)
-              .map((p) => (
-                <ProductCardSmall 
-                  key={p.name} 
-                  {...p} 
-                  onAddToCart={handleAddToCart}
-                  isFavorite={user?.favorites?.some(f => f.name === p.name)}
-                  onToggleFavorite={handleToggleFavorite}
-                />
-              ))}
+            {seasonProducts
+              .filter((p) => activeFilter === 'todos' || (p.categoria?.toLowerCase() === 'produtos' ? 'produto' : p.categoria?.toLowerCase()) === activeFilter)
+              .map((p) => {
+                const delay = 150;
+                const type = p.categoria?.toLowerCase() === 'produtos' ? 'produto' : p.categoria?.toLowerCase();
+                return (
+                  <ProductCardSmall 
+                    key={p.id} 
+                    name={p.name}
+                    desc={p.description}
+                    price={`R$ ${p.price?.toFixed(2).replace('.', ',')}`}
+                    stars="4.8"
+                    reviews="200"
+                    image={{ uri: p.imageUrl }}
+                    delay={delay}
+                    type={p.category}
+                    onAddToCart={handleAddToCart}
+                    isFavorite={user?.favorites?.some(f => f.id === p.id)}
+                    onToggleFavorite={handleToggleFavorite}
+                  />
+                );
+              })}
           </View>
         </View>
 

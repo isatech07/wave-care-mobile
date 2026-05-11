@@ -26,6 +26,7 @@ import {
   Poppins_600SemiBold,
   Poppins_700Bold,
 } from '@expo-google-fonts/poppins';
+import { useProducts } from '../contexts/ProductContext';
 
 const { width } = Dimensions.get('window');
 
@@ -130,14 +131,14 @@ function ProductCard({ name, desc, price, oldPrice, stars, reviews, highlight, i
     <Animated.View style={[styles.productCard, highlight && styles.productCardHighlight, anim]}>
       <View style={[styles.productThumb, highlight && styles.productThumbHighlight]}>
         {image ? (
-          <Image source={image} style={styles.productImage} resizeMode="cover" />
+          <Image source={{ uri: image.uri || image }} style={styles.productImage} resizeMode="cover" />
         ) : (
           <View style={styles.productImagePlaceholder}>
             <Ionicons name="image-outline" size={44} color={C.mutedLight} />
           </View>
         )}
 
-        <TouchableOpacity style={styles.favBtn} onPress={() => onToggleFavorite && onToggleFavorite({ id: name, nome: name, preco: parseFloat(price.replace('R$ ', '').replace(',', '.')), image, categoria: 'Produto', estacao: 'Inverno' })} activeOpacity={0.8}>
+        <TouchableOpacity style={styles.favBtn} onPress={() => onToggleFavorite && onToggleFavorite({ id: name, nome: name, preco: parseFloat(price?.replace('R$ ', '').replace(',', '.') ?? '0'), image, categoria: 'Produto', estacao: 'Inverno' })} activeOpacity={0.8}>
           <Ionicons name={isFavorite ? 'heart' : 'heart-outline'} size={18} color={isFavorite ? '#E53E3E' : C.muted} />
         </TouchableOpacity>
 
@@ -183,14 +184,14 @@ function ProductCardSmall({ name, price, stars, reviews, image, delay, type, onA
     <Animated.View style={[styles.productCardSmall, anim]}>
       <View style={styles.productThumbSmall}>
         {image ? (
-          <Image source={image} style={styles.productImageSmall} resizeMode="cover" />
+          <Image source={{ uri: image.uri || image }} style={styles.productImageSmall} resizeMode="cover" />
         ) : (
           <View style={styles.productImagePlaceholder}>
             <Ionicons name="image-outline" size={32} color={C.mutedLight} />
           </View>
         )}
 
-        <TouchableOpacity style={styles.favBtn} onPress={() => onToggleFavorite && onToggleFavorite({ id: name, nome: name, preco: parseFloat(price.replace('R$ ', '').replace(',', '.')), image, categoria: 'Produto', estacao: 'Inverno' })} activeOpacity={0.8}>
+        <TouchableOpacity style={styles.favBtn} onPress={() => onToggleFavorite && onToggleFavorite({ id: name, nome: name, preco: parseFloat(price?.replace('R$ ', '').replace(',', '.') ?? '0'), image, categoria: 'Produto', estacao: 'Inverno' })} activeOpacity={0.8}>
           <Ionicons name={isFavorite ? 'heart' : 'heart-outline'} size={15} color={isFavorite ? '#E53E3E' : C.muted} />
         </TouchableOpacity>
       </View>
@@ -252,9 +253,13 @@ function Toast({ visible, message, icon }) {
 }
 
 export default function WinterScreen() {
+  const { getBySeason, loading } = useProducts();
+  if (loading) return null;
+  
   const router = useRouter();
   const scrollViewRef = useRef(null);
   const { user, toggleFavorite } = useUser();
+  const seasonProducts = getBySeason('inverno');
   const [activeFilter, setActiveFilter] = useState('todos');
   const [benefitIndex, setBenefitIndex] = useState(0);
   const [cart, setCart] = useState([]);
@@ -460,30 +465,28 @@ export default function WinterScreen() {
           </View>
 
           <View style={styles.productsGrid}>
-            {[
-              { name: 'Shampoo Gelo Suave',          price: 'R$ 39,90',  stars: '4.8', reviews: '234', image: IMAGES.shampoo,       delay: 100, type: 'produto' },
-              { name: 'Condicionador Polar',         price: 'R$ 44,90',  stars: '4.7', reviews: '198', image: IMAGES.condicionador, delay: 150, type: 'produto' },
-              { name: 'Mascara Neve Nutritiva',      price: 'R$ 59,90',  stars: '4.9', reviews: '189', image: IMAGES.mascara,       delay: 200, type: 'produto' },
-              { name: 'Creme Barreira Termica',      price: 'R$ 49,90',  stars: '4.6', reviews: '142', image: IMAGES.creme,         delay: 250, type: 'produto' },
-              { name: 'Gelatina Brisa Gelada',       price: 'R$ 42,90',  stars: '4.8', reviews: '167', image: IMAGES.gelatina,      delay: 300, type: 'produto' },
-              { name: 'Oleo Escudo Invernal',        price: 'R$ 54,90',  stars: '4.9', reviews: '213', image: IMAGES.oleo,          delay: 350, type: 'produto' },
-              { name: 'Kit Inverno Essencial',       price: 'R$ 99,90',  stars: '4.8', reviews: '156', image: IMAGES.kit1,          delay: 400, type: 'kit' },
-              { name: 'Kit Hidratacao Profunda',     price: 'R$ 119,90', stars: '4.7', reviews: '134', image: IMAGES.kit2,          delay: 450, type: 'kit' },
-              { name: 'Kit Defesa ao Vento',         price: 'R$ 129,90', stars: '4.9', reviews: '178', image: IMAGES.kit3,          delay: 500, type: 'kit' },
-              { name: 'Kit Brilho Glacial',          price: 'R$ 109,90', stars: '4.8', reviews: '145', image: IMAGES.kit4,          delay: 550, type: 'kit' },
-              { name: 'Kit Winter Frost Premium',    price: 'R$ 149,90', stars: '5.0', reviews: '201', image: IMAGES.kit5,          delay: 600, type: 'kit' },
-              { name: 'Wave Care Kit Winter Frost',  price: 'R$ 249,90', stars: '4.8', reviews: '250', image: IMAGES.kitCompleto,   delay: 650, type: 'kit' },
-            ]
-              .filter((p) => activeFilter === 'todos' || p.type === activeFilter)
-              .map((p) => (
-                <ProductCardSmall 
-                  key={p.name} 
-                  {...p} 
-                  onAddToCart={handleAddToCart}
-                  isFavorite={user?.favorites?.some(f => f.name === p.name)}
-                  onToggleFavorite={handleToggleFavorite}
-                />
-              ))}
+            {seasonProducts
+              .filter((p) => activeFilter === 'todos' || (p.categoria?.toLowerCase() === 'produtos' ? 'produto' : p.categoria?.toLowerCase()) === activeFilter)
+              .map((p) => {
+                const delay = 100;
+                const type = p.categoria?.toLowerCase() === 'produtos' ? 'produto' : p.categoria?.toLowerCase();
+                return (
+                  <ProductCardSmall 
+                    key={p.id} 
+                    name={p.name}
+                    desc={p.description}
+                    price={`R$ ${p.price?.toFixed(2).replace('.', ',')}`}
+                    stars="4.8"
+                    reviews="200"
+                    image={{ uri: p.imageUrl }}
+                    delay={delay}
+                    type={p.category}
+                    onAddToCart={handleAddToCart}
+                    isFavorite={user?.favorites?.some(f => f.id === p.id)}
+                    onToggleFavorite={handleToggleFavorite}
+                  />
+                );
+              })}
           </View>
         </View>
 

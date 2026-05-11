@@ -14,6 +14,7 @@ import {
   PlayfairDisplay_800ExtraBold,
 } from '@expo-google-fonts/playfair-display';
 import { UserProvider } from '../contexts/UserContext';
+import { ProductProvider } from '../contexts/ProductContext';
 
 export default function RootLayout() {
   const [poppinsLoaded] = usePoppinsFonts({
@@ -33,6 +34,7 @@ export default function RootLayout() {
 
   return (
     <UserProvider>
+      <ProductProvider>
       <Stack>
         <Stack.Screen name="index"           options={{ headerShown: false }} />
         <Stack.Screen name="seja-bem-vindo"  options={{ headerShown: false }} />
@@ -44,6 +46,7 @@ export default function RootLayout() {
         <Stack.Screen name="primavera"       options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)"          options={{ headerShown: false }} />
       </Stack>
+      </ProductProvider>
     </UserProvider>
   );
 }

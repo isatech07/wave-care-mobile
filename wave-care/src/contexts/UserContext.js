@@ -8,7 +8,7 @@ export function UserProvider({ children }) {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    loadUser(); // ← recarrega o usuário salvo ao iniciar
+    loadUser(); 
   }, []);
 
   const loadUser = async () => {
@@ -45,7 +45,7 @@ export function UserProvider({ children }) {
     await AsyncStorage.setItem('wavecare_user', JSON.stringify(updatedUser));
   };
 
-  const toggleFavorite = async (product) => {
+const toggleFavorite = async (product) => {
     if (!user || user.guest) return false;
 
     const currentFavorites = user.favorites || [];
@@ -55,11 +55,11 @@ export function UserProvider({ children }) {
       ? currentFavorites.filter(fav => fav.id !== product.id)
       : [...currentFavorites, {
           id:       product.id,
-          name:     product.nome,
-          price:    product.preco,
+          name:     product.name,      
+          price:    product.price,     
           image:    product.image,
-          categoria: product.categoria,
-          estacao:  product.estacao,
+          category: product.category,  
+          season:   product.season,    
         }];
 
     const updatedUser = { ...user, favorites: newFavorites };

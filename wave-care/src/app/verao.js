@@ -14,6 +14,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useUser } from '../contexts/UserContext';
+import { useProducts } from '../contexts/ProductContext';
 import CartSheet from '../components/CartSheet';
 import {
   useFonts,
@@ -134,7 +135,7 @@ function ProductCard({ name, desc, price, oldPrice, stars, reviews, highlight, i
           </View>
         )}
 
-        <TouchableOpacity style={styles.favBtn} onPress={() => onToggleFavorite && onToggleFavorite({ id: name, nome: name, preco: parseFloat(price.replace('R$ ', '').replace(',', '.')), image, categoria: 'Produto', estacao: 'Verão' })} activeOpacity={0.8}>
+        <TouchableOpacity style={styles.favBtn} onPress={() => onToggleFavorite && onToggleFavorite({ id: name, nome: name, preco: parseFloat(price?.replace('R$ ', '').replace(',', '.') ?? '0'), image, categoria: 'Produto', estacao: 'Verão' })} activeOpacity={0.8}>
           <Ionicons name={isFavorite ? 'heart' : 'heart-outline'} size={18} color={isFavorite ? '#E53E3E' : C.muted} />
         </TouchableOpacity>
 
@@ -187,7 +188,7 @@ function ProductCardSmall({ name, price, stars, reviews, image, delay, type, onA
           </View>
         )}
 
-        <TouchableOpacity style={styles.favBtn} onPress={() => onToggleFavorite && onToggleFavorite({ id: name, nome: name, preco: parseFloat(price.replace('R$ ', '').replace(',', '.')), image, categoria: 'Produto', estacao: 'Verão' })} activeOpacity={0.8}>
+        <TouchableOpacity style={styles.favBtn} onPress={() => onToggleFavorite && onToggleFavorite({ id: name, nome: name, preco: parseFloat(price?.replace('R$ ', '').replace(',', '.') ?? '0'), image, categoria: 'Produto', estacao: 'Verão' })} activeOpacity={0.8}>
           <Ionicons name={isFavorite ? 'heart' : 'heart-outline'} size={15} color={isFavorite ? '#E53E3E' : C.muted} />
         </TouchableOpacity>
       </View>
@@ -249,9 +250,13 @@ function Toast({ visible, message, icon }) {
 }
 
 export default function SummerScreen() {
+  const { getBySeason, loading } = useProducts();
+  if (loading) return null;
+  
   const router = useRouter();
   const scrollViewRef = useRef(null);
   const { user, toggleFavorite } = useUser();
+  const seasonProducts = getBySeason('verao');
   const [activeFilter, setActiveFilter] = useState('todos');
   const [benefitIndex, setBenefitIndex] = useState(0);
   const [cart, setCart] = useState([]);
@@ -463,31 +468,28 @@ export default function SummerScreen() {
           </View>
 
           <View style={styles.productsGrid}>
-            {[
-              { name: 'SunShield Conditioner',    desc: 'Restaura a hidratação após exposição solar.',      price: 'R$ 42,80',  stars: '4.6', reviews: '156', image: IMAGES.condicionador, delay: 150, type: 'produto' },
-              { name: 'Summer Repair Mask',       desc: 'Recupera fios danificados pelo sol e maresia.',    price: 'R$ 54,90',  stars: '4.3', reviews: '116', image: IMAGES.mascara,       delay: 200, type: 'produto' },
-              { name: 'Heat & Sun Leave-In',      desc: 'Proteção UV invisível com definição duradoura.',   price: 'R$ 49,90',  stars: '4.7', reviews: '205', image: IMAGES.creme,         delay: 250, type: 'produto' },
-              { name: 'Summer Definition Jelly',  desc: 'Definição natural com toque leve no calor.',       price: 'R$ 46,90',  stars: '4.8', reviews: '250', image: IMAGES.gelatina,      delay: 300, type: 'produto' },
-              { name: 'Golden Shine Oil',         desc: 'Óleo leve que sela, brilha e controla o frizz.',  price: 'R$ 44,90',  stars: '4.2', reviews: '98',  image: IMAGES.oleo,          delay: 350, type: 'produto' },
-              { name: 'Summer Essential Kit',     desc: 'Protege, hidrata e ilumina os fios no verão.',     price: 'R$ 129,90', stars: '4.8', reviews: '250', image: IMAGES.kit1,          delay: 400, type: 'kit' },
-              { name: 'Summer Full Protection',   desc: 'Proteção térmica, solar e hidratação profunda.',   price: 'R$ 189,90', stars: '4.8', reviews: '250', image: IMAGES.kit2,          delay: 450, type: 'kit' },
-              { name: 'Summer Definition Duo',    desc: 'Definição duradoura e controle do frizz.',         price: 'R$ 89,90',  stars: '4.8', reviews: '250', image: IMAGES.kit3,          delay: 500, type: 'kit' },
-              { name: 'Summer Finishing Trio',    desc: 'Trio indispensável para finalizar no verão.',      price: 'R$ 109,90', stars: '4.8', reviews: '250', image: IMAGES.kit4,          delay: 550, type: 'kit' },
-              { name: 'Summer Styling Duo',       desc: 'Modela e nutre os fios no verão.',                 price: 'R$ 74,90',  stars: '4.8', reviews: '250', image: IMAGES.kit5,          delay: 600, type: 'kit' },
-              { name: 'Summer Total Protection',  desc: 'Experiência completa de cuidado para o verão.',   price: 'R$ 249,90', stars: '4.9', reviews: '300', image: IMAGES.kitCompleto,   delay: 650, type: 'kit' },
-              { name: 'SunShield Shampoo',        desc: 'Limpeza suave com proteção UV capilar.',          price: 'R$ 39,90',  stars: '4.8', reviews: '204', image: IMAGES.shampoo,      delay: 100, type: 'produto' },
-            ]
-              .filter(p => activeFilter === 'todos' || p.type === activeFilter)
-              .map((p, i) => (
-                <ProductCardSmall 
-                  key={p.name} 
-                  {...p} 
-                  onAddToCart={handleAddToCart}
-                  isFavorite={user?.favorites?.some(f => f.name === p.name)}
-                  onToggleFavorite={handleToggleFavorite}
-                />
-              ))
-            }
+            {seasonProducts
+              .filter(p => activeFilter === 'todos' || (p.categoria?.toLowerCase() === 'produtos' ? 'produto' : p.categoria?.toLowerCase()) === activeFilter)
+              .map((p, i) => {
+                const delay = p.categoria?.toLowerCase() === 'produtos' ? 100 + (i * 50) : 400 + ((i - (seasonProducts.filter(item => item.categoria?.toLowerCase() === 'produtos').length)) * 50);
+                const type = p.categoria?.toLowerCase() === 'produtos' ? 'produto' : p.categoria?.toLowerCase();
+                return (
+                  <ProductCardSmall 
+                    key={p.id} 
+                    name={p.name}
+                    desc={p.description}
+                    price={`R$ ${p.price?.toFixed(2).replace('.', ',')}`}
+                    stars="4.8"
+                    reviews="200"
+                    image={{ uri: p.imageUrl }}
+                    delay={delay}
+                    type={p.category}
+                    onAddToCart={handleAddToCart}
+                    isFavorite={user?.favorites?.some(f => f.id === p.id)}
+                    onToggleFavorite={handleToggleFavorite}
+                  />
+                );
+              })}
           </View>
         </View>
 
