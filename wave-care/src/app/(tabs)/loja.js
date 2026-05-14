@@ -205,7 +205,7 @@ function CartSheet({ visible, cart, onClose, onAdd, onRemove, onDelete, onChecko
             <ScrollView style={styles.cartList} showsVerticalScrollIndicator={false}>
               {cart.map((item, index) => (
                 <Animated.View key={item.id} entering={FadeInDown.delay(index * 80).springify()} style={styles.cartItem}>
-                  <Image source={{ uri: item.imageUrl }} style={styles.cartItemImage} contentFit="cover" />
+                  <Image source={item.imageSource} style={styles.cartItemImage} contentFit="cover" />
                   <View style={styles.cartItemInfo}>
                     <Text style={styles.cartItemName} numberOfLines={1}>{item.name}</Text>
                     <Text style={styles.cartItemCategory}>{item.category}</Text>
@@ -299,7 +299,7 @@ function ProductCard({ item, viewMode, onAddToCart, isFavorite, onToggleFavorite
       <Animated.View entering={FadeInDown.delay(index * 70).springify().damping(16)} style={[styles.gridCard, cardStyle]}>
         <TouchableOpacity activeOpacity={1} onPressIn={handlePressIn} onPressOut={handlePressOut}>
           <View style={styles.cardImageContainer}>
-            <Image source={{ uri: item.imageUrl }} style={styles.gridImage} contentFit="cover" transition={300} />
+            <Image source={item.imageSource} style={styles.gridImage} contentFit="cover" transition={300} />
             <LinearGradient colors={['transparent', 'rgba(0,0,0,0.03)']} style={styles.imageOverlay} />
             {item.badge && (
               <View style={[styles.badge, { backgroundColor: badgeStyle.bg }]}>
@@ -348,7 +348,7 @@ function ProductCard({ item, viewMode, onAddToCart, isFavorite, onToggleFavorite
     <Animated.View entering={FadeInDown.delay(index * 70).springify().damping(16)} style={[styles.compactCard, cardStyle]}>
       <TouchableOpacity activeOpacity={1} onPressIn={handlePressIn} onPressOut={handlePressOut} style={styles.compactInner}>
         <View style={styles.compactImageContainer}>
-          <Image source={{ uri: item.imageUrl }} style={styles.compactImage} contentFit="cover" transition={300} />
+          <Image source={item.imageSource} style={styles.compactImage} contentFit="cover" transition={300} />
           {item.badge && (
             <View style={[styles.badgeCompact, { backgroundColor: badgeStyle.bg }]}>
               <Text style={[styles.badgeTextCompact, { color: badgeStyle.text }]}>{item.badge}</Text>

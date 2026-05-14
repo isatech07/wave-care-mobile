@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { getProducts } from '../services/productService';
-import { BASE_URL } from '../services/api';
+import imageMap from '../services/imageMap';
 
 const ProductContext = createContext();
 
@@ -11,13 +11,15 @@ export function ProductProvider({ children }) {
   useEffect(() => {
     getProducts()
       .then(res => {
+        console.log('🔍 p.image exemplos:', res.data.slice(0, 3).map(p => p.image));
         const mapped = res.data.map(p => {
-          const imagePath = p.image || p.imageUrl || p.img || '';
-          const imageUrl = imagePath.startsWith('http') ? imagePath : `${BASE_URL}${imagePath}`;
+          const imagePath = p.image || '';
+          // Busca a imagem local pelo caminho salvo no banco.
+          // Se não achar no mapa, fica null (mostra placeholder).
+          const imageSource = imageMap[imagePath] || null;
           return {
             ...p,
-            imageUrl: imageUrl,
-            image: imageUrl,
+            imageSource, // use this in ALL components: <Image source={p.imageSource} />
           };
         });
         setProducts(mapped);

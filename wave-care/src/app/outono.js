@@ -478,7 +478,7 @@ export default function AutumnScreen() {
                     price={`R$ ${p.price?.toFixed(2).replace('.', ',')}`}
                     stars="4.8"
                     reviews="200"
-                    image={{ uri: p.imageUrl }}
+                    image={p.imageSource}
                     delay={delay}
                     type={p.category}
                     onAddToCart={handleAddToCart}

@@ -123,7 +123,7 @@ export default function Home() {
           <Text style={styles.sectionTitle}>Mais Amados</Text>
           {destaques.map((p) => (
             <View key={p.id} style={styles.produtoCard}>
-              <Image source={{ uri: p.imageUrl }} style={styles.produtoImg} />
+              <Image source={p.imageSource} style={styles.produtoImg} />
               <View style={styles.produtoInfo}>
                 <Text style={styles.produtoNome}>{p.nome}</Text>
                 <Text style={styles.produtoDesc}>{p.descricao}</Text>
