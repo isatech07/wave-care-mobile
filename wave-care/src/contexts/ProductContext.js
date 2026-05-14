@@ -11,10 +11,15 @@ export function ProductProvider({ children }) {
   useEffect(() => {
     getProducts()
       .then(res => {
-        const mapped = res.data.map(p => ({
-          ...p,
-          imageUrl: `${BASE_URL}${p.image}`,
-        }));
+        const mapped = res.data.map(p => {
+          const imagePath = p.image || p.imageUrl || p.img || '';
+          const imageUrl = imagePath.startsWith('http') ? imagePath : `${BASE_URL}${imagePath}`;
+          return {
+            ...p,
+            imageUrl: imageUrl,
+            image: imageUrl,
+          };
+        });
         setProducts(mapped);
       })
       .finally(() => setLoading(false));

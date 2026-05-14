@@ -617,7 +617,7 @@ const styles = StyleSheet.create({
   tabs: {
     flexDirection: 'row',
     backgroundColor: '#fff',
-    marginHorizontal: 12,
+    marginHorizontal: 8,
     borderRadius: 14,
     marginBottom: 12,
     overflow: 'hidden',
@@ -626,11 +626,12 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     paddingVertical: 14,
+    paddingHorizontal: 4,
     position: 'relative',
   },
   tabText: {
     fontFamily: 'Poppins_500Medium',
-    fontSize: 13,
+    fontSize: 12,
     color: '#aaa',
     fontWeight: '500',
   },
@@ -641,8 +642,8 @@ const styles = StyleSheet.create({
   tabIndicator: {
     position: 'absolute',
     bottom: 0,
-    left: '20%',
-    right: '20%',
+    left: '15%',
+    right: '15%',
     height: 3,
     backgroundColor: GREEN,
     borderTopLeftRadius: 2,

@@ -252,14 +252,13 @@ function Toast({ visible, message, icon }) {
 export default function AutumnScreen() {
   const { getBySeason, loading } = useProducts();
   if (loading) return null;
-  
+
   const router = useRouter();
   const scrollViewRef = useRef(null);
-  const { user, toggleFavorite } = useUser();
+  const { user, toggleFavorite, cart, addToCart, removeFromCart, deleteFromCart } = useUser();
   const seasonProducts = getBySeason('outono');
   const [activeFilter, setActiveFilter] = useState('todos');
   const [benefitIndex, setBenefitIndex] = useState(0);
-  const [cart, setCart] = useState([]);
   const [cartVisible, setCartVisible] = useState(false);
   const [toastVisible, setToastVisible] = useState(false);
   const [toastMessage, setToastMessage] = useState('');

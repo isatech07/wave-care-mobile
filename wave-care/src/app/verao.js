@@ -252,14 +252,13 @@ function Toast({ visible, message, icon }) {
 export default function SummerScreen() {
   const { getBySeason, loading } = useProducts();
   if (loading) return null;
-  
+
   const router = useRouter();
   const scrollViewRef = useRef(null);
-  const { user, toggleFavorite } = useUser();
+  const { user, toggleFavorite, cart, addToCart, removeFromCart, deleteFromCart } = useUser();
   const seasonProducts = getBySeason('verao');
   const [activeFilter, setActiveFilter] = useState('todos');
   const [benefitIndex, setBenefitIndex] = useState(0);
-  const [cart, setCart] = useState([]);
   const [cartVisible, setCartVisible] = useState(false);
   const [toastVisible, setToastVisible] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
@@ -309,10 +308,10 @@ export default function SummerScreen() {
   }, []);
 
   const handleAddToCart = useCallback((product) => {
-    const priceNum = typeof product.price === 'string' 
+    const priceNum = typeof product.price === 'string'
       ? parseFloat(product.price.replace('R$ ', '').replace(',', '.'))
       : (product.price || 0);
-    
+
     const productWithPrice = {
       ...product,
       preco: priceNum,
@@ -321,26 +320,18 @@ export default function SummerScreen() {
       categoria: 'Produto',
       id: product.name
     };
-    
-    setCart(prev => {
-      const existing = prev.find(i => i.name === product.name);
-      if (existing) return prev.map(i => i.name === product.name ? { ...i, qty: i.qty + 1 } : i);
-      return [...prev, { ...productWithPrice, qty: 1 }];
-    });
+
+    addToCart(productWithPrice);
     showToast(product.name + ' adicionado!', 'cart-outline');
-  }, [showToast]);
+  }, [showToast, addToCart]);
 
   const handleRemoveFromCart = useCallback((id) => {
-    setCart(prev => {
-      const existing = prev.find(i => i.name === id || i.id === id);
-      if (existing && existing.qty === 1) return prev.filter(i => i.name !== id && i.id !== id);
-      return prev.map(i => i.name === id || i.id === id ? { ...i, qty: i.qty - 1 } : i);
-    });
-  }, []);
+    removeFromCart(id);
+  }, [removeFromCart]);
 
   const handleDeleteFromCart = useCallback((id) => {
-    setCart(prev => prev.filter(i => i.name !== id && i.id !== id));
-  }, []);
+    deleteFromCart(id);
+  }, [deleteFromCart]);
 
   const handleToggleFavorite = useCallback(async (product) => {
     if (!user || user.guest) {

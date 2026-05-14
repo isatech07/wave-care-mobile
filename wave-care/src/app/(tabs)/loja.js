@@ -166,8 +166,8 @@ function FilterPanel({ visible, onClose, selectedSeason, selectedCategory, onSea
   );
 }
 
-function CartSheet({ visible, cart, onClose, onAdd, onRemove, onDelete }) {
-  const total = cart.reduce((sum, item) => sum + item.preco * item.qty, 0);
+function CartSheet({ visible, cart, onClose, onAdd, onRemove, onDelete, onCheckout }) {
+  const total = cart.reduce((sum, item) => sum + (item.preco || item.price || 0) * item.qty, 0);
   const itemCount = cart.reduce((sum, i) => sum + i.qty, 0);
 
   if (!visible) return null;
@@ -244,7 +244,7 @@ function CartSheet({ visible, cart, onClose, onAdd, onRemove, onDelete }) {
                 <Text style={styles.totalLabel}>Total</Text>
                 <Text style={styles.totalValue}>R$ {(total ?? 0).toFixed(2)}</Text>
               </View>
-              <TouchableOpacity style={styles.checkoutBtn} activeOpacity={0.85}>
+              <TouchableOpacity style={styles.checkoutBtn} activeOpacity={0.85} onPress={onCheckout}>
                 <LinearGradient colors={[COLORS.green, COLORS.greenLight]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.checkoutGradient}>
                   <Text style={styles.checkoutBtnText}>Finalizar Compra</Text>
                   <View style={styles.checkoutArrow}>
@@ -435,11 +435,10 @@ function FloatingCartButton({ cartCount, onPress }) {
 export default function loja() {
   const router = useRouter();
   const { products, loading } = useProducts();
-  const { user, toggleFavorite } = useUser();
-  
+  const { user, toggleFavorite, cart, addToCart, removeFromCart, deleteFromCart, addOrder, clearCart } = useUser();
+
   const [selectedSeason, setSelectedSeason] = useState('Todos');
   const [viewMode, setViewMode] = useState('grid');
-  const [cart, setCart] = useState([]);
   const [favorites, setFavorites] = useState([]);
   const [filterVisible, setFilterVisible] = useState(false);
   const [cartVisible, setCartVisible] = useState(false);
@@ -472,25 +471,54 @@ export default function loja() {
   }, []);
 
   const handleAddToCart = useCallback((item) => {
-    setCart(prev => {
-      const existing = prev.find(i => i.id === item.id);
-      if (existing) return prev.map(i => i.id === item.id ? { ...i, qty: i.qty + 1 } : i);
-      return [...prev, { ...item, qty: 1 }];
-    });
-    showToast(item.nome + ' adicionado!', 'cart-outline');
-  }, [showToast]);
+    addToCart(item);
+    showToast(item.name + ' adicionado!', 'cart-outline');
+  }, [showToast, addToCart]);
 
   const handleRemoveFromCart = useCallback((id) => {
-    setCart(prev => {
-      const existing = prev.find(i => i.id === id);
-      if (existing && existing.qty === 1) return prev.filter(i => i.id !== id);
-      return prev.map(i => i.id === id ? { ...i, qty: i.qty - 1 } : i);
-    });
-  }, []);
+    removeFromCart(id);
+  }, [removeFromCart]);
 
   const handleDeleteFromCart = useCallback((id) => {
-    setCart(prev => prev.filter(i => i.id !== id));
-  }, []);
+    deleteFromCart(id);
+  }, [deleteFromCart]);
+
+  const handleCheckout = useCallback(async () => {
+    if (!user || user.guest) {
+      showToast('Faça login para finalizar a compra', 'log-in-outline');
+      setTimeout(() => {
+        router.push('/login');
+      }, 1500);
+      return;
+    }
+
+    if (cart.length === 0) {
+      showToast('Seu carrinho está vazio', 'cart-outline');
+      return;
+    }
+
+    const total = cart.reduce((sum, item) => sum + (item.preco || item.price || 0) * item.qty, 0);
+
+    try {
+      await addOrder({
+        products: cart.map(item => ({
+          id: item.id,
+          name: item.name || item.nome,
+          price: item.preco || item.price,
+          qty: item.qty,
+        })),
+        total: total,
+        status: 'aguardando',
+      });
+
+      await clearCart();
+      setCartVisible(false);
+      showToast('Pedido realizado com sucesso!', 'checkmark-circle');
+    } catch (error) {
+      console.error('Erro ao finalizar pedido:', error);
+      showToast('Erro ao finalizar pedido. Tente novamente.', 'alert-circle');
+    }
+  }, [user, cart, addOrder, clearCart, showToast, router]);
 
   const handleToggleFavorite = useCallback(async (product) => {
     if (!user || user.guest) {
@@ -664,6 +692,7 @@ export default function loja() {
         onAdd={handleAddToCart}
         onRemove={handleRemoveFromCart}
         onDelete={handleDeleteFromCart}
+        onCheckout={handleCheckout}
       />
     </View>
   );
