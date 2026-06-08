@@ -23,7 +23,7 @@ import { useFonts, Poppins_400Regular, Poppins_500Medium, Poppins_700Bold } from
 import { useRouter } from 'expo-router';
 import AnimatedInput from '../components/AnimatedInput';
 import { Colors } from '../theme/colors';
-import { createUser } from '../services/userService';
+import { authService } from '../services/authService';
 import { useUser }    from '../contexts/UserContext';
 
 export default function Cadastro() {
@@ -58,18 +58,8 @@ export default function Cadastro() {
     setLoading(true);
     loadProgress.value = withTiming(100, { duration: 1500 });
       try {
-        const res = await createUser({
-          name:     nome.trim(),
-          email:    email.trim(),
-          password: senha.trim(),
-        });
-
-        // salva token igual ao login
-        if (res.data.access_token) {
-          await AsyncStorage.setItem('wavecare_token', res.data.access_token);
-        }
-
-        const newUser = { ...res.data, favorites: [] };
+        const data = await authService.register(nome.trim(), email.trim(), senha.trim());
+        const newUser = { ...data.user || data, favorites: [] };
         await login(newUser);
 
         setTimeout(() => {

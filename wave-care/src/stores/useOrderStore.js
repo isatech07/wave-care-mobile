@@ -31,4 +31,8 @@ export const useOrderStore = create((set) => ({
       set({ loading: false });
     }
   },
+
+  resetOrders: () => {
+    set({ orders: [], loading: false, error: null });
+  },
 }));

@@ -4,10 +4,20 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const authService = {
   async login(email, password) {
-    const { data } = await api.post('/auth/login', { email, password });
-    // Salva token e dados do usuário separadamente
+    const { data } = await api.post('/users/login', { email, password });
+    
     await AsyncStorage.setItem('wavecare_token', data.access_token);
-    await AsyncStorage.setItem('wavecare_user', JSON.stringify(data.user));
+    await AsyncStorage.setItem('wavecare_user', JSON.stringify(data.user)); // ← salva data.user, não data
+    return data;
+  },
+
+  async register(name, email, password) {
+    const { data } = await api.post('/users/register', { name, email, password });
+
+    if (data.access_token) {
+      await AsyncStorage.setItem('wavecare_token', data.access_token);
+    }
+    await AsyncStorage.setItem('wavecare_user', JSON.stringify(data.user || data));
     return data;
   },
 

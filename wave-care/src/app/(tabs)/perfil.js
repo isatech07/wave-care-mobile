@@ -9,7 +9,6 @@ import {
   SafeAreaView,
   Image,
   Alert,
-  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -24,9 +23,9 @@ const GREEN = '#2D5A45';
 export default function perfil() {
   const { user, logout, updateUser, deleteAccount } = useUser();
   const router = useRouter();
-
   const { orders, fetchOrders } = useOrderStore();
 
+  const [modal, setModal]     = useState({ visible: false, title: '', message: '', onConfirm: null, danger: false });
   const [tab, setTab]         = useState('dados');
   const [editing, setEditing] = useState(false);
   const [avatar, setAvatar]   = useState(user?.avatar ?? null);
@@ -34,12 +33,12 @@ export default function perfil() {
   const [form, setForm] = useState({
     name:  user?.name     ?? '',
     email: user?.email    ?? '',
-    phone: user?.telefone ?? '', 
-    city:  user?.cidade   ?? '', 
+    phone: user?.telefone ?? '',
+    city:  user?.cidade   ?? '',
   });
 
   useEffect(() => {
-    if (user?.id) {
+    if (user?.id && !user.guest) {
       fetchOrders(user.id);
     }
   }, [user?.id]);
@@ -53,7 +52,6 @@ export default function perfil() {
             <Ionicons name="chevron-back" size={26} color={GREEN} />
             <Text style={styles.backText}>Voltar</Text>
           </TouchableOpacity>
-
           <View style={styles.guestContent}>
             <View style={styles.guestIconCircle}>
               <Ionicons name="person-outline" size={48} color={GREEN} />
@@ -70,7 +68,6 @@ export default function perfil() {
             </TouchableOpacity>
           </View>
         </View>
-
       </SafeAreaView>
     );
   }
@@ -102,9 +99,7 @@ export default function perfil() {
               return;
             }
             const result = await ImagePicker.launchCameraAsync({
-              allowsEditing: true,
-              aspect: [1, 1],
-              quality: 0.7,
+              allowsEditing: true, aspect: [1, 1], quality: 0.7,
             });
             if (!result.canceled) {
               const uri = result.assets[0].uri;
@@ -125,9 +120,7 @@ export default function perfil() {
             }
             const result = await ImagePicker.launchImageLibraryAsync({
               mediaTypes: ImagePicker.MediaTypeOptions.Images,
-              allowsEditing: true,
-              aspect: [1, 1],
-              quality: 0.7,
+              allowsEditing: true, aspect: [1, 1], quality: 0.7,
             });
             if (!result.canceled) {
               const uri = result.assets[0].uri;
@@ -149,100 +142,100 @@ export default function perfil() {
       ...user,
       name:     form.name,
       email:    form.email,
-      phone:    form.phone,
-      city:     form.city,  
+      telefone: form.phone,
+      cidade:   form.city,
     };
-    updateUser(updated);
-    setEditing(false);
+    try {
+      await updateUser(updated);
+      setEditing(false);
+      Alert.alert('Sucesso', 'Perfil atualizado com sucesso.');
+    } catch (e) {
+      Alert.alert('Erro', 'Não foi possível atualizar o perfil. Tente novamente.');
+    }
   };
 
-  const handleLogout = async () => {
-    await AsyncStorage.multiRemove([
-      'wavecare_guest',
-      'wavecare_last_email',
-      'wavecare_token',
-    ]);
-
-    logout();
-    router.push('/welcome');
-  };
-
+  // ─── Modal helpers ────────────────────────────────────────────────────────
   const confirmLogout = () => {
-    Alert.alert(
-      'Sair da conta',
-      'Deseja realmente sair da sua conta?',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        { text: 'Sair', style: 'destructive', onPress: handleLogout },
-      ]
-    );
+    setModal({
+      visible: true,
+      title: 'Sair da conta',
+      message: 'Deseja realmente sair da sua conta?',
+      danger: true,
+      onConfirm: async () => {
+        setModal({ visible: false });
+        await logout();
+        router.replace('/seja-bem-vindo');
+      },
+    });
   };
 
   const confirmDeleteAccount = () => {
-    Alert.alert(
-      'Excluir conta',
-      'Esta ação é permanente e irreversível. Todos os seus dados serão apagados.',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Excluir',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await deleteAccount();
-              router.replace('/welcome');
-            } catch (e) {
-              Alert.alert('Erro', 'Não foi possível excluir a conta. Tente novamente.');
-            }
-          },
-        },
-      ]
-    );
+    setModal({
+      visible: true,
+      title: 'Excluir conta',
+      message: 'Esta ação é permanente e irreversível. Todos os seus dados serão apagados.',
+      danger: true,
+      onConfirm: async () => {
+        setModal({ visible: false });
+        try {
+          await deleteAccount();
+          router.replace('/seja-bem-vindo');
+        } catch (e) {
+          Alert.alert('Erro', 'Não foi possível excluir a conta. Tente novamente.');
+        }
+      },
+    });
   };
 
   // ─── Aba Dados ────────────────────────────────────────────────────────────
-  const renderDadosTab = () => (
-    <View style={styles.card}>
-      {[
-        { key: 'name',  label: 'Nome',    placeholder: 'Seu nome',        keyboard: 'default' },
-        { key: 'email', label: 'Email',   placeholder: 'seu@email.com',   keyboard: 'email-address' },
-        { key: 'phone', label: 'Telefone',placeholder: '(00) 00000-0000', keyboard: 'phone-pad' },
-        { key: 'city',  label: 'Cidade',  placeholder: 'Sua cidade',      keyboard: 'default' },
-      ].map(({ key, label, placeholder, keyboard }) => (
-        <View key={key} style={styles.fieldGroup}>
-          <Text style={styles.fieldLabel}>{label}</Text>
-          {editing ? (
-            <TextInput
-              style={styles.input}
-              value={form[key]}
-              onChangeText={(t) => setForm({ ...form, [key]: t })}
-              placeholder={placeholder}
-              keyboardType={keyboard}
-              autoCapitalize={key === 'email' ? 'none' : 'sentences'}
-            />
-          ) : (
-            <Text style={styles.fieldValue}>{user[key] || 'Não informado'}</Text>
-          )}
-        </View>
-      ))}
+  const renderDadosTab = () => {
+    const USER_KEY_MAP = { name: 'name', email: 'email', phone: 'telefone', city: 'cidade' };
 
-      {editing ? (
-        <View style={styles.row}>
-          <TouchableOpacity style={[styles.btn, styles.btnSave]} onPress={save}>
-            <Text style={styles.btnText}>Salvar</Text>
+    return (
+      <View style={styles.card}>
+        {[
+          { key: 'name',  label: 'Nome',     placeholder: 'Seu nome',        keyboard: 'default' },
+          { key: 'email', label: 'Email',    placeholder: 'seu@email.com',   keyboard: 'email-address' },
+          { key: 'phone', label: 'Telefone', placeholder: '(00) 00000-0000', keyboard: 'phone-pad' },
+          { key: 'city',  label: 'Cidade',   placeholder: 'Sua cidade',      keyboard: 'default' },
+        ].map(({ key, label, placeholder, keyboard }) => (
+          <View key={key} style={styles.fieldGroup}>
+            <Text style={styles.fieldLabel}>{label}</Text>
+            {editing ? (
+              <TextInput
+                style={styles.input}
+                value={form[key]}
+                onChangeText={(t) => setForm({ ...form, [key]: t })}
+                placeholder={placeholder}
+                keyboardType={keyboard}
+                autoCapitalize={key === 'email' ? 'none' : 'sentences'}
+              />
+            ) : (
+              <Text style={styles.fieldValue}>
+                {user[USER_KEY_MAP[key]] || 'Não informado'}
+              </Text>
+            )}
+          </View>
+        ))}
+
+        {editing ? (
+          <View style={styles.row}>
+            <TouchableOpacity style={[styles.btn, styles.btnSave]} onPress={save}>
+              <Text style={styles.btnText}>Salvar</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.btn, styles.btnCancel]} onPress={() => setEditing(false)}>
+              <Text style={[styles.btnText, { color: '#555' }]}>Cancelar</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <TouchableOpacity onPress={() => setEditing(true)} style={styles.editBtn}>
+            <Ionicons name="create-outline" size={16} color={GREEN} />
+            <Text style={styles.editText}>Editar dados</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.btn, styles.btnCancel]} onPress={() => setEditing(false)}>
-            <Text style={[styles.btnText, { color: '#555' }]}>Cancelar</Text>
-          </TouchableOpacity>
-        </View>
-      ) : (
-        <TouchableOpacity onPress={() => setEditing(true)} style={styles.editBtn}>
-          <Ionicons name="create-outline" size={16} color={GREEN} />
-          <Text style={styles.editText}>Editar dados</Text>
-        </TouchableOpacity>
-      )}
-    </View>
-  );
+        )}
+      </View>
+    );
+  };
 
   // ─── Aba Pedidos ──────────────────────────────────────────────────────────
   const renderPedidosTab = () => {
@@ -260,7 +253,7 @@ export default function perfil() {
 
     return (
       <View>
-       {orders.map((order, i) => {
+        {orders.map((order, i) => {
           const config = STATUS[order.status ?? 'aguardando'] ?? STATUS.aguardando;
           return (
             <View key={i} style={styles.card}>
@@ -270,7 +263,6 @@ export default function perfil() {
                   <Text style={styles.badgeText}>{config.label}</Text>
                 </View>
               </View>
-
               <View style={styles.timeline}>
                 {STEPS.map((step, idx) => (
                   <View key={idx} style={styles.timelineStep}>
@@ -282,7 +274,6 @@ export default function perfil() {
                   </View>
                 ))}
               </View>
-
               {order.items?.length > 0 && (
                 <View>
                   <Text style={styles.sectionTitle}>Produtos:</Text>
@@ -296,7 +287,6 @@ export default function perfil() {
                   ))}
                 </View>
               )}
-
               <View style={styles.totalRow}>
                 <Text style={styles.totalLabel}>Total:</Text>
                 <Text style={styles.totalValue}>
@@ -370,10 +360,7 @@ export default function perfil() {
               </View>
             </View>
           ))}
-          <TouchableOpacity
-            style={styles.refazerQuizBtn}
-            onPress={() => router.push('/(tabs)/quiz')}
-          >
+          <TouchableOpacity style={styles.refazerQuizBtn} onPress={() => router.push('/(tabs)/quiz')}>
             <Ionicons name="refresh-outline" size={16} color={GREEN} />
             <Text style={styles.refazerQuizText}>Refazer quiz</Text>
           </TouchableOpacity>
@@ -396,6 +383,7 @@ export default function perfil() {
     </View>
   );
 
+  // ─── Aba Configurações ────────────────────────────────────────────────────
   const renderConfiguracoesTab = () => (
     <View style={styles.card}>
       <TouchableOpacity style={styles.configItem} activeOpacity={0.8} onPress={() => setTab('dados')}>
@@ -433,7 +421,6 @@ export default function perfil() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 100 }}
       >
-        {/* Header com avatar */}
         <View style={styles.header}>
           <TouchableOpacity style={styles.avatarWrapper} onPress={handleChangeAvatar} activeOpacity={0.8}>
             {avatar ? (
@@ -447,12 +434,10 @@ export default function perfil() {
               <Ionicons name="camera" size={14} color="#fff" />
             </View>
           </TouchableOpacity>
-
           <Text style={styles.userName}>{user.name || 'Usuário'}</Text>
           <Text style={styles.userEmail}>{user.email || 'email@exemplo.com'}</Text>
         </View>
 
-        {/* Tabs */}
         <View style={styles.tabs}>
           {TABS.map((t) => (
             <TouchableOpacity key={t} style={styles.tabBtn} onPress={() => setTab(t)}>
@@ -464,14 +449,32 @@ export default function perfil() {
           ))}
         </View>
 
-        {/* Conteúdo da aba */}
-        {tab === 'dados'     && renderDadosTab()}
-        {tab === 'pedidos'   && renderPedidosTab()}
-        {tab === 'favoritos' && renderFavoritosTab()}
-        {tab === 'capilar'   && renderCapilarTab()}
-        {tab === 'configuracoes' && renderConfiguracoesTab()}
+        {tab === 'dados'          && renderDadosTab()}
+        {tab === 'pedidos'        && renderPedidosTab()}
+        {tab === 'favoritos'      && renderFavoritosTab()}
+        {tab === 'capilar'        && renderCapilarTab()}
+        {tab === 'configuracoes'  && renderConfiguracoesTab()}
       </ScrollView>
 
+      {modal.visible && (
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalBox}>
+            <Text style={styles.modalTitle}>{modal.title}</Text>
+            <Text style={styles.modalMessage}>{modal.message}</Text>
+            <View style={styles.modalButtons}>
+              <TouchableOpacity style={styles.modalBtnCancel} onPress={() => setModal({ visible: false })}>
+                <Text style={styles.modalBtnCancelText}>Cancelar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalBtnConfirm, modal.danger && styles.modalBtnDanger]}
+                onPress={modal.onConfirm}
+              >
+                <Text style={styles.modalBtnConfirmText}>Confirmar</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -1005,4 +1008,63 @@ const styles = StyleSheet.create({
   configDangerText: {
     color: '#d32f2f',
   },
+
+  modalOverlay: {
+  position: 'absolute',
+  top: 0, left: 0, right: 0, bottom: 0,
+  backgroundColor: 'rgba(0,0,0,0.5)',
+  alignItems: 'center',
+  justifyContent: 'center',
+  zIndex: 999,
+},
+modalBox: {
+  backgroundColor: '#fff',
+  borderRadius: 16,
+  padding: 24,
+  marginHorizontal: 32,
+  width: '85%',
+},
+modalTitle: {
+  fontSize: 17,
+  fontWeight: 'bold',
+  color: '#222',
+  marginBottom: 10,
+},
+modalMessage: {
+  fontSize: 14,
+  color: '#555',
+  lineHeight: 20,
+  marginBottom: 24,
+},
+modalButtons: {
+  flexDirection: 'row',
+  gap: 10,
+},
+modalBtnCancel: {
+  flex: 1,
+  paddingVertical: 12,
+  borderRadius: 10,
+  backgroundColor: '#eee',
+  alignItems: 'center',
+},
+modalBtnCancelText: {
+  color: '#555',
+  fontWeight: '600',
+  fontSize: 14,
+},
+modalBtnConfirm: {
+  flex: 1,
+  paddingVertical: 12,
+  borderRadius: 10,
+  backgroundColor: GREEN,
+  alignItems: 'center',
+},
+modalBtnDanger: {
+  backgroundColor: '#d32f2f',
+},
+modalBtnConfirmText: {
+  color: '#fff',
+  fontWeight: '600',
+  fontSize: 14,
+},
 });

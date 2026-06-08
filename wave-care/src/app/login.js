@@ -25,7 +25,7 @@ import { useFonts, Poppins_400Regular, Poppins_500Medium, Poppins_700Bold } from
 import { useRouter } from 'expo-router';
 import AnimatedInput from '../components/AnimatedInput';
 import { Colors } from '../theme/colors';
-import { loginUser } from '../services/userService';
+import { authService } from '../services/authService';
 import { useUser }   from '../contexts/UserContext';
 
 const { width } = Dimensions.get('window');
@@ -81,13 +81,8 @@ export default function Login() {
     });
 
     try {
-      const res = await loginUser({ email: email.trim(), password: senha });
-
-      // Salva o token separado para o interceptor do api.js usar
-      const token = res.data.access_token;
-      await AsyncStorage.setItem('wavecare_token', token);
-
-      await login({ ...res.data.user, favorites: [] });
+      const data = await authService.login(email.trim(), senha);
+      await login({ ...data.user, favorites: [] });
       setTimeout(() => router.replace('/(tabs)/home'), 2200);
     } catch (e) {
       console.log('erro status:', e.response?.status);
