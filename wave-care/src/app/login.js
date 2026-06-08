@@ -20,6 +20,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFonts, Poppins_400Regular, Poppins_500Medium, Poppins_700Bold } from '@expo-google-fonts/poppins';
 import { useRouter } from 'expo-router';
 import AnimatedInput from '../components/AnimatedInput';
@@ -81,8 +82,12 @@ export default function Login() {
 
     try {
       const res = await loginUser({ email: email.trim(), password: senha });
-      console.log('resposta:', res.data);
-      await login({ ...res.data.user, favorites: [], orders: [] });
+
+      // Salva o token separado para o interceptor do api.js usar
+      const token = res.data.access_token;
+      await AsyncStorage.setItem('wavecare_token', token);
+
+      await login({ ...res.data.user, favorites: [] });
       setTimeout(() => router.replace('/(tabs)/home'), 2200);
     } catch (e) {
       console.log('erro status:', e.response?.status);

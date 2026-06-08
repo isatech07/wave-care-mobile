@@ -521,18 +521,20 @@ export default function SummerScreen() {
         <View style={{ height: 20 }} />
       </ScrollView>
       <Toast visible={toastVisible} message={toastMessage} icon={toastIcon} />
-      <TouchableOpacity
-        style={styles.floatingCartBtn}
-        activeOpacity={0.85}
-        onPress={() => setCartVisible(true)}
-      >
-        <Ionicons name="cart-outline" size={22} color="#FFFFFF" />
-        {cart.reduce((sum, i) => sum + i.qty, 0) > 0 && (
-          <View style={styles.cartBadge}>
-            <Text style={styles.cartBadgeText}>{cart.reduce((sum, i) => sum + i.qty, 0)}</Text>
-          </View>
-        )}
-      </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.floatingCartBtn}
+          activeOpacity={0.85}
+          onPress={() => setCartVisible(true)}
+        >
+          <Ionicons name="cart-outline" size={22} color="#FFFFFF" />
+          {(cart || []).reduce((sum, i) => sum + i.qty, 0) > 0 && (
+            <View style={styles.cartBadge}>
+              <Text style={styles.cartBadgeText}>
+                {(cart || []).reduce((sum, i) => sum + i.qty, 0)}
+              </Text>
+            </View>
+          )}
+        </TouchableOpacity>
       <CartSheet
         visible={cartVisible}
         cart={cart}

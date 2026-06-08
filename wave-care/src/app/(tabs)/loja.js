@@ -30,6 +30,7 @@ import Animated, {
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useUser } from '../../contexts/UserContext';
+import { useCartStore } from '../../stores/useCartStore';
 import { useProducts } from '../../contexts/ProductContext';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -167,9 +168,11 @@ function FilterPanel({ visible, onClose, selectedSeason, selectedCategory, onSea
 }
 
 function CartSheet({ visible, cart, onClose, onAdd, onRemove, onDelete, onCheckout }) {
-  const total = cart.reduce((sum, item) => sum + (item.preco || item.price || 0) * item.qty, 0);
-  const itemCount = cart.reduce((sum, i) => sum + i.qty, 0);
-
+  const total = cart.reduce(
+    (sum, item) => sum + (item.product?.price ?? 0) * (item.quantity ?? 0),
+    0
+  );
+  const itemCount = cart.reduce((sum, i) => sum + (i.quantity ?? 0), 0);
   if (!visible) return null;
 
   return (
@@ -205,17 +208,17 @@ function CartSheet({ visible, cart, onClose, onAdd, onRemove, onDelete, onChecko
             <ScrollView style={styles.cartList} showsVerticalScrollIndicator={false}>
               {cart.map((item, index) => (
                 <Animated.View key={item.id} entering={FadeInDown.delay(index * 80).springify()} style={styles.cartItem}>
-                  <Image source={item.imageSource} style={styles.cartItemImage} contentFit="cover" />
+                 <Image source={item.product?.imageSource ?? { uri: item.product?.image }} style={styles.cartItemImage} contentFit="cover" />
                   <View style={styles.cartItemInfo}>
-                    <Text style={styles.cartItemName} numberOfLines={1}>{item.name}</Text>
-                    <Text style={styles.cartItemCategory}>{item.category}</Text>
+                    <Text style={styles.cartItemName} numberOfLines={1}>{item.product?.name}</Text>
+                    <Text style={styles.cartItemCategory}>{item.product?.category}</Text>
                     <Text style={styles.cartItemPrice}>R$ {(Number(item.price ?? 0) * item.qty).toFixed(2).replace('.', ',')}</Text>
                     <View style={styles.cartQtyRow}>
                       <TouchableOpacity style={styles.qtyBtn} onPress={() => onRemove(item.id)} activeOpacity={0.7}>
                         <Ionicons name="remove" size={14} color={COLORS.green} />
                       </TouchableOpacity>
                       <View style={styles.qtyDisplay}>
-                        <Text style={styles.qtyText}>{item.qty}</Text>
+                        <Text style={styles.qtyText}>{item.quantity ?? 0}</Text>
                       </View>
                       <TouchableOpacity style={styles.qtyBtn} onPress={() => onAdd(item)} activeOpacity={0.7}>
                         <Ionicons name="add" size={14} color={COLORS.green} />
@@ -435,7 +438,17 @@ function FloatingCartButton({ cartCount, onPress }) {
 export default function loja() {
   const router = useRouter();
   const { products, loading } = useProducts();
-  const { user, toggleFavorite, cart, addToCart, removeFromCart, deleteFromCart, addOrder, clearCart } = useUser();
+  const { user, toggleFavorite } = useUser();
+
+  const {
+    items: cart,
+    addItem,
+    decreaseItem,
+    removeItem,
+    fetchCart,
+    itemCount,
+    total
+  } = useCartStore();
 
   const [selectedSeason, setSelectedSeason] = useState('Todos');
   const [viewMode, setViewMode] = useState('grid');
@@ -453,9 +466,12 @@ export default function loja() {
   // Carrega favoritos do usuário quando a tela ganha foco
   useFocusEffect(
     useCallback(() => {
-      if (user && !user.guest && user.favorites) {
-        const favoriteIds = user.favorites.map(fav => fav.id);
-        setFavorites(favoriteIds);
+      if (user && !user.guest) {
+        if (user.favorites) {
+          const favoriteIds = user.favorites.map(fav => fav.id);
+          setFavorites(favoriteIds);
+        }
+        fetchCart(user.id);
       } else {
         setFavorites([]);
       }
@@ -470,55 +486,53 @@ export default function loja() {
     toastTimeout.current = setTimeout(() => setToastVisible(false), 2200);
   }, []);
 
-  const handleAddToCart = useCallback((item) => {
-    addToCart(item);
-    showToast(item.name + ' adicionado!', 'cart-outline');
-  }, [showToast, addToCart]);
-
-  const handleRemoveFromCart = useCallback((id) => {
-    removeFromCart(id);
-  }, [removeFromCart]);
-
-  const handleDeleteFromCart = useCallback((id) => {
-    deleteFromCart(id);
-  }, [deleteFromCart]);
-
-  const handleCheckout = useCallback(async () => {
+  const handleAddToCart = useCallback(async (item) => {
     if (!user || user.guest) {
-      showToast('Faça login para finalizar a compra', 'log-in-outline');
-      setTimeout(() => {
-        router.push('/login');
-      }, 1500);
+      showToast('Faça login para adicionar ao carrinho', 'log-in-outline');
+      setTimeout(() => router.push('/login'), 1500);
       return;
     }
+    try {
+      await addItem(user.id, item.id);
+      showToast(`${item.name} adicionado!`, 'cart-outline');
+    } catch (error) {
+      console.log(error);
+      showToast('Erro ao adicionar produto', 'alert-circle-outline');
+    }
+  }, [user, addItem, showToast, router]);
 
+  const handleRemoveFromCart = useCallback(async (cartItemId) => {
+  try {
+    const found = cart.find(i => i.id === cartItemId);
+    if (found) await decreaseItem(user.id, cartItemId, found.quantity);
+  } catch (error) {
+    console.log(error);
+  }
+  }, [cart, decreaseItem, user]);
+
+  const handleDeleteFromCart = useCallback(async (cartItemId) => {
+    try {
+      await removeItem(user.id, cartItemId);
+      showToast('Produto removido', 'trash-outline');
+    } catch (error) {
+      console.log(error);
+    }
+  }, [removeItem, user, showToast]);
+
+  const handleCheckout = useCallback(() => {
+    if (!user || user.guest) {
+      showToast('Faça login para finalizar a compra', 'log-in-outline');
+      setTimeout(() => router.push('/login'), 1500);
+      return;
+    }
     if (cart.length === 0) {
       showToast('Seu carrinho está vazio', 'cart-outline');
       return;
     }
+    setCartVisible(false);
+    router.push('/pagamento');
+  }, [user, cart, router, showToast]);
 
-    const total = cart.reduce((sum, item) => sum + (item.preco || item.price || 0) * item.qty, 0);
-
-    try {
-      await addOrder({
-        products: cart.map(item => ({
-          id: item.id,
-          name: item.name || item.nome,
-          price: item.preco || item.price,
-          qty: item.qty,
-        })),
-        total: total,
-        status: 'aguardando',
-      });
-
-      await clearCart();
-      setCartVisible(false);
-      showToast('Pedido realizado com sucesso!', 'checkmark-circle');
-    } catch (error) {
-      console.error('Erro ao finalizar pedido:', error);
-      showToast('Erro ao finalizar pedido. Tente novamente.', 'alert-circle');
-    }
-  }, [user, cart, addOrder, clearCart, showToast, router]);
 
   const handleToggleFavorite = useCallback(async (product) => {
     if (!user || user.guest) {
@@ -553,7 +567,10 @@ export default function loja() {
       return 0;
     });
 
-  const cartCount = cart.reduce((sum, i) => sum + i.qty, 0);
+  const cartCount = cart.reduce(
+    (sum, i) => sum + i.quantity,
+    0
+  );
 
   const renderItem = useCallback(({ item, index }) => (
     <ProductCard
@@ -653,29 +670,60 @@ export default function loja() {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor={COLORS.green} />
+      <StatusBar
+        barStyle="light-content"
+        backgroundColor={COLORS.green}
+      />
+
       <FlatList
         data={filteredProducts}
         renderItem={renderItem}
-        keyExtractor={item => item.id}
+        keyExtractor={(item) => item.id.toString()}
         numColumns={viewMode === 'grid' ? 2 : 1}
         key={viewMode}
         ListHeaderComponent={ListHeader}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
-        columnWrapperStyle={viewMode === 'grid' ? styles.columnWrapper : undefined}
+        columnWrapperStyle={
+          viewMode === 'grid'
+            ? styles.columnWrapper
+            : undefined
+        }
         ListEmptyComponent={
           <View style={styles.emptyList}>
-            <Ionicons name="search-outline" size={48} color={COLORS.lightGray} />
-            <Text style={styles.emptyTitle}>Nenhum produto encontrado</Text>
-            <Text style={styles.emptyText}>Tente ajustar os filtros</Text>
+            <Ionicons
+              name="search-outline"
+              size={48}
+              color={COLORS.lightGray}
+            />
+
+            <Text style={styles.emptyTitle}>
+              Nenhum produto encontrado
+            </Text>
+
+            <Text style={styles.emptyText}>
+              Tente ajustar os filtros
+            </Text>
           </View>
         }
       />
-      <FloatingCartButton cartCount={cartCount} onPress={() => setCartVisible(true)} />
-      <View style={styles.toastContainer} pointerEvents="none">
-        <Toast visible={toastVisible} message={toastMessage} icon={toastIcon} />
+
+      <FloatingCartButton
+        cartCount={cartCount}
+        onPress={() => setCartVisible(true)}
+      />
+
+      <View
+        style={styles.toastContainer}
+        pointerEvents="none"
+      >
+        <Toast
+          visible={toastVisible}
+          message={toastMessage}
+          icon={toastIcon}
+        />
       </View>
+
       <FilterPanel
         visible={filterVisible}
         onClose={() => setFilterVisible(false)}
@@ -683,7 +731,10 @@ export default function loja() {
         selectedCategory={selectedCategory}
         onSeasonChange={setSelectedSeason}
         onCategoryChange={setSelectedCategory}
-        onClear={() => { setSelectedSeason('Todos'); setSelectedCategory('Todos'); }}
+        onClear={() => {
+          setSelectedSeason('Todos');
+          setSelectedCategory('Todos');
+        }}
       />
       <CartSheet
         visible={cartVisible}

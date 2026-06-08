@@ -58,13 +58,18 @@ export default function Cadastro() {
     setLoading(true);
     loadProgress.value = withTiming(100, { duration: 1500 });
       try {
-        const res = await createUser({ 
-          name:     nome.trim(), 
+        const res = await createUser({
+          name:     nome.trim(),
           email:    email.trim(),
-          password: senha.trim(), 
+          password: senha.trim(),
         });
-        const newUser = { ...res.data, favorites: [], orders: [] };
 
+        // salva token igual ao login
+        if (res.data.access_token) {
+          await AsyncStorage.setItem('wavecare_token', res.data.access_token);
+        }
+
+        const newUser = { ...res.data, favorites: [] };
         await login(newUser);
 
         setTimeout(() => {

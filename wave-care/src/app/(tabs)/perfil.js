@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -15,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useUser } from '../../contexts/UserContext';
+import { useOrderStore } from '../../stores/useOrderStore';
 import { useRouter } from 'expo-router';
 
 const TABS = ['dados', 'pedidos', 'favoritos', 'capilar', 'configuracoes'];
@@ -23,6 +24,8 @@ const GREEN = '#2D5A45';
 export default function perfil() {
   const { user, logout, updateUser, deleteAccount } = useUser();
   const router = useRouter();
+
+  const { orders, fetchOrders } = useOrderStore();
 
   const [tab, setTab]         = useState('dados');
   const [editing, setEditing] = useState(false);
@@ -34,6 +37,12 @@ export default function perfil() {
     phone: user?.telefone ?? '', 
     city:  user?.cidade   ?? '', 
   });
+
+  useEffect(() => {
+    if (user?.id) {
+      fetchOrders(user.id);
+    }
+  }, [user?.id]);
 
   // ─── Tela de convidado ────────────────────────────────────────────────────
   if (!user || user.guest) {
@@ -148,7 +157,12 @@ export default function perfil() {
   };
 
   const handleLogout = async () => {
-    await AsyncStorage.multiRemove(['wavecare_guest', 'wavecare_last_email']);
+    await AsyncStorage.multiRemove([
+      'wavecare_guest',
+      'wavecare_last_email',
+      'wavecare_token',
+    ]);
+
     logout();
     router.push('/welcome');
   };
@@ -232,7 +246,7 @@ export default function perfil() {
 
   // ─── Aba Pedidos ──────────────────────────────────────────────────────────
   const renderPedidosTab = () => {
-    if (!user.orders?.length) {
+    if (!orders?.length) {
       return (
         <View style={styles.emptyState}>
           <Ionicons name="bag-outline" size={50} color="#ccc" />
@@ -246,7 +260,7 @@ export default function perfil() {
 
     return (
       <View>
-        {user.orders.map((order, i) => {
+       {orders.map((order, i) => {
           const config = STATUS[order.status ?? 'aguardando'] ?? STATUS.aguardando;
           return (
             <View key={i} style={styles.card}>
@@ -269,14 +283,14 @@ export default function perfil() {
                 ))}
               </View>
 
-              {order.products?.length > 0 && (
+              {order.items?.length > 0 && (
                 <View>
                   <Text style={styles.sectionTitle}>Produtos:</Text>
-                  {order.products.map((p, idx) => (
+                  {order.items.map((item, idx) => (
                     <View key={idx} style={styles.productRow}>
-                      <Text style={styles.productName}>{p.name ?? p}</Text>
+                      <Text style={styles.productName}>{item.product?.name}</Text>
                       <Text style={styles.productPrice}>
-                        R$ {typeof p.price === 'number' ? p.price.toFixed(2) : p.price}
+                        R$ {typeof item.price === 'number' ? item.price.toFixed(2) : item.price}
                       </Text>
                     </View>
                   ))}
