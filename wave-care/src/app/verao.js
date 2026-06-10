@@ -16,6 +16,7 @@ import { useRouter } from 'expo-router';
 import { useUser } from '../contexts/UserContext';
 import { useProducts } from '../contexts/ProductContext';
 import CartSheet from '../components/CartSheet';
+import { useCartStore } from '../stores/useCartStore';
 import {
   useFonts,
   PlayfairDisplay_700Bold,
@@ -121,7 +122,7 @@ function BenefitChip({ iconName, text }) {
   );
 }
 
-function ProductCard({ name, desc, price, oldPrice, stars, reviews, highlight, image, delay, onAddToCart, isFavorite, onToggleFavorite }) {
+function ProductCard({ name, desc, price, oldPrice, stars, reviews, highlight, image, delay, productId, onAddToCart, isFavorite, onToggleFavorite }) {
   const anim = useFadeSlide(delay, 20);
 
   return (
@@ -161,10 +162,10 @@ function ProductCard({ name, desc, price, oldPrice, stars, reviews, highlight, i
             <Text style={styles.productPrice}>{price}</Text>
           </View>
           <View style={styles.productActions}>
-            <TouchableOpacity style={styles.cartBtn} onPress={() => onAddToCart && onAddToCart({ name, price, image })} activeOpacity={0.8}>
+            <TouchableOpacity style={styles.cartBtn} onPress={() => onAddToCart && onAddToCart({ id: productId, name, price, image })} activeOpacity={0.8}>
               <Ionicons name="cart-outline" size={18} color={C.accent} />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.buyBtn} onPress={() => onAddToCart && onAddToCart({ name, price, image })} activeOpacity={0.8}>
+            <TouchableOpacity style={styles.buyBtn} onPress={() => onAddToCart && onAddToCart({ id: productId, name, price, image })} activeOpacity={0.8}>
               <Text style={styles.buyBtnText}>Comprar</Text>
             </TouchableOpacity>
           </View>
@@ -174,7 +175,7 @@ function ProductCard({ name, desc, price, oldPrice, stars, reviews, highlight, i
   );
 }
 
-function ProductCardSmall({ name, price, stars, reviews, image, delay, type, onAddToCart, isFavorite, onToggleFavorite }) {
+function ProductCardSmall({ name, price, stars, reviews, image, delay, type, productId, onAddToCart, isFavorite, onToggleFavorite }) {
   const anim = useFadeSlide(delay, 20);
 
   return (
@@ -202,10 +203,10 @@ function ProductCardSmall({ name, price, stars, reviews, image, delay, type, onA
         <Text style={styles.productPriceSmall}>{price}</Text>
 
         <View style={styles.smallCardActions}>
-          <TouchableOpacity style={styles.smallCartBtn} onPress={() => onAddToCart && onAddToCart({ name, price, image })} activeOpacity={0.8}>
+          <TouchableOpacity style={styles.smallCartBtn} onPress={() => onAddToCart && onAddToCart({ id: productId, name, price, image })} activeOpacity={0.8}>
             <Ionicons name="cart-outline" size={16} color={C.accent} />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.buyBtnFull} onPress={() => onAddToCart && onAddToCart({ name, price, image })} activeOpacity={0.8}>
+          <TouchableOpacity style={styles.buyBtnFull} onPress={() => onAddToCart && onAddToCart({ id: productId, name, price, image })} activeOpacity={0.8}>
             <Text style={styles.buyBtnText}>Comprar</Text>
           </TouchableOpacity>
         </View>
@@ -255,7 +256,8 @@ export default function SummerScreen() {
 
   const router = useRouter();
   const scrollViewRef = useRef(null);
-  const { user, toggleFavorite, cart, addToCart, removeFromCart, deleteFromCart } = useUser();
+  const { user, toggleFavorite} = useUser();
+  const { items, addItem, decreaseItem, removeItem, fetchCart } = useCartStore();
   const seasonProducts = getBySeason('verao');
   const [activeFilter, setActiveFilter] = useState('todos');
   const [benefitIndex, setBenefitIndex] = useState(0);
@@ -291,6 +293,12 @@ export default function SummerScreen() {
     scrollViewRef.current?.scrollTo({ y: 0, animated: false });
   }, []);
 
+useEffect(() => {
+    if (user?.id && !user.guest) {
+      fetchCart(user.id);
+    }
+  }, [user?.id]);
+
   useEffect(() => {
     const interval = setInterval(() => {
       setBenefitIndex((prev) => (prev + 1) % summerBenefits.length);
@@ -308,30 +316,33 @@ export default function SummerScreen() {
   }, []);
 
   const handleAddToCart = useCallback((product) => {
-    const priceNum = typeof product.price === 'string'
-      ? parseFloat(product.price.replace('R$ ', '').replace(',', '.'))
-      : (product.price || 0);
+    if (!user?.id || user.guest) {
+      showToast('Faça login para adicionar ao carrinho', 'log-in-outline');
+      return;
+    }
+    
+    // usa p.id numérico — não o nome
+    const productId = product.id;
+    if (!productId) {
+      showToast('Produto inválido', 'alert-circle-outline');
+      return;
+    }
+    
+    addItem(user.id, productId);
+    showToast((product.name || product.nome) + ' adicionado!', 'cart-outline');
+  }, [user, addItem, showToast]);
 
-    const productWithPrice = {
-      ...product,
-      preco: priceNum,
-      price: priceNum,
-      nome: product.name,
-      categoria: 'Produto',
-      id: product.name
-    };
+  const handleRemoveFromCart = useCallback((cartItemId) => {
+    const item = items.find(i => i.id === cartItemId || i.product?.name === cartItemId);
+    if (!item) return;
+    decreaseItem(user.id, item.id, item.quantity);
+  }, [items, user, decreaseItem]);
 
-    addToCart(productWithPrice);
-    showToast(product.name + ' adicionado!', 'cart-outline');
-  }, [showToast, addToCart]);
-
-  const handleRemoveFromCart = useCallback((id) => {
-    removeFromCart(id);
-  }, [removeFromCart]);
-
-  const handleDeleteFromCart = useCallback((id) => {
-    deleteFromCart(id);
-  }, [deleteFromCart]);
+  const handleDeleteFromCart = useCallback((cartItemId) => {
+    const item = items.find(i => i.id === cartItemId || i.product?.name === cartItemId);
+    if (!item) return;
+    removeItem(user.id, item.id);
+  }, [items, user, removeItem]);
 
   const handleToggleFavorite = useCallback(async (product) => {
     if (!user || user.guest) {
@@ -352,6 +363,21 @@ export default function SummerScreen() {
   }, [user, toggleFavorite, showToast, router]);
 
   if (!fontsLoaded) return null;
+
+  const cartForSheet = items.map(i => {
+  const localProduct = seasonProducts.find(p => p.id === i.productId || p.name === i.product?.name);
+  
+  return {
+    id:        i.id,
+    name:      i.product?.name ?? '',
+    nome:      i.product?.name ?? '',
+    price:     i.product?.price ?? 0,
+    preco:     i.product?.price ?? 0,
+    image:     localProduct?.imageSource ?? null,
+    categoria: i.product?.category ?? 'Produto',
+    qty:       i.quantity,
+  };
+});
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -414,20 +440,21 @@ export default function SummerScreen() {
           <Text style={styles.sectionSub}>
             O kit mais completo da estação para proteção total dos seus fios
           </Text>
-          <ProductCard
-            name="Kit Summer Protection"
-            desc="Kit completo com shampoo, condicionador, máscara e óleo protetor solar para fios"
-            price="R$ 229,90"
-            oldPrice="R$ 249,90"
-            stars="4.8"
-            reviews="250"
-            highlight
-            image={IMAGES.kitCompleto}
-            delay={200}
-            onAddToCart={handleAddToCart}
-            isFavorite={user?.favorites?.some(f => f.name === 'Kit Summer Protection')}
-            onToggleFavorite={handleToggleFavorite}
-          />
+            <ProductCard
+              name="Kit Summer Protection"
+              productId={seasonProducts.find(p => p.name === 'Kit Summer Protection')?.id}
+              desc="Kit completo com shampoo, condicionador, máscara e óleo protetor solar para fios"
+              price="R$ 229,90"
+              oldPrice="R$ 249,90"
+              stars="4.8"
+              reviews="250"
+              highlight
+              image={IMAGES.kitCompleto}
+              delay={200}
+              onAddToCart={handleAddToCart}
+              isFavorite={user?.favorites?.some(f => f.name === 'Kit Summer Protection')}
+              onToggleFavorite={handleToggleFavorite}
+            />
         </View>
 
         {/* ===== LINHA COMPLETA ===== */}
@@ -475,6 +502,7 @@ export default function SummerScreen() {
                     image={p.imageSource}
                     delay={delay}
                     type={p.category}
+                    productId={p.id}
                     onAddToCart={handleAddToCart}
                     isFavorite={user?.favorites?.some(f => f.id === p.id)}
                     onToggleFavorite={handleToggleFavorite}
@@ -527,22 +555,26 @@ export default function SummerScreen() {
           onPress={() => setCartVisible(true)}
         >
           <Ionicons name="cart-outline" size={22} color="#FFFFFF" />
-          {(cart || []).reduce((sum, i) => sum + i.qty, 0) > 0 && (
+          {items.reduce((sum, i) => sum + i.quantity, 0) > 0 && (
             <View style={styles.cartBadge}>
               <Text style={styles.cartBadgeText}>
-                {(cart || []).reduce((sum, i) => sum + i.qty, 0)}
+                {items.reduce((sum, i) => sum + i.quantity, 0)}
               </Text>
             </View>
           )}
         </TouchableOpacity>
-      <CartSheet
-        visible={cartVisible}
-        cart={cart}
-        onClose={() => setCartVisible(false)}
-        onAdd={handleAddToCart}
-        onRemove={handleRemoveFromCart}
-        onDelete={handleDeleteFromCart}
-      />
+          <CartSheet
+            visible={cartVisible}
+            cart={cartForSheet}
+            onClose={() => setCartVisible(false)}
+            onAdd={handleAddToCart}
+            onRemove={handleRemoveFromCart}
+            onDelete={handleDeleteFromCart}
+            onCheckout={() => {
+              setCartVisible(false);
+              router.push('/pagamento');
+            }}
+          />
     </SafeAreaView>
   );
 }

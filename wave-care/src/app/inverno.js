@@ -27,6 +27,7 @@ import {
   Poppins_700Bold,
 } from '@expo-google-fonts/poppins';
 import { useProducts } from '../contexts/ProductContext';
+import { useCartStore } from '../stores/useCartStore';
 
 const { width } = Dimensions.get('window');
 
@@ -258,7 +259,8 @@ export default function WinterScreen() {
 
   const router = useRouter();
   const scrollViewRef = useRef(null);
-  const { user, toggleFavorite, cart, addToCart, removeFromCart, deleteFromCart } = useUser();
+  const { user, toggleFavorite} = useUser();
+  const { items, addItem, decreaseItem, removeItem, fetchCart } = useCartStore();
   const seasonProducts = getBySeason('inverno');
   const [activeFilter, setActiveFilter] = useState('todos');
   const [benefitIndex, setBenefitIndex] = useState(0);
@@ -310,31 +312,27 @@ export default function WinterScreen() {
     toastTimeout.current = setTimeout(() => setToastVisible(false), 2200);
   }, []);
 
-  const handleAddToCart = useCallback((product) => {
-    const priceNum = typeof product.price === 'string'
-      ? parseFloat(product.price.replace('R$ ', '').replace(',', '.'))
-      : (product.price || 0);
-
-    const productWithPrice = {
-      ...product,
-      preco: priceNum,
-      price: priceNum,
-      nome: product.name,
-      categoria: 'Produto',
-      id: product.name
-    };
-
-    addToCart(productWithPrice);
-    showToast(product.name + ' adicionado!', 'cart-outline');
-  }, [showToast, addToCart]);
-
-  const handleRemoveFromCart = useCallback((id) => {
-    removeFromCart(id);
-  }, [removeFromCart]);
-
-  const handleDeleteFromCart = useCallback((id) => {
-    deleteFromCart(id);
-  }, [deleteFromCart]);
+    const handleAddToCart = useCallback((product) => {
+      if (!user?.id || user.guest) {
+        showToast('Faça login para adicionar ao carrinho', 'log-in-outline');
+        return;
+      }
+      const productId = product.id || product.name;
+      addItem(user.id, productId);
+      showToast((product.name || product.nome) + ' adicionado!', 'cart-outline');
+    }, [user, addItem, showToast]);
+  
+    const handleRemoveFromCart = useCallback((cartItemId) => {
+      const item = items.find(i => i.id === cartItemId || i.product?.name === cartItemId);
+      if (!item) return;
+      decreaseItem(user.id, item.id, item.quantity);
+    }, [items, user, decreaseItem]);
+  
+    const handleDeleteFromCart = useCallback((cartItemId) => {
+      const item = items.find(i => i.id === cartItemId || i.product?.name === cartItemId);
+      if (!item) return;
+      removeItem(user.id, item.id);
+    }, [items, user, removeItem]);
 
   const handleToggleFavorite = useCallback(async (product) => {
     if (!user || user.guest) {

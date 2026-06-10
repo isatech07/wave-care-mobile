@@ -18,15 +18,15 @@ export const useCartStore = create((set, get) => ({
     }
   },
 
-  addItem: async (userId, productId) => {
-    try {
-      await cartService.addItem(productId, 1);
-      await get().fetchCart(userId);
-    } catch (e) {
-      set({ error: 'Erro ao adicionar item' });
-      throw e;
-    }
-  },
+addItem: async (userId, productId) => {
+  try {
+    await cartService.addItem(userId, productId, 1); // ← passa userId
+    await get().fetchCart(userId);
+  } catch (e) {
+    set({ error: 'Erro ao adicionar item' });
+    throw e;
+  }
+},
 
   increaseItem: async (userId, cartItemId, currentQty) => {
     try {
