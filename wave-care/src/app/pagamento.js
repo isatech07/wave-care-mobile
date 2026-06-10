@@ -14,38 +14,32 @@ const GREEN = '#2D5A45';
 export default function Pagamento() {
   const router = useRouter();
   const { user } = useUser();
-  const { items, total } = useCartStore();
   const { createOrder, loading } = useOrderStore();
   const [paymentMethod, setPaymentMethod] = useState('card');
 
-  const totalValue = total();
+  const items = useCartStore((state) => state.items);
+  const totalValue = useCartStore((state) =>
+    state.items.reduce((sum, i) => sum + (i.product?.price ?? 0) * i.quantity, 0)
+  );
+
+  const [modal, setModal] = useState({ visible: false });
 
   const handleConfirm = async () => {
     if (!user || user.guest) {
       router.push('/login');
       return;
     }
+    setModal({ visible: true });
+  };
 
-    Alert.alert(
-      'Confirmar pedido',
-      `Total: R$ ${totalValue.toFixed(2).replace('.', ',')}\nPagamento: ${paymentMethod === 'card' ? 'Cartão' : 'Dinheiro'}`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Confirmar',
-          onPress: async () => {
-            try {
-              await createOrder(user.id);
-              Alert.alert('Pedido realizado!', 'Seu pedido foi confirmado.', [
-                { text: 'Ver pedidos', onPress: () => router.replace('/(tabs)/perfil') },
-              ]);
-            } catch (e) {
-              Alert.alert('Erro', 'Não foi possível finalizar o pedido. Tente novamente.');
-            }
-          },
-        },
-      ]
-    );
+  const handleFinalize = async () => {
+    setModal({ visible: false });
+    try {
+      await createOrder(user.id);
+      router.replace('/(tabs)');
+    } catch (e) {
+      console.log('[pagamento] erro:', e.message);
+    }
   };
 
   return (
@@ -150,6 +144,35 @@ export default function Pagamento() {
           }
         </TouchableOpacity>
       </View>
+
+        {modal.visible && (
+    <View style={styles.modalOverlay}>
+      <View style={styles.modalBox}>
+        <Text style={styles.modalTitle}>Confirmar pedido</Text>
+        <Text style={styles.modalMessage}>
+          Total: R$ {totalValue.toFixed(2).replace('.', ',')}{'  '}
+          Pagamento: {paymentMethod === 'card' ? 'Cartão' : 'Dinheiro'}
+        </Text>
+        <View style={styles.modalButtons}>
+          <TouchableOpacity
+            style={styles.modalBtnCancel}
+            onPress={() => setModal({ visible: false })}
+          >
+            <Text style={styles.modalBtnCancelText}>Cancelar</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.modalBtnConfirm}
+            onPress={handleFinalize}
+          >
+            {loading
+              ? <ActivityIndicator color="#fff" size="small" />
+              : <Text style={styles.modalBtnConfirmText}>Confirmar</Text>
+            }
+          </TouchableOpacity>
+        </View>
+      </View>
+    </View>
+  )}
     </SafeAreaView>
   );
 }
@@ -214,4 +237,59 @@ const styles = StyleSheet.create({
     paddingVertical: 16, alignItems: 'center',
   },
   confirmBtnText: { fontWeight: '700', color: '#fff', fontSize: 16 },
+  modalOverlay: {
+  position: 'absolute',
+  top: 0, left: 0, right: 0, bottom: 0,
+  backgroundColor: 'rgba(0,0,0,0.5)',
+  alignItems: 'center',
+  justifyContent: 'center',
+  zIndex: 999,
+},
+modalBox: {
+  backgroundColor: '#fff',
+  borderRadius: 16,
+  padding: 24,
+  marginHorizontal: 32,
+  width: '85%',
+},
+modalTitle: {
+  fontSize: 17,
+  fontWeight: 'bold',
+  color: '#222',
+  marginBottom: 10,
+},
+modalMessage: {
+  fontSize: 14,
+  color: '#555',
+  lineHeight: 22,
+  marginBottom: 24,
+},
+modalButtons: {
+  flexDirection: 'row',
+  gap: 10,
+},
+modalBtnCancel: {
+  flex: 1,
+  paddingVertical: 12,
+  borderRadius: 10,
+  backgroundColor: '#eee',
+  alignItems: 'center',
+},
+modalBtnCancelText: {
+  color: '#555',
+  fontWeight: '600',
+  fontSize: 14,
+},
+modalBtnConfirm: {
+  flex: 1,
+  paddingVertical: 12,
+  borderRadius: 10,
+  backgroundColor: GREEN,
+  alignItems: 'center',
+},
+modalBtnConfirmText: {
+  color: '#fff',
+  fontWeight: '600',
+  fontSize: 14,
+},
 });

@@ -19,9 +19,10 @@ const COLORS = {
   red: '#e53935',
 };
 
-function CartSheet({ visible, cart, onClose, onAdd, onRemove, onDelete }) {
-  const total = cart.reduce((sum, item) => sum + (item.preco || item.price || 0) * item.qty, 0);
-  const itemCount = cart.reduce((sum, i) => sum + i.qty, 0);
+function CartSheet({ visible, cart = [], onClose, onAdd, onRemove, onDelete, onCheckout }) {
+  const safeCart = cart ?? [];
+  const total = safeCart.reduce((sum, item) => sum + (item.preco || item.price || 0) * item.qty, 0);
+  const itemCount = safeCart.reduce((sum, i) => sum + i.qty, 0);
 
   if (!visible) return null;
 
@@ -97,7 +98,7 @@ function CartSheet({ visible, cart, onClose, onAdd, onRemove, onDelete }) {
                 <Text style={styles.totalLabel}>Total</Text>
                 <Text style={styles.totalValue}>R$ {total.toFixed(2)}</Text>
               </View>
-              <TouchableOpacity style={styles.checkoutBtn} activeOpacity={0.85}>
+                <TouchableOpacity style={styles.checkoutBtn} onPress={onCheckout} activeOpacity={0.85}>
                 <LinearGradient colors={[COLORS.green, COLORS.greenLight]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.checkoutGradient}>
                   <Text style={styles.checkoutBtnText}>Finalizar Compra</Text>
                   <View style={styles.checkoutArrow}>

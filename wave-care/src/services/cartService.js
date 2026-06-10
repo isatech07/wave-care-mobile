@@ -1,10 +1,10 @@
 import api from './api';
 
 export const cartService = {
-  async addItem(productId, quantity = 1) {
-    const { data } = await api.post('/cart', { productId, quantity });
-    return data;
-  },
+async addItem(userId, productId, quantity = 1) {
+  const { data } = await api.post('/cart', { userId, productId, quantity });
+  return data;
+},
 
   async getCart(userId) {
     const { data } = await api.get(`/cart/${userId}`);
