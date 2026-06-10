@@ -251,14 +251,11 @@ function Toast({ visible, message, icon }) {
 }
 
 export default function SummerScreen() {
-  const { getBySeason, loading } = useProducts();
-  if (loading) return null;
-
+ const { getBySeason, loading } = useProducts();
   const router = useRouter();
   const scrollViewRef = useRef(null);
-  const { user, toggleFavorite} = useUser();
+  const { user, toggleFavorite } = useUser();
   const { items, addItem, decreaseItem, removeItem, fetchCart } = useCartStore();
-  const seasonProducts = getBySeason('verao');
   const [activeFilter, setActiveFilter] = useState('todos');
   const [benefitIndex, setBenefitIndex] = useState(0);
   const [cartVisible, setCartVisible] = useState(false);
@@ -277,107 +274,101 @@ export default function SummerScreen() {
     []
   );
 
-  const [fontsLoaded] = useFonts({
-    PlayfairDisplay_700Bold,
-    PlayfairDisplay_800ExtraBold,
-    Poppins_400Regular,
-    Poppins_500Medium,
-    Poppins_600SemiBold,
-    Poppins_700Bold,
-  });
-
-  const badgeAnim = useFadeSlide(60,  0);
-  const titleAnim = useFadeSlide(180, 36);
-  const subAnim   = useFadeSlide(340, 20);
-  useEffect(() => {
-    scrollViewRef.current?.scrollTo({ y: 0, animated: false });
-  }, []);
-
-useEffect(() => {
-    if (user?.id && !user.guest) {
-      fetchCart(user.id);
-    }
-  }, [user?.id]);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setBenefitIndex((prev) => (prev + 1) % summerBenefits.length);
-    }, 3500);
-
-    return () => clearInterval(interval);
-  }, [summerBenefits.length]);
-
-  const showToast = useCallback((message, icon = 'checkmark-circle') => {
-    if (toastTimeout.current) clearTimeout(toastTimeout.current);
-    setToastMessage(message);
-    setToastIcon(icon);
-    setToastVisible(true);
-    toastTimeout.current = setTimeout(() => setToastVisible(false), 2200);
-  }, []);
-
-  const handleAddToCart = useCallback((product) => {
-    if (!user?.id || user.guest) {
-      showToast('Faça login para adicionar ao carrinho', 'log-in-outline');
-      return;
-    }
-    
-    // usa p.id numérico — não o nome
-    const productId = product.id;
-    if (!productId) {
-      showToast('Produto inválido', 'alert-circle-outline');
-      return;
-    }
-    
-    addItem(user.id, productId);
-    showToast((product.name || product.nome) + ' adicionado!', 'cart-outline');
-  }, [user, addItem, showToast]);
-
-  const handleRemoveFromCart = useCallback((cartItemId) => {
-    const item = items.find(i => i.id === cartItemId || i.product?.name === cartItemId);
-    if (!item) return;
-    decreaseItem(user.id, item.id, item.quantity);
-  }, [items, user, decreaseItem]);
-
-  const handleDeleteFromCart = useCallback((cartItemId) => {
-    const item = items.find(i => i.id === cartItemId || i.product?.name === cartItemId);
-    if (!item) return;
-    removeItem(user.id, item.id);
-  }, [items, user, removeItem]);
-
-  const handleToggleFavorite = useCallback(async (product) => {
-    if (!user || user.guest) {
-      showToast('Faça login para favoritar produtos', 'log-in-outline');
-      setTimeout(() => {
-        router.push('/login');
-      }, 1500);
-      return;
-    }
-
-    const wasAdded = await toggleFavorite(product);
-
-    if (wasAdded) {
-      showToast(product.name + ' adicionado aos favoritos', 'heart');
-    } else {
-      showToast(product.name + ' removido dos favoritos', 'heart-dislike-outline');
-    }
-  }, [user, toggleFavorite, showToast, router]);
-
-  if (!fontsLoaded) return null;
-
-  const cartForSheet = items.map(i => {
-  const localProduct = seasonProducts.find(p => p.id === i.productId || p.name === i.product?.name);
+ const [fontsLoaded] = useFonts({
+      PlayfairDisplay_700Bold,
+      PlayfairDisplay_800ExtraBold,
+      Poppins_400Regular,
+      Poppins_500Medium,
+      Poppins_600SemiBold,
+      Poppins_700Bold,
+    });
   
-  return {
-    id:        i.id,
-    name:      i.product?.name ?? '',
-    nome:      i.product?.name ?? '',
-    price:     i.product?.price ?? 0,
-    preco:     i.product?.price ?? 0,
-    image:     localProduct?.imageSource ?? null,
-    categoria: i.product?.category ?? 'Produto',
-    qty:       i.quantity,
-  };
-});
+    const badgeAnim = useFadeSlide(60, 0);
+    const titleAnim = useFadeSlide(180, 36);
+    const subAnim = useFadeSlide(340, 20);
+  
+    useEffect(() => {
+      scrollViewRef.current?.scrollTo({ y: 0, animated: false });
+    }, []);
+  
+    useEffect(() => {
+      if (user?.id && !user.guest) {
+        fetchCart(user.id);
+      }
+    }, [user?.id]);
+  
+    useEffect(() => {
+      const interval = setInterval(() => {
+        setBenefitIndex((prev) => (prev + 1) % autumnBenefits.length);
+      }, 3500);
+      return () => clearInterval(interval);
+    }, [autumnBenefits.length]);
+  
+    const showToast = useCallback((message, icon = 'checkmark-circle') => {
+      if (toastTimeout.current) clearTimeout(toastTimeout.current);
+      setToastMessage(message);
+      setToastIcon(icon);
+      setToastVisible(true);
+      toastTimeout.current = setTimeout(() => setToastVisible(false), 2200);
+    }, []);
+  
+    const handleAddToCart = useCallback((product) => {
+      if (!user?.id || user.guest) {
+        showToast('Faça login para adicionar ao carrinho', 'log-in-outline');
+        return;
+      }
+      const productId = product.id;
+      if (!productId) {
+        showToast('Produto inválido', 'alert-circle-outline');
+        return;
+      }
+      addItem(user.id, productId);
+      showToast((product.name || product.nome) + ' adicionado!', 'cart-outline');
+    }, [user, addItem, showToast]);
+  
+    const handleRemoveFromCart = useCallback((cartItemId) => {
+      const item = items.find(i => i.id === cartItemId || i.product?.name === cartItemId);
+      if (!item) return;
+      decreaseItem(user.id, item.id, item.quantity);
+    }, [items, user, decreaseItem]);
+  
+    const handleDeleteFromCart = useCallback((cartItemId) => {
+      const item = items.find(i => i.id === cartItemId || i.product?.name === cartItemId);
+      if (!item) return;
+      removeItem(user.id, item.id);
+    }, [items, user, removeItem]);
+  
+    const handleToggleFavorite = useCallback(async (product) => {
+      if (!user || user.guest) {
+        showToast('Faça login para favoritar produtos', 'log-in-outline');
+        setTimeout(() => router.push('/login'), 1500);
+        return;
+      }
+      const wasAdded = await toggleFavorite(product);
+      if (wasAdded) {
+        showToast(product.name + ' adicionado aos favoritos', 'heart');
+      } else {
+        showToast(product.name + ' removido dos favoritos', 'heart-dislike-outline');
+      }
+    }, [user, toggleFavorite, showToast, router]);
+  
+    if (loading || !fontsLoaded) return null;
+  
+    const seasonProducts = getBySeason('outono');
+  
+    const cartForSheet = items.map(i => {
+      const localProduct = seasonProducts.find(p => p.id === i.productId || p.name === i.product?.name);
+      return {
+        id:        i.id,
+        name:      i.product?.name ?? '',
+        nome:      i.product?.name ?? '',
+        price:     i.product?.price ?? 0,
+        preco:     i.product?.price ?? 0,
+        image:     localProduct?.imageSource ?? null,
+        categoria: i.product?.category ?? 'Produto',
+        qty:       i.quantity,
+      };
+    });
 
   return (
     <SafeAreaView style={styles.safe}>

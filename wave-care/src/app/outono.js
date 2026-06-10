@@ -16,6 +16,7 @@ import { useRouter } from 'expo-router';
 import { useUser } from '../contexts/UserContext';
 import { useProducts } from '../contexts/ProductContext';
 import CartSheet from '../components/CartSheet';
+import { useCartStore } from '../stores/useCartStore';
 import {
   useFonts,
   PlayfairDisplay_700Bold,
@@ -121,21 +122,21 @@ function BenefitChip({ iconName, text }) {
   );
 }
 
-function ProductCard({ name, desc, price, oldPrice, stars, reviews, highlight, image, delay, onAddToCart, isFavorite, onToggleFavorite }) {
+function ProductCard({ name, desc, price, oldPrice, stars, reviews, highlight, image, delay, productId, onAddToCart, isFavorite, onToggleFavorite }) {
   const anim = useFadeSlide(delay, 20);
 
   return (
     <Animated.View style={[styles.productCard, highlight && styles.productCardHighlight, anim]}>
       <View style={[styles.productThumb, highlight && styles.productThumbHighlight]}>
         {image ? (
-          <Image source={{ uri: image.uri || image }} style={styles.productImage} resizeMode="cover" />
+          <Image source={image} style={styles.productImage} resizeMode="cover" />
         ) : (
           <View style={styles.productImagePlaceholder}>
             <Ionicons name="image-outline" size={44} color={C.mutedLight} />
           </View>
         )}
 
-        <TouchableOpacity style={styles.favBtn} onPress={() => onToggleFavorite && onToggleFavorite({ id: name, name: name, preco: parseFloat(price.replace('R$ ', '').replace(',', '.')), image, categoria: 'Produto', estacao: 'Outono' })} activeOpacity={0.8}>
+        <TouchableOpacity style={styles.favBtn} onPress={() => onToggleFavorite && onToggleFavorite({ id: name, nome: name, preco: parseFloat(price?.replace('R$ ', '').replace(',', '.') ?? '0'), image, categoria: 'Produto', estacao: 'Outono' })} activeOpacity={0.8}>
           <Ionicons name={isFavorite ? 'heart' : 'heart-outline'} size={18} color={isFavorite ? '#E53E3E' : C.muted} />
         </TouchableOpacity>
 
@@ -161,10 +162,10 @@ function ProductCard({ name, desc, price, oldPrice, stars, reviews, highlight, i
             <Text style={styles.productPrice}>{price}</Text>
           </View>
           <View style={styles.productActions}>
-            <TouchableOpacity style={styles.cartBtn} onPress={() => onAddToCart && onAddToCart({ name, price, image })} activeOpacity={0.8}>
+            <TouchableOpacity style={styles.cartBtn} onPress={() => onAddToCart && onAddToCart({ id: productId, name, price, image })} activeOpacity={0.8}>
               <Ionicons name="cart-outline" size={18} color={C.accent} />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.buyBtn} onPress={() => onAddToCart && onAddToCart({ name, price, image })} activeOpacity={0.8}>
+            <TouchableOpacity style={styles.buyBtn} onPress={() => onAddToCart && onAddToCart({ id: productId, name, price, image })} activeOpacity={0.8}>
               <Text style={styles.buyBtnText}>Comprar</Text>
             </TouchableOpacity>
           </View>
@@ -174,14 +175,14 @@ function ProductCard({ name, desc, price, oldPrice, stars, reviews, highlight, i
   );
 }
 
-function ProductCardSmall({ name, price, stars, reviews, image, delay, type, onAddToCart, isFavorite, onToggleFavorite }) {
+function ProductCardSmall({ name, price, stars, reviews, image, delay, type, productId, onAddToCart, isFavorite, onToggleFavorite }) {
   const anim = useFadeSlide(delay, 20);
 
   return (
     <Animated.View style={[styles.productCardSmall, anim]}>
       <View style={styles.productThumbSmall}>
         {image ? (
-          <Image source={{ uri: image.uri || image }} style={styles.productImageSmall} resizeMode="cover" />
+          <Image source={image} style={styles.productImageSmall} resizeMode="cover" />
         ) : (
           <View style={styles.productImagePlaceholder}>
             <Ionicons name="image-outline" size={32} color={C.mutedLight} />
@@ -202,10 +203,10 @@ function ProductCardSmall({ name, price, stars, reviews, image, delay, type, onA
         <Text style={styles.productPriceSmall}>{price}</Text>
 
         <View style={styles.smallCardActions}>
-          <TouchableOpacity style={styles.smallCartBtn} onPress={() => onAddToCart && onAddToCart({ name, price, image })} activeOpacity={0.8}>
+          <TouchableOpacity style={styles.smallCartBtn} onPress={() => onAddToCart && onAddToCart({ id: productId, name, price, image })} activeOpacity={0.8}>
             <Ionicons name="cart-outline" size={16} color={C.accent} />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.buyBtnFull} onPress={() => onAddToCart && onAddToCart({ name, price, image })} activeOpacity={0.8}>
+          <TouchableOpacity style={styles.buyBtnFull} onPress={() => onAddToCart && onAddToCart({ id: productId, name, price, image })} activeOpacity={0.8}>
             <Text style={styles.buyBtnText}>Comprar</Text>
           </TouchableOpacity>
         </View>
@@ -251,12 +252,10 @@ function Toast({ visible, message, icon }) {
 
 export default function AutumnScreen() {
   const { getBySeason, loading } = useProducts();
-  if (loading) return null;
-
   const router = useRouter();
   const scrollViewRef = useRef(null);
-  const { user, toggleFavorite, cart, addToCart, removeFromCart, deleteFromCart } = useUser();
-  const seasonProducts = getBySeason('outono');
+  const { user, toggleFavorite } = useUser();
+  const { items, addItem, decreaseItem, removeItem, fetchCart } = useCartStore();
   const [activeFilter, setActiveFilter] = useState('todos');
   const [benefitIndex, setBenefitIndex] = useState(0);
   const [cartVisible, setCartVisible] = useState(false);
@@ -287,15 +286,21 @@ export default function AutumnScreen() {
   const badgeAnim = useFadeSlide(60, 0);
   const titleAnim = useFadeSlide(180, 36);
   const subAnim = useFadeSlide(340, 20);
+
   useEffect(() => {
     scrollViewRef.current?.scrollTo({ y: 0, animated: false });
   }, []);
 
   useEffect(() => {
+    if (user?.id && !user.guest) {
+      fetchCart(user.id);
+    }
+  }, [user?.id]);
+
+  useEffect(() => {
     const interval = setInterval(() => {
       setBenefitIndex((prev) => (prev + 1) % autumnBenefits.length);
     }, 3500);
-
     return () => clearInterval(interval);
   }, [autumnBenefits.length]);
 
@@ -308,50 +313,38 @@ export default function AutumnScreen() {
   }, []);
 
   const handleAddToCart = useCallback((product) => {
-    const priceNum = typeof product.price === 'string' 
-      ? parseFloat(product.price.replace('R$ ', '').replace(',', '.'))
-      : (product.price || 0);
-    
-    const productWithPrice = {
-      ...product,
-      preco: priceNum,
-      price: priceNum,
-      nome: product.name,
-      categoria: 'Produto',
-      id: product.name
-    };
-    
-    setCart(prev => {
-      const existing = prev.find(i => i.name === product.name);
-      if (existing) return prev.map(i => i.name === product.name ? { ...i, qty: i.qty + 1 } : i);
-      return [...prev, { ...productWithPrice, qty: 1 }];
-    });
-    showToast(product.name + ' adicionado!', 'cart-outline');
-  }, [showToast]);
+    if (!user?.id || user.guest) {
+      showToast('Faça login para adicionar ao carrinho', 'log-in-outline');
+      return;
+    }
+    const productId = product.id;
+    if (!productId) {
+      showToast('Produto inválido', 'alert-circle-outline');
+      return;
+    }
+    addItem(user.id, productId);
+    showToast((product.name || product.nome) + ' adicionado!', 'cart-outline');
+  }, [user, addItem, showToast]);
 
-  const handleRemoveFromCart = useCallback((id) => {
-    setCart(prev => {
-      const existing = prev.find(i => i.name === id || i.id === id);
-      if (existing && existing.qty === 1) return prev.filter(i => i.name !== id && i.id !== id);
-      return prev.map(i => i.name === id || i.id === id ? { ...i, qty: i.qty - 1 } : i);
-    });
-  }, []);
+  const handleRemoveFromCart = useCallback((cartItemId) => {
+    const item = items.find(i => i.id === cartItemId || i.product?.name === cartItemId);
+    if (!item) return;
+    decreaseItem(user.id, item.id, item.quantity);
+  }, [items, user, decreaseItem]);
 
-  const handleDeleteFromCart = useCallback((id) => {
-    setCart(prev => prev.filter(i => i.name !== id && i.id !== id));
-  }, []);
+  const handleDeleteFromCart = useCallback((cartItemId) => {
+    const item = items.find(i => i.id === cartItemId || i.product?.name === cartItemId);
+    if (!item) return;
+    removeItem(user.id, item.id);
+  }, [items, user, removeItem]);
 
   const handleToggleFavorite = useCallback(async (product) => {
     if (!user || user.guest) {
       showToast('Faça login para favoritar produtos', 'log-in-outline');
-      setTimeout(() => {
-        router.push('/login');
-      }, 1500);
+      setTimeout(() => router.push('/login'), 1500);
       return;
     }
-
     const wasAdded = await toggleFavorite(product);
-
     if (wasAdded) {
       showToast(product.name + ' adicionado aos favoritos', 'heart');
     } else {
@@ -359,7 +352,24 @@ export default function AutumnScreen() {
     }
   }, [user, toggleFavorite, showToast, router]);
 
-  if (!fontsLoaded) return null;
+  // ← todos os returns condicionais só aqui, depois de todos os hooks
+  if (loading || !fontsLoaded) return null;
+
+  const seasonProducts = getBySeason('outono');
+
+  const cartForSheet = items.map(i => {
+    const localProduct = seasonProducts.find(p => p.id === i.productId || p.name === i.product?.name);
+    return {
+      id:        i.id,
+      name:      i.product?.name ?? '',
+      nome:      i.product?.name ?? '',
+      price:     i.product?.price ?? 0,
+      preco:     i.product?.price ?? 0,
+      image:     localProduct?.imageSource ?? null,
+      categoria: i.product?.category ?? 'Produto',
+      qty:       i.quantity,
+    };
+  });
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -423,6 +433,7 @@ export default function AutumnScreen() {
           </Text>
           <ProductCard
             name="Kit Autumn Total Nutrition"
+            productId={seasonProducts.find(p => p.name === 'Kit Autumn Total Nutrition')?.id}
             desc="Kit completo com shampoo, condicionador, máscara e óleo nutritivo para dias frios"
             price="R$ 229,90"
             oldPrice="R$ 249,90"
@@ -467,8 +478,8 @@ export default function AutumnScreen() {
           <View style={styles.productsGrid}>
             {seasonProducts
               .filter((p) => activeFilter === 'todos' || (p.categoria?.toLowerCase() === 'produtos' ? 'produto' : p.categoria?.toLowerCase()) === activeFilter)
-              .map((p) => {
-                const delay = 150;
+              .map((p, i) => {
+                const delay = 100 + (i * 50);
                 const type = p.categoria?.toLowerCase() === 'produtos' ? 'produto' : p.categoria?.toLowerCase();
                 return (
                   <ProductCardSmall 
@@ -481,6 +492,7 @@ export default function AutumnScreen() {
                     image={p.imageSource}
                     delay={delay}
                     type={p.category}
+                    productId={p.id}
                     onAddToCart={handleAddToCart}
                     isFavorite={user?.favorites?.some(f => f.id === p.id)}
                     onToggleFavorite={handleToggleFavorite}
@@ -533,19 +545,25 @@ export default function AutumnScreen() {
         onPress={() => setCartVisible(true)}
       >
         <Ionicons name="cart-outline" size={22} color="#FFFFFF" />
-        {cart.reduce((sum, i) => sum + i.qty, 0) > 0 && (
+        {items.reduce((sum, i) => sum + i.quantity, 0) > 0 && (
           <View style={styles.cartBadge}>
-            <Text style={styles.cartBadgeText}>{cart.reduce((sum, i) => sum + i.qty, 0)}</Text>
+            <Text style={styles.cartBadgeText}>
+              {items.reduce((sum, i) => sum + i.quantity, 0)}
+            </Text>
           </View>
         )}
       </TouchableOpacity>
       <CartSheet
         visible={cartVisible}
-        cart={cart}
+        cart={cartForSheet}
         onClose={() => setCartVisible(false)}
         onAdd={handleAddToCart}
         onRemove={handleRemoveFromCart}
         onDelete={handleDeleteFromCart}
+        onCheckout={() => {
+          setCartVisible(false);
+          router.push('/pagamento');
+        }}
       />
     </SafeAreaView>
   );

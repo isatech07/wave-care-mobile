@@ -32,15 +32,15 @@ export default function Pagamento() {
     setModal({ visible: true });
   };
 
-  const handleFinalize = async () => {
-    setModal({ visible: false });
-    try {
-      await createOrder(user.id);
-      router.replace('/(tabs)');
-    } catch (e) {
-      console.log('[pagamento] erro:', e.message);
-    }
-  };
+const handleFinalize = async () => {
+  setModal({ visible: false });
+  try {
+    await createOrder(user.id);
+    router.replace('/(tabs)/home');  // ← rota completa
+  } catch (e) {
+    console.log('[pagamento] erro:', e.message);
+  }
+};
 
   return (
     <SafeAreaView style={styles.safe}>

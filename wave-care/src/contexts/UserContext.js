@@ -42,35 +42,18 @@ export function UserProvider({ children }) {
     }
   };
 
-  const login = async (userData) => {
+  const login = async (userData, token) => {
     try {
       await AsyncStorage.removeItem('wavecare_user');
-
-      const { data } = await getUserById(userData.id);
-
-      const fullUser = {
-        ...userData,
-        ...data,
-      };
-
+      const { data } = await getUserById(userData.id, token);
+      const fullUser = { ...userData, ...data };
       setUser(fullUser);
-
-      await AsyncStorage.setItem(
-        'wavecare_user',
-        JSON.stringify(fullUser)
-      );
+      await AsyncStorage.setItem('wavecare_user', JSON.stringify(fullUser));
+      console.log('[login] usuário autenticado:', fullUser.email);
     } catch (error) {
-      console.log(
-        '[login] usando dados retornados pelo login:',
-        error?.message
-      );
-
+      console.log('[login] usando dados básicos do login:', error?.message);
       setUser(userData);
-
-      await AsyncStorage.setItem(
-        'wavecare_user',
-        JSON.stringify(userData)
-      );
+      await AsyncStorage.setItem('wavecare_user', JSON.stringify(userData));
     }
   };
 

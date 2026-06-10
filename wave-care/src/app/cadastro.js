@@ -49,38 +49,36 @@ export default function Cadastro() {
 
   if (!fontsLoaded) return null; 
 
-  const handleCadastro = async () => { 
-    if (!nome.trim() || !email.trim() || !senha.trim()) {
-      Alert.alert('Atenção', 'Preencha todos os campos para criar sua conta.');
-      return;
-    }
+  const handleCadastro = async () => {
+  if (!nome.trim() || !email.trim() || !senha.trim()) {
+    Alert.alert('Atenção', 'Preencha todos os campos para criar sua conta.');
+    return;
+  }
 
-    setLoading(true);
-    loadProgress.value = withTiming(100, { duration: 1500 });
-      try {
-        const data = await authService.register(nome.trim(), email.trim(), senha.trim());
-        const newUser = { ...data.user || data, favorites: [] };
-        await login(newUser);
+  setLoading(true);
+  loadProgress.value = withTiming(100, { duration: 1500 });
 
-        setTimeout(() => {
-          setLoading(false);
-          router.replace('/(tabs)/home');
-        }, 1800);
-      } 
-      
-     catch (e) {
-  console.log('STATUS:', e.response?.status);
-  console.log('DATA:', e.response?.data);
-  console.log('ERRO:', e);
+  try {
+    await authService.register(nome.trim(), email.trim(), senha.trim());
+    const loginData = await authService.login(email.trim(), senha.trim());
+    console.log('[cadastro] conta criada e autenticada:', loginData.user?.email);
+    const newUser = { ...loginData.user, favorites: [] };
+    await login(newUser, loginData.access_token);
 
-  Alert.alert(
-    'Erro',
-    JSON.stringify(e.response?.data || e.message)
-  );
+    setTimeout(() => {
+      setLoading(false);
+      router.replace('/(tabs)/home');
+    }, 1800);
 
-  setLoading(false);
-}
-  };
+  } catch (e) {
+    console.log('STATUS:', e.response?.status);
+    console.log('DATA:', e.response?.data);
+    console.log('ERRO:', e);
+
+    Alert.alert('Erro', JSON.stringify(e.response?.data || e.message));
+    setLoading(false);
+  }
+};
 
   return (
     <View style={styles.container}>

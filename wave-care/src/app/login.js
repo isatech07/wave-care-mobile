@@ -65,7 +65,7 @@ export default function Login() {
     buttonWidth.value     = withSpring(width * 0.8);
   };
 
-  const handleLogin = async () => {
+const handleLogin = async () => {
   if (loading) return;
 
   if (!email.trim() || !senha.trim()) {
@@ -74,34 +74,25 @@ export default function Login() {
   }
 
   setLoading(true);
-
   buttonWidth.value = withSpring(width * 0.7);
-
   loadingProgress.value = withTiming(100, {
     duration: 2000,
     easing: Easing.bezier(0.4, 0, 0.2, 1),
   });
 
   try {
-    const data = await authService.login(
-      email.trim(),
-      senha
-    );
+    const data = await authService.login(email.trim(), senha);
+    console.log('[login] autenticado como:', data.user?.email, '| role:', data.user?.role);
+    await login({ ...data.user, favorites: [] }, data.access_token);
 
-    console.log('LOGIN RESPONSE:', data);
-    console.log('USER:', data.user);
-    console.log('EMAIL:', data.user?.email);
-    console.log('ROLE:', data.user?.role);
+    if (data.user?.email?.toLowerCase() === 'admin@wavecare.com') {
+      router.replace('/admin/dashboard');
+    } else {
+      router.replace('/(tabs)/home');
+}
+    await login({ ...data.user, favorites: [] }, data.access_token); // ← só uma vez, com token
 
-    await login({
-      ...data.user,
-      favorites: [],
-    });
-
-    if (
-      data.user?.email?.toLowerCase() ===
-      'admin@wavecare.com'
-    ) {
+    if (data.user?.email?.toLowerCase() === 'admin@wavecare.com') {
       router.replace('/admin/dashboard');
     } else {
       router.replace('/(tabs)/home');
@@ -115,12 +106,7 @@ export default function Login() {
     setLoading(false);
     loadingProgress.value = 0;
 
-    Alert.alert(
-      'Erro',
-      JSON.stringify(
-        e.response?.data || e.message
-      )
-    );
+    Alert.alert('Erro', JSON.stringify(e.response?.data || e.message));
   }
 };
 
