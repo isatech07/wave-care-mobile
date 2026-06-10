@@ -66,11 +66,20 @@ export default function Cadastro() {
           setLoading(false);
           router.replace('/(tabs)/home');
         }, 1800);
-      } catch (e) {
-        setLoading(false);
-        loadProgress.value = 0;
-        Alert.alert('Erro', 'Não foi possível criar a conta. Tente novamente.');
-      }
+      } 
+      
+     catch (e) {
+  console.log('STATUS:', e.response?.status);
+  console.log('DATA:', e.response?.data);
+  console.log('ERRO:', e);
+
+  Alert.alert(
+    'Erro',
+    JSON.stringify(e.response?.data || e.message)
+  );
+
+  setLoading(false);
+}
   };
 
   return (

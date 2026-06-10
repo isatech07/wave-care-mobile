@@ -66,31 +66,63 @@ export default function Login() {
   };
 
   const handleLogin = async () => {
-    if (loading) return;
+  if (loading) return;
 
-    if (!email.trim() || !senha.trim()) {
-      Alert.alert('Atenção', 'Preencha e-mail e senha.');
-      return;
-    }
+  if (!email.trim() || !senha.trim()) {
+    Alert.alert('Atenção', 'Preencha e-mail e senha.');
+    return;
+  }
 
-    setLoading(true);
-    buttonWidth.value     = withSpring(width * 0.7);
-    loadingProgress.value = withTiming(100, {
-      duration: 2000,
-      easing: Easing.bezier(0.4, 0, 0.2, 1),
+  setLoading(true);
+
+  buttonWidth.value = withSpring(width * 0.7);
+
+  loadingProgress.value = withTiming(100, {
+    duration: 2000,
+    easing: Easing.bezier(0.4, 0, 0.2, 1),
+  });
+
+  try {
+    const data = await authService.login(
+      email.trim(),
+      senha
+    );
+
+    console.log('LOGIN RESPONSE:', data);
+    console.log('USER:', data.user);
+    console.log('EMAIL:', data.user?.email);
+    console.log('ROLE:', data.user?.role);
+
+    await login({
+      ...data.user,
+      favorites: [],
     });
 
-    try {
-      const data = await authService.login(email.trim(), senha);
-      await login({ ...data.user, favorites: [] });
-      setTimeout(() => router.replace('/(tabs)/home'), 2200);
-    } catch (e) {
-      console.log('erro status:', e.response?.status);
-      console.log('erro data:', e.response?.data);
-      Alert.alert('Erro', 'E-mail ou senha incorretos.');
-      resetButton();
+    if (
+      data.user?.email?.toLowerCase() ===
+      'admin@wavecare.com'
+    ) {
+      router.replace('/admin/dashboard');
+    } else {
+      router.replace('/(tabs)/home');
     }
-  };
+
+  } catch (e) {
+    console.log('STATUS:', e.response?.status);
+    console.log('DATA:', e.response?.data);
+    console.log('ERRO COMPLETO:', e);
+
+    setLoading(false);
+    loadingProgress.value = 0;
+
+    Alert.alert(
+      'Erro',
+      JSON.stringify(
+        e.response?.data || e.message
+      )
+    );
+  }
+};
 
   return (
     <KeyboardAvoidingView
