@@ -36,7 +36,7 @@ const handleFinalize = async () => {
   setModal({ visible: false });
   try {
     await createOrder(user.id);
-    router.replace('/(tabs)/home');  // ← rota completa
+    router.replace('/(tabs)/home');  
   } catch (e) {
     console.log('[pagamento] erro:', e.message);
   }

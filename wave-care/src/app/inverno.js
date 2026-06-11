@@ -254,7 +254,7 @@ function Toast({ visible, message, icon }) {
 }
 
 export default function WinterScreen() {
-  const { getBySeason, loading } = useProducts();
+  const { getBySeason, products, loading } = useProducts();
   const router = useRouter();
   const scrollViewRef = useRef(null);
   const { user, toggleFavorite } = useUser();
@@ -302,10 +302,10 @@ export default function WinterScreen() {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setBenefitIndex((prev) => (prev + 1) % autumnBenefits.length);
+      setBenefitIndex((prev) => (prev + 1) % winterBenefits.length);
     }, 3500);
     return () => clearInterval(interval);
-  }, [autumnBenefits.length]);
+  }, [winterBenefits.length]);
 
   const showToast = useCallback((message, icon = 'checkmark-circle') => {
     if (toastTimeout.current) clearTimeout(toastTimeout.current);
@@ -315,19 +315,19 @@ export default function WinterScreen() {
     toastTimeout.current = setTimeout(() => setToastVisible(false), 2200);
   }, []);
 
-  const handleAddToCart = useCallback((product) => {
-    if (!user?.id || user.guest) {
-      showToast('Faça login para adicionar ao carrinho', 'log-in-outline');
-      return;
-    }
-    const productId = product.id;
-    if (!productId) {
-      showToast('Produto inválido', 'alert-circle-outline');
-      return;
-    }
-    addItem(user.id, productId);
-    showToast((product.name || product.nome) + ' adicionado!', 'cart-outline');
-  }, [user, addItem, showToast]);
+const handleAddToCart = useCallback((product) => {
+  if (!user?.id || user.guest) {
+    showToast('Faça login para adicionar ao carrinho', 'log-in-outline');
+    return;
+  }
+  const productId = product.productId ?? product.id;
+  if (!productId) {
+    showToast('Produto inválido', 'alert-circle-outline');
+    return;
+  }
+  addItem(user.id, productId);
+  showToast((product.name || product.nome) + ' adicionado!', 'cart-outline');
+}, [user, addItem, showToast]);
 
   const handleRemoveFromCart = useCallback((cartItemId) => {
     const item = items.find(i => i.id === cartItemId || i.product?.name === cartItemId);
@@ -357,22 +357,22 @@ export default function WinterScreen() {
 
   if (loading || !fontsLoaded) return null;
 
-  const seasonProducts = getBySeason('outono');
+  const seasonProducts = getBySeason('inverno');
 
-  const cartForSheet = items.map(i => {
-    const localProduct = seasonProducts.find(p => p.id === i.productId || p.name === i.product?.name);
-    return {
-      id:        i.id,
-      name:      i.product?.name ?? '',
-      nome:      i.product?.name ?? '',
-      price:     i.product?.price ?? 0,
-      preco:     i.product?.price ?? 0,
-      image:     localProduct?.imageSource ?? null,
-      categoria: i.product?.category ?? 'Produto',
-      qty:       i.quantity,
-    };
-  });
-
+const cartForSheet = items.map(i => {
+  const localProduct = products.find(p => p.id === i.productId || p.name === i.product?.name);
+  return {
+    id:        i.id,          // id do CartItem (usado para update/remove)
+    productId: i.productId,   // id real do Produto (usado para o "+")
+    name:      i.product?.name ?? '',
+    nome:      i.product?.name ?? '',
+    price:     i.product?.price ?? 0,
+    preco:     i.product?.price ?? 0,
+    image:     localProduct?.imageSource ?? null,
+    categoria: i.product?.category ?? 'Produto',
+    qty:       i.quantity,
+  };
+});
   return (
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="dark-content" backgroundColor={C.bg} />

@@ -9,6 +9,7 @@ import {
   SafeAreaView,
   Image,
   Alert,
+  ActivityIndicator
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -16,9 +17,32 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useUser } from '../../contexts/UserContext';
 import { useOrderStore } from '../../stores/useOrderStore';
 import { useRouter } from 'expo-router';
+import { getMyQuizResult } from '../../services/quizService';
+
 
 const TABS = ['dados', 'pedidos', 'favoritos', 'capilar', 'configuracoes'];
 const GREEN = '#2D5A45';
+
+const DIAGNOSIS_LABELS = {
+  hydration:      'Hidratação Intensiva',
+  reconstruction: 'Reconstrução Capilar',
+  nutrition:      'Nutrição Profunda',
+  maintenance:    'Manutenção Preventiva',
+};
+
+const HAIR_TYPE_LABELS = {
+  liso:      'Liso',
+  ondulado:  'Ondulado',
+  cacheado:  'Cacheado',
+  crespo:    'Crespo',
+};
+
+const SEASON_LABELS = {
+  verao:     'Verão',
+  outono:    'Outono',
+  inverno:   'Inverno',
+  primavera: 'Primavera',
+};
 
 export default function perfil() {
   const { user, logout, updateUser, deleteAccount } = useUser();
@@ -42,6 +66,37 @@ export default function perfil() {
       fetchOrders(user.id);
     }
   }, [user?.id]);
+
+  const [quizResult,        setQuizResult]        = useState(null);
+  const [quizLoading,       setQuizLoading]       = useState(false);
+
+  useEffect(() => {
+  if (!user || user.guest) return;
+  loadQuizResult();
+}, [user?.id]);
+
+const loadQuizResult = async () => {
+  setQuizLoading(true);
+  try {
+    const cached = await AsyncStorage.getItem('wavecare_quiz_result');
+    if (cached) setQuizResult(JSON.parse(cached));
+
+    const remote = await getMyQuizResult();
+    if (remote) {
+      setQuizResult(remote);
+      await AsyncStorage.setItem('wavecare_quiz_result', JSON.stringify(remote));
+    }
+  } catch (err) {
+    console.log('Nenhum resultado de quiz encontrado:', err?.message);
+  } finally {
+    setQuizLoading(false);
+  }
+};
+
+useEffect(() => {
+  if (!user || user.guest) return;
+  loadQuizResult();
+}, [user?.id]);
 
   // ─── Tela de convidado ────────────────────────────────────────────────────
   if (!user || user.guest) {
@@ -341,47 +396,89 @@ export default function perfil() {
   };
 
   // ─── Aba Capilar ─────────────────────────────────────────────────────────
-  const renderCapilarTab = () => (
-    <View style={styles.card}>
-      {user.hairProfile ? (
-        <>
-          {[
-            { icon: 'water-outline',       label: 'Tipo de cabelo', value: user.hairProfile.type },
-            { icon: 'git-compare-outline', label: 'Porosidade',     value: user.hairProfile.porosity },
-            { icon: 'copy-outline',        label: 'Densidade',      value: user.hairProfile.density },
-          ].map(({ icon, label, value }) => (
-            <View key={label} style={styles.hairRow}>
-              <View style={styles.hairIconWrap}>
-                <Ionicons name={icon} size={20} color={GREEN} />
-              </View>
-              <View style={styles.hairTextWrap}>
-                <Text style={styles.hairLabel}>{label}</Text>
-                <Text style={styles.hairValue}>{value}</Text>
-              </View>
-            </View>
-          ))}
-          <TouchableOpacity style={styles.refazerQuizBtn} onPress={() => router.push('/(tabs)/quiz')}>
-            <Ionicons name="refresh-outline" size={16} color={GREEN} />
-            <Text style={styles.refazerQuizText}>Refazer quiz</Text>
-          </TouchableOpacity>
-        </>
-      ) : (
+const renderCapilarTab = () => {
+  if (quizLoading) {
+    return (
+      <View style={[styles.card, { alignItems: 'center', paddingVertical: 32 }]}>
+        <ActivityIndicator size="large" color={GREEN} />
+        <Text style={{ marginTop: 12, color: '#888', fontFamily: 'Poppins_400Regular' }}>
+          Carregando perfil capilar...
+        </Text>
+      </View>
+    );
+  }
+
+  if (!quizResult) {
+    return (
+      <View style={styles.card}>
         <View style={styles.quizPrompt}>
           <View style={styles.quizIconCircle}>
             <Ionicons name="analytics-outline" size={36} color={GREEN} />
           </View>
           <Text style={styles.quizTitle}>Descubra seu perfil capilar</Text>
           <Text style={styles.quizSubtitle}>
-            Responda algumas perguntas rápidas e receba recomendações personalizadas.
+            Responda algumas perguntas rápidas e receba recomendações personalizadas para o litoral norte.
           </Text>
-          <TouchableOpacity style={styles.quizBtn} onPress={() => router.push('/(tabs)/quiz')}>
+          <TouchableOpacity
+            style={styles.quizBtn}
+            onPress={() => router.push('/(tabs)/quiz')}
+          >
             <Text style={styles.quizBtnText}>Fazer Quiz</Text>
             <Ionicons name="arrow-forward" size={16} color="#fff" />
           </TouchableOpacity>
         </View>
+      </View>
+    );
+  }
+
+  const diagLabel  = DIAGNOSIS_LABELS[quizResult.diagnosis]    ?? quizResult.diagnosis    ?? '—';
+  const hairLabel  = HAIR_TYPE_LABELS[quizResult.hairType]     ?? quizResult.hairType     ?? '—';
+  const seasonLabel= SEASON_LABELS[quizResult.season]          ?? quizResult.season       ?? '—';
+  const kitName    = quizResult.recommendedKit                  ?? '—';
+  const createdAt  = quizResult.createdAt
+    ? new Date(quizResult.createdAt).toLocaleDateString('pt-BR')
+    : null;
+
+  const rows = [
+    { icon: 'water-outline',        label: 'Diagnóstico',        value: diagLabel  },
+    { icon: 'git-compare-outline',  label: 'Tipo de cabelo',     value: hairLabel  },
+    { icon: 'sunny-outline',        label: 'Estação do quiz',    value: seasonLabel},
+    { icon: 'bag-outline',          label: 'Kit recomendado',    value: kitName    },
+  ];
+
+  return (
+    <View style={styles.card}>
+      {rows.map(({ icon, label, value }) => (
+        <View key={label} style={styles.hairRow}>
+          <View style={styles.hairIconWrap}>
+            <Ionicons name={icon} size={20} color={GREEN} />
+          </View>
+          <View style={styles.hairTextWrap}>
+            <Text style={styles.hairLabel}>{label}</Text>
+            <Text style={styles.hairValue}>{value}</Text>
+          </View>
+        </View>
+      ))}
+
+      {createdAt && (
+        <Text style={{
+          fontSize: 11, color: '#aaa', textAlign: 'right',
+          marginTop: 4, fontFamily: 'Poppins_400Regular',
+        }}>
+          Realizado em {createdAt}
+        </Text>
       )}
+
+      <TouchableOpacity
+        style={styles.refazerQuizBtn}
+        onPress={() => router.push('/(tabs)/quiz')}
+      >
+        <Ionicons name="refresh-outline" size={16} color={GREEN} />
+        <Text style={styles.refazerQuizText}>Refazer quiz</Text>
+      </TouchableOpacity>
     </View>
   );
+};
 
   // ─── Aba Configurações ────────────────────────────────────────────────────
   const renderConfiguracoesTab = () => (

@@ -251,7 +251,7 @@ function Toast({ visible, message, icon }) {
 }
 
 export default function AutumnScreen() {
-  const { getBySeason, loading } = useProducts();
+  const { getBySeason, products, loading } = useProducts();
   const router = useRouter();
   const scrollViewRef = useRef(null);
   const { user, toggleFavorite } = useUser();
@@ -317,7 +317,7 @@ export default function AutumnScreen() {
       showToast('Faça login para adicionar ao carrinho', 'log-in-outline');
       return;
     }
-    const productId = product.id;
+    const productId = product.productId ?? product.id;
     if (!productId) {
       showToast('Produto inválido', 'alert-circle-outline');
       return;
@@ -352,15 +352,15 @@ export default function AutumnScreen() {
     }
   }, [user, toggleFavorite, showToast, router]);
 
-  // ← todos os returns condicionais só aqui, depois de todos os hooks
   if (loading || !fontsLoaded) return null;
 
   const seasonProducts = getBySeason('outono');
 
   const cartForSheet = items.map(i => {
-    const localProduct = seasonProducts.find(p => p.id === i.productId || p.name === i.product?.name);
+    const localProduct = products.find(p => p.id === i.productId || p.name === i.product?.name);
     return {
-      id:        i.id,
+      id:        i.id,          // id do CartItem (usado para update/remove)
+      productId: i.productId,   // id real do Produto (usado para o "+")
       name:      i.product?.name ?? '',
       nome:      i.product?.name ?? '',
       price:     i.product?.price ?? 0,

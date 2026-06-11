@@ -90,7 +90,7 @@ const handleLogin = async () => {
     } else {
       router.replace('/(tabs)/home');
 }
-    await login({ ...data.user, favorites: [] }, data.access_token); // ← só uma vez, com token
+    await login({ ...data.user, favorites: [] }, data.access_token); 
 
     if (data.user?.email?.toLowerCase() === 'admin@wavecare.com') {
       router.replace('/admin/dashboard');
