@@ -6,6 +6,7 @@ import {
   getUserById,
 } from '../services/userService';
 import { authService } from '../services/authService';
+import { router } from 'expo-router';
 import { useCartStore } from '../stores/useCartStore';
 import { useOrderStore } from '../stores/useOrderStore';
 
@@ -30,9 +31,12 @@ export function UserProvider({ children }) {
   const loadUser = async () => {
     try {
       const storedUser = await AsyncStorage.getItem('wavecare_user');
+      console.log('[loadUser] storedUser raw:', storedUser);
 
       if (storedUser) {
-        setUser(JSON.parse(storedUser));
+        const parsed = JSON.parse(storedUser);
+        console.log('[loadUser] parsed user:', parsed);
+        setUser(parsed);
       } else {
         setUser(GUEST_USER);
       }
@@ -139,28 +143,49 @@ export function UserProvider({ children }) {
     return !isFavorite;
   };
 
-  const logout = async () => {
+ const logout = async () => {
+  try {
+    console.log('[logout] iniciando logout');
+    await authService.logout();
+  } catch (error) {
+    console.log('[logout] erro ao sair:', error?.message);
+  } finally {
+    await AsyncStorage.multiRemove([
+      'wavecare_token',
+      'wavecare_user',
+      'wavecare_cart',
+    ]);
+    // Verifica se os itens foram realmente removidos
+    const remainingToken = await AsyncStorage.getItem('wavecare_token');
+    console.log('[logout] token após multiRemove:', remainingToken);
+
+    resetCart();
+    resetOrders();
+
+    // Define usuário como convidado em vez de `null` para manter
+    // o estado da aplicação consistente após logout.
+    setUser(GUEST_USER);
+    console.log('[logout] user definido como GUEST_USER no contexto');
+
+    // Força redirecionamento para a tela inicial/boas-vindas com
+    // fallback para web usando window.location.href.
     try {
-      await authService.logout();
-    } catch (error) {
-      console.log(
-        '[logout] erro ao sair:',
-        error?.message
-      );
-    } finally {
-      await AsyncStorage.multiRemove([
-        'wavecare_token',
-        'wavecare_user',
-        'wavecare_cart',
-      ]);
-
-      resetCart();
-      resetOrders();
-
-      setUser(GUEST_USER);
+      router.replace('/seja-bem-vindo');
+      console.log('[logout] router.replace chamado com sucesso');
+    } catch (e) {
+      console.log('[logout] router.replace falhou:', e?.message);
     }
-  };
 
+    if (typeof window !== 'undefined') {
+      try {
+        // Força reload/redirect no navegador caso o router não funcione
+        window.location.href = '/seja-bem-vindo';
+      } catch (we) {
+        console.log('[logout] fallback window.location falhou:', we?.message);
+      }
+    }
+  }
+};
   const deleteAccount = async () => {
     try {
       if (user?.id && !user?.guest) {

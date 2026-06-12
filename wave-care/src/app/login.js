@@ -89,13 +89,6 @@ const handleLogin = async () => {
       router.replace('/admin/dashboard');
     } else {
       router.replace('/(tabs)/home');
-}
-    await login({ ...data.user, favorites: [] }, data.access_token); 
-
-    if (data.user?.email?.toLowerCase() === 'admin@wavecare.com') {
-      router.replace('/admin/dashboard');
-    } else {
-      router.replace('/(tabs)/home');
     }
 
   } catch (e) {

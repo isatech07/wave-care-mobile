@@ -36,16 +36,17 @@ export default function RootLayout() {
     <UserProvider>
       <ProductProvider>
       <Stack>
-        <Stack.Screen name="index"           options={{ headerShown: false }} />
-        <Stack.Screen name="seja-bem-vindo"  options={{ headerShown: false }} />
-        <Stack.Screen name="login"           options={{ headerShown: false }} />
-        <Stack.Screen name="cadastro"        options={{ headerShown: false }} />
-        <Stack.Screen name="verao"           options={{ headerShown: false }} />
-        <Stack.Screen name="outono"          options={{ headerShown: false }} />
-        <Stack.Screen name="inverno"         options={{ headerShown: false }} />
-        <Stack.Screen name="primavera"       options={{ headerShown: false }} />
-        <Stack.Screen name="(tabs)"          options={{ headerShown: false }} />
-      </Stack>
+      <Stack.Screen name="index"           options={{ headerShown: false }} />
+      <Stack.Screen name="seja-bem-vindo"  options={{ headerShown: false }} />
+      <Stack.Screen name="login"           options={{ headerShown: false }} />
+      <Stack.Screen name="cadastro"        options={{ headerShown: false }} />
+      <Stack.Screen name="verao"           options={{ headerShown: false }} />
+      <Stack.Screen name="outono"          options={{ headerShown: false }} />
+      <Stack.Screen name="inverno"         options={{ headerShown: false }} />
+      <Stack.Screen name="primavera"       options={{ headerShown: false }} />
+      <Stack.Screen name="(tabs)"          options={{ headerShown: false }} />
+      <Stack.Screen name="admin/dashboard"           options={{ headerShown: false }} />
+    </Stack>
       </ProductProvider>
     </UserProvider>
   );
