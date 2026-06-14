@@ -67,36 +67,31 @@ export default function perfil() {
     }
   }, [user?.id]);
 
-  const [quizResult,        setQuizResult]        = useState(null);
-  const [quizLoading,       setQuizLoading]       = useState(false);
+  const [quizResult,  setQuizResult]  = useState(null);
+  const [quizLoading, setQuizLoading] = useState(false);
+
+  const loadQuizResult = async () => {
+    setQuizLoading(true);
+    try {
+      const cached = await AsyncStorage.getItem('wavecare_quiz_result');
+      if (cached) setQuizResult(JSON.parse(cached));
+
+      const remote = await getMyQuizResult();
+      if (remote) {
+        setQuizResult(remote);
+        await AsyncStorage.setItem('wavecare_quiz_result', JSON.stringify(remote));
+      }
+    } catch (err) {
+      console.log('Nenhum resultado de quiz encontrado:', err?.message);
+    } finally {
+      setQuizLoading(false);
+    }
+  };
 
   useEffect(() => {
-  if (!user || user.guest) return;
-  loadQuizResult();
-}, [user?.id]);
-
-const loadQuizResult = async () => {
-  setQuizLoading(true);
-  try {
-    const cached = await AsyncStorage.getItem('wavecare_quiz_result');
-    if (cached) setQuizResult(JSON.parse(cached));
-
-    const remote = await getMyQuizResult();
-    if (remote) {
-      setQuizResult(remote);
-      await AsyncStorage.setItem('wavecare_quiz_result', JSON.stringify(remote));
-    }
-  } catch (err) {
-    console.log('Nenhum resultado de quiz encontrado:', err?.message);
-  } finally {
-    setQuizLoading(false);
-  }
-};
-
-useEffect(() => {
-  if (!user || user.guest) return;
-  loadQuizResult();
-}, [user?.id]);
+    if (!user || user.guest) return;
+    loadQuizResult();
+  }, [user?.id]);
 
   // ─── Tela de convidado ────────────────────────────────────────────────────
   if (!user || user.guest) {
@@ -132,12 +127,13 @@ useEffect(() => {
     user.name ? user.name.slice(0, 2).toUpperCase() : '?';
 
   const STATUS = {
-    aguardando: { label: 'Aguardando', color: '#f59e0b', step: 0 },
-    confirmado: { label: 'Confirmado', color: '#3b82f6', step: 1 },
-    enviado:    { label: 'Enviado',    color: '#8b5cf6', step: 2 },
-    entregue:   { label: 'Entregue',   color: '#10b981', step: 3 },
+    pending:   { label: 'Aguardando', color: '#f59e0b', step: 0 },
+    confirmed: { label: 'Confirmado', color: '#3b82f6', step: 1 },
+    shipped:   { label: 'Enviado',    color: '#8b5cf6', step: 2 },
+    delivered: { label: 'Entregue',   color: '#10b981', step: 3 },
   };
   const STEPS = ['Aguardando', 'Confirmado', 'Enviado', 'Entregue'];
+
 
   // ─── Troca de foto ────────────────────────────────────────────────────────
   const handleChangeAvatar = () => {
@@ -293,6 +289,8 @@ useEffect(() => {
   };
 
   // ─── Aba Pedidos ──────────────────────────────────────────────────────────
+  const [filterStatus, setFilterStatus] = useState('all');
+
   const renderPedidosTab = () => {
     if (!orders?.length) {
       return (
@@ -306,18 +304,93 @@ useEffect(() => {
       );
     }
 
+    const filterOptions = [
+      { key: 'all',       label: 'Todos' },
+      { key: 'pending',   label: 'Pendentes' },
+      { key: 'confirmed', label: 'Confirmados' },
+      { key: 'shipped',   label: 'Enviados' },
+      { key: 'delivered', label: 'Entregues' },
+    ].filter(opt => opt.key === 'all' || orders.some(o => o.status === opt.key));
+
+    const filtered = filterStatus === 'all'
+      ? orders
+      : orders.filter(o => o.status === filterStatus);
+
+    const handleFinalizarPagamento = (order) => {
+      // Leva direto para a tela de pagamento com o orderId
+      router.push({ pathname: '/pagamento', params: { orderId: order.id, resumo: JSON.stringify(order.items) } });
+    };
+
     return (
       <View>
-        {orders.map((order, i) => {
-          const config = STATUS[order.status ?? 'aguardando'] ?? STATUS.aguardando;
+        {/* Filtros */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ gap: 8, paddingHorizontal: 12, paddingBottom: 12 }}
+        >
+          {filterOptions.map(opt => {
+            const active = filterStatus === opt.key;
+            const isPendingFilter = opt.key === 'pending' && orders.some(o => o.status === 'pending');
+            return (
+              <TouchableOpacity
+                key={opt.key}
+                onPress={() => setFilterStatus(opt.key)}
+                style={{
+                  paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20,
+                  borderWidth: 1.5,
+                  borderColor: active ? GREEN : isPendingFilter && !active ? '#f59e0b' : '#ddd',
+                  backgroundColor: active ? GREEN + '15' : 'transparent',
+                }}
+              >
+                <Text style={{
+                  fontSize: 12, fontWeight: active ? '700' : '500',
+                  color: active ? GREEN : isPendingFilter && !active ? '#92400e' : '#888',
+                }}>
+                  {opt.label}
+                  {isPendingFilter && !active ? ' ⚠' : ''}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+
+        {filtered.length === 0 && (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyText}>Nenhum pedido nessa categoria</Text>
+          </View>
+        )}
+
+        {filtered.map((order, i) => {
+          const config = STATUS[order.status] ?? STATUS.pending;
+          const isPending = order.status === 'pending';
+
           return (
-            <View key={i} style={styles.card}>
+            <View key={order.id ?? i} style={[
+              styles.card,
+              isPending && { borderWidth: 1.5, borderColor: '#f59e0b' },
+            ]}>
+              {/* Faixa de aviso */}
+              {isPending && (
+                <View style={{
+                  backgroundColor: '#fef3c7', borderRadius: 8,
+                  paddingHorizontal: 10, paddingVertical: 6,
+                  marginBottom: 12, flexDirection: 'row', alignItems: 'center', gap: 6,
+                }}>
+                  <Ionicons name="warning-outline" size={14} color="#92400e" />
+                  <Text style={{ fontSize: 12, color: '#92400e', fontWeight: '600' }}>
+                    Pagamento pendente
+                  </Text>
+                </View>
+              )}
+
               <View style={styles.orderHeader}>
                 <Text style={styles.orderId}>Pedido #{order.id ?? i + 1}</Text>
                 <View style={[styles.badge, { backgroundColor: config.color }]}>
                   <Text style={styles.badgeText}>{config.label}</Text>
                 </View>
               </View>
+
               <View style={styles.timeline}>
                 {STEPS.map((step, idx) => (
                   <View key={idx} style={styles.timelineStep}>
@@ -329,6 +402,7 @@ useEffect(() => {
                   </View>
                 ))}
               </View>
+
               {order.items?.length > 0 && (
                 <View>
                   <Text style={styles.sectionTitle}>Produtos:</Text>
@@ -342,12 +416,31 @@ useEffect(() => {
                   ))}
                 </View>
               )}
+
               <View style={styles.totalRow}>
                 <Text style={styles.totalLabel}>Total:</Text>
                 <Text style={styles.totalValue}>
                   R$ {typeof order.total === 'number' ? order.total.toFixed(2) : order.total}
                 </Text>
               </View>
+
+              {/* Botão finalizar pagamento */}
+              {isPending && (
+                <TouchableOpacity
+                  style={{
+                    marginTop: 14, backgroundColor: GREEN, borderRadius: 12,
+                    paddingVertical: 12, alignItems: 'center', flexDirection: 'row',
+                    justifyContent: 'center', gap: 8,
+                  }}
+                  onPress={() => handleFinalizarPagamento(order)}
+                  activeOpacity={0.85}
+                >
+                  <Ionicons name="card-outline" size={18} color="#fff" />
+                  <Text style={{ color: '#fff', fontWeight: '700', fontSize: 14 }}>
+                    Finalizar pagamento
+                  </Text>
+                </TouchableOpacity>
+              )}
             </View>
           );
         })}
@@ -396,89 +489,89 @@ useEffect(() => {
   };
 
   // ─── Aba Capilar ─────────────────────────────────────────────────────────
-const renderCapilarTab = () => {
-  if (quizLoading) {
-    return (
-      <View style={[styles.card, { alignItems: 'center', paddingVertical: 32 }]}>
-        <ActivityIndicator size="large" color={GREEN} />
-        <Text style={{ marginTop: 12, color: '#888', fontFamily: 'Poppins_400Regular' }}>
-          Carregando perfil capilar...
-        </Text>
-      </View>
-    );
-  }
+  const renderCapilarTab = () => {
+    if (quizLoading) {
+      return (
+        <View style={[styles.card, { alignItems: 'center', paddingVertical: 32 }]}>
+          <ActivityIndicator size="large" color={GREEN} />
+          <Text style={{ marginTop: 12, color: '#888', fontFamily: 'Poppins_400Regular' }}>
+            Carregando perfil capilar...
+          </Text>
+        </View>
+      );
+    }
 
-  if (!quizResult) {
+    if (!quizResult) {
+      return (
+        <View style={styles.card}>
+          <View style={styles.quizPrompt}>
+            <View style={styles.quizIconCircle}>
+              <Ionicons name="analytics-outline" size={36} color={GREEN} />
+            </View>
+            <Text style={styles.quizTitle}>Descubra seu perfil capilar</Text>
+            <Text style={styles.quizSubtitle}>
+              Responda algumas perguntas rápidas e receba recomendações personalizadas para o litoral norte.
+            </Text>
+            <TouchableOpacity
+              style={styles.quizBtn}
+              onPress={() => router.push('/(tabs)/quiz')}
+            >
+              <Text style={styles.quizBtnText}>Fazer Quiz</Text>
+              <Ionicons name="arrow-forward" size={16} color="#fff" />
+            </TouchableOpacity>
+          </View>
+        </View>
+      );
+    }
+
+    const diagLabel   = DIAGNOSIS_LABELS[quizResult.diagnosis] ?? quizResult.diagnosis ?? '—';
+    const hairLabel   = HAIR_TYPE_LABELS[quizResult.hairType]  ?? quizResult.hairType  ?? '—';
+    const seasonLabel = SEASON_LABELS[quizResult.season]       ?? quizResult.season    ?? '—';
+    const kitName     = quizResult.recommendedKit ?? '—';
+    const createdAt   = quizResult.createdAt
+      ? new Date(quizResult.createdAt).toLocaleDateString('pt-BR')
+      : null;
+
+    const rows = [
+      { icon: 'water-outline',       label: 'Diagnóstico',     value: diagLabel   },
+      { icon: 'git-compare-outline', label: 'Tipo de cabelo',  value: hairLabel   },
+      { icon: 'sunny-outline',       label: 'Estação do quiz', value: seasonLabel },
+      { icon: 'bag-outline',         label: 'Kit recomendado', value: kitName     },
+    ];
+
     return (
       <View style={styles.card}>
-        <View style={styles.quizPrompt}>
-          <View style={styles.quizIconCircle}>
-            <Ionicons name="analytics-outline" size={36} color={GREEN} />
+        {rows.map(({ icon, label, value }) => (
+          <View key={label} style={styles.hairRow}>
+            <View style={styles.hairIconWrap}>
+              <Ionicons name={icon} size={20} color={GREEN} />
+            </View>
+            <View style={styles.hairTextWrap}>
+              <Text style={styles.hairLabel}>{label}</Text>
+              <Text style={styles.hairValue}>{value}</Text>
+            </View>
           </View>
-          <Text style={styles.quizTitle}>Descubra seu perfil capilar</Text>
-          <Text style={styles.quizSubtitle}>
-            Responda algumas perguntas rápidas e receba recomendações personalizadas para o litoral norte.
+        ))}
+
+        {createdAt && (
+          <Text style={{
+            fontSize: 11, color: '#aaa', textAlign: 'right',
+            marginTop: 4, fontFamily: 'Poppins_400Regular',
+          }}>
+            Realizado em {createdAt}
           </Text>
-          <TouchableOpacity
-            style={styles.quizBtn}
-            onPress={() => router.push('/(tabs)/quiz')}
-          >
-            <Text style={styles.quizBtnText}>Fazer Quiz</Text>
-            <Ionicons name="arrow-forward" size={16} color="#fff" />
-          </TouchableOpacity>
-        </View>
+        )}
+
+        <TouchableOpacity
+          style={styles.refazerQuizBtn}
+          onPress={() => router.push('/(tabs)/quiz')}
+        >
+          <Ionicons name="refresh-outline" size={16} color={GREEN} />
+          <Text style={styles.refazerQuizText}>Refazer quiz</Text>
+        </TouchableOpacity>
       </View>
     );
-  }
-
-  const diagLabel  = DIAGNOSIS_LABELS[quizResult.diagnosis]    ?? quizResult.diagnosis    ?? '—';
-  const hairLabel  = HAIR_TYPE_LABELS[quizResult.hairType]     ?? quizResult.hairType     ?? '—';
-  const seasonLabel= SEASON_LABELS[quizResult.season]          ?? quizResult.season       ?? '—';
-  const kitName    = quizResult.recommendedKit                  ?? '—';
-  const createdAt  = quizResult.createdAt
-    ? new Date(quizResult.createdAt).toLocaleDateString('pt-BR')
-    : null;
-
-  const rows = [
-    { icon: 'water-outline',        label: 'Diagnóstico',        value: diagLabel  },
-    { icon: 'git-compare-outline',  label: 'Tipo de cabelo',     value: hairLabel  },
-    { icon: 'sunny-outline',        label: 'Estação do quiz',    value: seasonLabel},
-    { icon: 'bag-outline',          label: 'Kit recomendado',    value: kitName    },
-  ];
-
-  return (
-    <View style={styles.card}>
-      {rows.map(({ icon, label, value }) => (
-        <View key={label} style={styles.hairRow}>
-          <View style={styles.hairIconWrap}>
-            <Ionicons name={icon} size={20} color={GREEN} />
-          </View>
-          <View style={styles.hairTextWrap}>
-            <Text style={styles.hairLabel}>{label}</Text>
-            <Text style={styles.hairValue}>{value}</Text>
-          </View>
-        </View>
-      ))}
-
-      {createdAt && (
-        <Text style={{
-          fontSize: 11, color: '#aaa', textAlign: 'right',
-          marginTop: 4, fontFamily: 'Poppins_400Regular',
-        }}>
-          Realizado em {createdAt}
-        </Text>
-      )}
-
-      <TouchableOpacity
-        style={styles.refazerQuizBtn}
-        onPress={() => router.push('/(tabs)/quiz')}
-      >
-        <Ionicons name="refresh-outline" size={16} color={GREEN} />
-        <Text style={styles.refazerQuizText}>Refazer quiz</Text>
-      </TouchableOpacity>
-    </View>
-  );
-};
+  };
 
   // ─── Aba Configurações ────────────────────────────────────────────────────
   const renderConfiguracoesTab = () => (
@@ -1107,61 +1200,61 @@ const styles = StyleSheet.create({
   },
 
   modalOverlay: {
-  position: 'absolute',
-  top: 0, left: 0, right: 0, bottom: 0,
-  backgroundColor: 'rgba(0,0,0,0.5)',
-  alignItems: 'center',
-  justifyContent: 'center',
-  zIndex: 999,
-},
-modalBox: {
-  backgroundColor: '#fff',
-  borderRadius: 16,
-  padding: 24,
-  marginHorizontal: 32,
-  width: '85%',
-},
-modalTitle: {
-  fontSize: 17,
-  fontWeight: 'bold',
-  color: '#222',
-  marginBottom: 10,
-},
-modalMessage: {
-  fontSize: 14,
-  color: '#555',
-  lineHeight: 20,
-  marginBottom: 24,
-},
-modalButtons: {
-  flexDirection: 'row',
-  gap: 10,
-},
-modalBtnCancel: {
-  flex: 1,
-  paddingVertical: 12,
-  borderRadius: 10,
-  backgroundColor: '#eee',
-  alignItems: 'center',
-},
-modalBtnCancelText: {
-  color: '#555',
-  fontWeight: '600',
-  fontSize: 14,
-},
-modalBtnConfirm: {
-  flex: 1,
-  paddingVertical: 12,
-  borderRadius: 10,
-  backgroundColor: GREEN,
-  alignItems: 'center',
-},
-modalBtnDanger: {
-  backgroundColor: '#d32f2f',
-},
-modalBtnConfirmText: {
-  color: '#fff',
-  fontWeight: '600',
-  fontSize: 14,
-},
+    position: 'absolute',
+    top: 0, left: 0, right: 0, bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 999,
+  },
+  modalBox: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 24,
+    marginHorizontal: 32,
+    width: '85%',
+  },
+  modalTitle: {
+    fontSize: 17,
+    fontWeight: 'bold',
+    color: '#222',
+    marginBottom: 10,
+  },
+  modalMessage: {
+    fontSize: 14,
+    color: '#555',
+    lineHeight: 20,
+    marginBottom: 24,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  modalBtnCancel: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 10,
+    backgroundColor: '#eee',
+    alignItems: 'center',
+  },
+  modalBtnCancelText: {
+    color: '#555',
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  modalBtnConfirm: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 10,
+    backgroundColor: GREEN,
+    alignItems: 'center',
+  },
+  modalBtnDanger: {
+    backgroundColor: '#d32f2f',
+  },
+  modalBtnConfirmText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 14,
+  },
 });

@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { orderService } from '../services/orderService';
 
-export const useOrderStore = create((set) => ({
+export const useOrderStore = create((set, get) => ({
   orders: [],
   loading: false,
   error: null,
@@ -18,10 +18,10 @@ export const useOrderStore = create((set) => ({
     }
   },
 
-  createOrder: async (userId) => {
+  createOrder: async (paymentMethod = 'card') => {
     set({ loading: true, error: null });
     try {
-      const order = await orderService.createOrder(userId);
+      const order = await orderService.createOrder(paymentMethod);
       set((state) => ({ orders: [order, ...state.orders] }));
       return order;
     } catch (e) {
@@ -32,7 +32,21 @@ export const useOrderStore = create((set) => ({
     }
   },
 
-  resetOrders: () => {
-    set({ orders: [], loading: false, error: null });
+  confirmPayment: async (orderId, paymentMethod) => {
+    set({ loading: true, error: null });
+    try {
+      const confirmed = await orderService.confirmPayment(orderId, paymentMethod);
+      set((state) => ({
+        orders: state.orders.map((o) => o.id === orderId ? confirmed : o),
+      }));
+      return confirmed;
+    } catch (e) {
+      set({ error: 'Erro ao confirmar pagamento' });
+      throw e;
+    } finally {
+      set({ loading: false });
+    }
   },
+
+  resetOrders: () => set({ orders: [], loading: false, error: null }),
 }));
