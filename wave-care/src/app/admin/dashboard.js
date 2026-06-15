@@ -714,6 +714,7 @@ const ProductsScreen = () => {
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('all');
   const [formModal, setFormModal] = useState({ visible: false, product: null });
+  const [deleteModal, setDeleteModal] = useState({ visible: false, product: null });
 
   const fetchProducts = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true); else setLoading(true);
@@ -742,20 +743,19 @@ const ProductsScreen = () => {
   };
 
   const handleDelete = (product) => {
-    Alert.alert('Excluir Produto', `Deseja excluir "${product.name}"?`, [
-      { text: 'Cancelar', style: 'cancel' },
-      {
-        text: 'Excluir', style: 'destructive', onPress: async () => {
-          try {
-            await api.delete(`/products/${product.id}`);
-            setProducts(prev => prev.filter(p => p.id !== product.id));
-            Alert.alert('Sucesso', 'Produto excluído');
-          } catch (err) {
-            Alert.alert('Erro', 'Não foi possível excluir');
-          }
-        }
-      },
-    ]);
+    setDeleteModal({ visible: true, product });
+  };
+
+  const confirmDelete = async () => {
+    const product = deleteModal.product;
+    setDeleteModal({ visible: false, product: null });
+    try {
+      await api.delete(`/products/${product.id}`);
+      setProducts(prev => prev.filter(p => p.id !== product.id));
+      Alert.alert('Sucesso', 'Produto excluído');
+    } catch (err) {
+      Alert.alert('Erro', err?.response?.data?.message || 'Não foi possível excluir');
+    }
   };
 
   const filters = [
@@ -804,50 +804,52 @@ const ProductsScreen = () => {
           </PressableScale>
         </View>
 
-        {filtered.map((product, i) => (
-          <Animated.View key={product.id} entering={FadeInDown.delay(i * 50).duration(300)}>
-            <Card pa={0} style={s.productCard}>
-              {(product.stock ?? 0) === 0 && (
-                <View style={s.productOutBadge}><Text style={s.productOutBadgeText}>ESGOTADO</Text></View>
-              )}
-              <View style={s.productCardInner}>
-                {product.image ? (
-                  <Image source={{ uri: product.image }} style={s.productImage} />
-                ) : (
-                  <View style={[s.productThumb, { backgroundColor: C.primary + '12' }]}>
-                    {product.image ? (
-                      <Image
-                        source={{ uri: `http://localhost:3002${product.image}` }}
-                        style={s.productImage}
-                      />
-                    ) : (
-                      <Ionicons name="flask-outline" size={24} color={C.primary} />
-                    )}
-                  </View>
-                )}
-                <View style={{ flex: 1 }}>
-                  <Text style={s.productName}>{product.name}</Text>
-                  {product.category ? <Text style={s.productCategory}>{product.category}</Text> : null}
-                  <View style={s.productMeta}>
-                    <Text style={s.productPrice}>{toBRL(product.price)}</Text>
-                    <View style={[s.stockBadge, { backgroundColor: stockColor(product) + '18' }]}>
-                      <View style={[s.stockDot, { backgroundColor: stockColor(product) }]} />
-                      <Text style={[s.stockText, { color: stockColor(product) }]}>{stockLabel(product)}</Text>
-                    </View>
-                  </View>
-                </View>
-                <View style={s.productCardActions}>
-                  <TouchableOpacity style={s.editIconBtn} onPress={() => setFormModal({ visible: true, product })}>
-                    <Ionicons name="create-outline" size={18} color={C.primary} />
-                  </TouchableOpacity>
-                  <TouchableOpacity style={[s.editIconBtn, { backgroundColor: C.dangerBg }]} onPress={() => handleDelete(product)}>
-                    <Ionicons name="trash-outline" size={18} color={C.danger} />
-                  </TouchableOpacity>
-                </View>
+   {filtered.map((product, i) => {
+  // Gera a URL da imagem (pode ser removida se não precisar mais do log)
+  const imageUrl = product.image
+    ? (product.image.startsWith('http') ? product.image : `http://localhost:3002${product.image}`)
+    : null;
+  console.log(`🖼️ Produto: ${product.name} | URL:`, imageUrl);
+
+  return (
+    <Animated.View key={product.id} entering={FadeInDown.delay(i * 50).duration(300)}>
+      <Card pa={0} style={s.productCard}>
+        {(product.stock ?? 0) === 0 && (
+          <View style={s.productOutBadge}><Text style={s.productOutBadgeText}>ESGOTADO</Text></View>
+        )}
+        <View style={s.productCardInner}>
+          {/* Exibe a imagem do produto se existir, senão mostra ícone */}
+          {product.image ? (
+            <Image source={{ uri: imageUrl }} style={s.productImage} />
+          ) : (
+            <View style={[s.productThumb, { backgroundColor: C.primary + '12' }]}>
+              <Ionicons name="flask-outline" size={24} color={C.primary} />
+            </View>
+          )}
+          <View style={{ flex: 1 }}>
+            <Text style={s.productName}>{product.name}</Text>
+            {product.category && <Text style={s.productCategory}>{product.category}</Text>}
+            <View style={s.productMeta}>
+              <Text style={s.productPrice}>{toBRL(product.price)}</Text>
+              <View style={[s.stockBadge, { backgroundColor: stockColor(product) + '18' }]}>
+                <View style={[s.stockDot, { backgroundColor: stockColor(product) }]} />
+                <Text style={[s.stockText, { color: stockColor(product) }]}>{stockLabel(product)}</Text>
               </View>
-            </Card>
-          </Animated.View>
-        ))}
+            </View>
+          </View>
+          <View style={s.productCardActions}>
+            <TouchableOpacity style={s.editIconBtn} onPress={() => setFormModal({ visible: true, product })}>
+              <Ionicons name="create-outline" size={18} color={C.primary} />
+            </TouchableOpacity>
+            <TouchableOpacity style={[s.editIconBtn, { backgroundColor: C.dangerBg }]} onPress={() => handleDelete(product)}>
+              <Ionicons name="trash-outline" size={18} color={C.danger} />
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Card>
+    </Animated.View>
+  );
+})}
 
         {filtered.length === 0 && (
           <View style={s.emptyState}>
@@ -857,6 +859,25 @@ const ProductsScreen = () => {
         )}
       </ScrollView>
 
+      {/* Modal de exclusão fora do ScrollView */}
+    {deleteModal.visible && (
+      <View style={s.modalOverlay}>
+        <View style={s.modalBox}>
+          <Text style={s.modalTitle}>Excluir Produto</Text>
+          <Text style={s.modalMessage}>
+            Deseja excluir "{deleteModal.product?.name}"? Esta ação não pode ser desfeita.
+          </Text>
+          <View style={s.modalButtons}>
+            <TouchableOpacity style={s.modalBtnCancel} onPress={() => setDeleteModal({ visible: false, product: null })}>
+              <Text style={s.modalBtnCancelText}>Cancelar</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[s.modalBtnConfirm, { backgroundColor: C.danger }]} onPress={confirmDelete}>
+              <Text style={s.modalBtnConfirmText}>Excluir</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    )}
       <ProductFormModal
         visible={formModal.visible}
         editingProduct={formModal.product}
@@ -1165,6 +1186,23 @@ const s = StyleSheet.create({
   stockText:        { fontFamily: 'Poppins_500Medium', fontSize: 11 },
   productCardActions: { alignItems: 'flex-end', gap: 8 },
   editIconBtn:      { width: 36, height: 36, borderRadius: 18, backgroundColor: C.primaryGhost, alignItems: 'center', justifyContent: 'center' },
+  modalOverlay: {
+  position: 'absolute',
+  top: 0, left: 0, right: 0, bottom: 0,
+  backgroundColor: 'rgba(0,0,0,0.5)',
+  alignItems: 'center',
+  justifyContent: 'center',
+  zIndex: 999,
+},
+
+  modalBox: { backgroundColor: '#fff', borderRadius: 16, padding: 24, width: '85%' },
+  modalTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 12 },
+  modalMessage: { fontSize: 14, color: '#555', marginBottom: 24 },
+  modalButtons: { flexDirection: 'row', justifyContent: 'space-between', gap: 12 },
+  modalBtnCancel: { flex: 1, paddingVertical: 12, backgroundColor: '#eee', borderRadius: 8, alignItems: 'center' },
+  modalBtnCancelText: { color: '#555', fontWeight: '600' },
+  modalBtnConfirm: { flex: 1, paddingVertical: 12, backgroundColor: C.primary, borderRadius: 8, alignItems: 'center' },
+  modalBtnConfirmText: { color: '#fff', fontWeight: '600' },
 
   // User Card
   userCardHeader:  { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16 },
@@ -1184,4 +1222,6 @@ const s = StyleSheet.create({
   emptyState:   { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 40, gap: 8 },
   emptyTitle:   { fontFamily: 'Poppins_600SemiBold', fontSize: 17, color: C.ink, textAlign: 'center' },
   emptySub:     { fontFamily: 'Poppins_400Regular', fontSize: 13, color: C.inkTertiary, textAlign: 'center' },
+
+
 });
