@@ -1,97 +1,147 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
-  ScrollView, ActivityIndicator, SafeAreaView,
+  ScrollView, ActivityIndicator, SafeAreaView, Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useUser } from '../contexts/UserContext';
 import { useCartStore } from '../stores/useCartStore';
 import { useOrderStore } from '../stores/useOrderStore';
+import api from '../services/api';
 
 const GREEN = '#2D5A45';
 
 const PAYMENT_OPTIONS = [
-  {
-    id: 'card',
-    title: 'Cartão',
-    sub: 'Crédito ou débito',
-    icon: 'card-outline',
-  },
-  {
-    id: 'pix',
-    title: 'PIX',
-    sub: 'Aprovação imediata',
-    icon: 'qr-code-outline',
-  },
-  {
-    id: 'boleto',
-    title: 'Boleto',
-    sub: '1 a 3 dias úteis',
-    icon: 'barcode-outline',
-  },
+  { id: 'card', title: 'Cartão', sub: 'Crédito ou débito', icon: 'card-outline' },
+  { id: 'pix', title: 'PIX', sub: 'Aprovação imediata', icon: 'qr-code-outline' },
+  { id: 'boleto', title: 'Boleto', sub: '1 a 3 dias úteis', icon: 'barcode-outline' },
 ];
 
 export default function Pagamento() {
   const router = useRouter();
+  const params = useLocalSearchParams();
   const { user } = useUser();
   const { createOrder, confirmPayment, loading } = useOrderStore();
   const [paymentMethod, setPaymentMethod] = useState('card');
   const [modal, setModal] = useState({ visible: false, type: '' });
-  // type: 'confirm' | 'pending' | 'confirmed'
   const [currentOrder, setCurrentOrder] = useState(null);
+  const [pendingOrder, setPendingOrder] = useState(null);
+  const [loadingOrder, setLoadingOrder] = useState(false);
+  const [totalValue, setTotalValue] = useState(0);
+  const [orderItems, setOrderItems] = useState([]);
 
   const items = useCartStore((state) => state.items);
   const clearCart = useCartStore((state) => state.clearCart);
-  const totalValue = useCartStore((state) =>
+  const cartTotal = useCartStore((state) =>
     state.items.reduce((sum, i) => sum + (i.product?.price ?? 0) * i.quantity, 0)
   );
+
+  const orderId = params.orderId;
+
+  useEffect(() => {
+    if (orderId) {
+      loadPendingOrder(orderId);
+    } else {
+      setOrderItems(items);
+      setTotalValue(cartTotal);
+    }
+  }, [orderId, items, cartTotal]);
+
+  const loadPendingOrder = async (id) => {
+    setLoadingOrder(true);
+    try {
+      const { data } = await api.get(`/order/${id}`);
+      if (data.status === 'pending') {
+        setPendingOrder(data);
+        const itemsList = data.items || [];
+        setOrderItems(itemsList);
+        const total = itemsList.reduce((sum, it) => sum + (it.price * it.quantity), 0);
+        setTotalValue(total);
+      } else {
+        Alert.alert('Pedido já foi pago ou cancelado');
+        router.back();
+      }
+    } catch (err) {
+      console.log(err);
+      Alert.alert('Erro', 'Não foi possível carregar o pedido');
+      router.back();
+    } finally {
+      setLoadingOrder(false);
+    }
+  };
 
   const handleConfirm = async () => {
     if (!user || user.guest) {
       router.push('/login');
       return;
     }
+    if (!orderId && orderItems.length === 0) {
+      Alert.alert('Carrinho vazio', 'Adicione produtos antes de finalizar.');
+      return;
+    }
     setModal({ visible: true, type: 'confirm' });
   };
 
   const handleFinalize = async () => {
-    setModal({ visible: false, type: '' });
+    setModal({ visible: false });
     try {
-      // Cria o pedido como pending, passa o método escolhido
-      const order = await createOrder(paymentMethod);
-      setCurrentOrder(order);
-      await clearCart(user.id);
-
-      // PIX e Boleto ficam pendentes — mostra tela de pendente
-      // Cartão confirma na hora
-      if (paymentMethod === 'card') {
-        const confirmed = await confirmPayment(order.id, paymentMethod);
-        setCurrentOrder(confirmed);
-        setModal({ visible: true, type: 'confirmed' });
+      let order;
+      if (orderId && pendingOrder) {
+        order = pendingOrder;
+        await api.put(`/order/${orderId}`, { paymentMethod });
+        if (paymentMethod === 'card') {
+          const confirmed = await confirmPayment(orderId, paymentMethod);
+          setCurrentOrder(confirmed);
+          setModal({ visible: true, type: 'confirmed' });
+        } else {
+          setCurrentOrder(order);
+          setModal({ visible: true, type: 'pending' });
+        }
       } else {
-        setModal({ visible: true, type: 'pending' });
+        order = await createOrder(paymentMethod);
+        setCurrentOrder(order);
+        await clearCart(user.id);
+        if (paymentMethod === 'card') {
+          const confirmed = await confirmPayment(order.id, paymentMethod);
+          setCurrentOrder(confirmed);
+          setModal({ visible: true, type: 'confirmed' });
+        } else {
+          setModal({ visible: true, type: 'pending' });
+        }
       }
     } catch (e) {
-      console.log('[pagamento] erro:', e.message);
+      console.log(e);
+      Alert.alert('Erro', 'Falha ao processar pagamento');
     }
   };
 
   const handleFinishPending = async () => {
-    // Usuário clicou em "Já paguei" no modal de PIX/Boleto
     if (!currentOrder) return;
     try {
       await confirmPayment(currentOrder.id, paymentMethod);
       setModal({ visible: true, type: 'confirmed' });
     } catch (e) {
-      console.log('[pagamento] erro ao confirmar:', e.message);
+      console.log(e);
+      Alert.alert('Erro', 'Falha na confirmação do pagamento');
     }
   };
 
   const handleGoToOrders = () => {
-    setModal({ visible: false, type: '' });
+    setModal({ visible: false });
     router.replace('/(tabs)/perfil');
   };
+
+  if (loadingOrder) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={GREEN} />
+          <Text style={{ marginTop: 16, color: '#888' }}>Carregando pedido...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -104,26 +154,27 @@ export default function Pagamento() {
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-
-        {/* Resumo */}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Resumo do pedido</Text>
-          {items.map((item) => (
-            <View key={item.id} style={styles.itemRow}>
-              <View style={styles.itemLeft}>
-                <Text style={styles.itemQty}>{item.quantity}x</Text>
-                <Text style={styles.itemName} numberOfLines={1}>
-                  {item.product?.name}
+          {orderItems.length === 0 ? (
+            <Text style={styles.emptyText}>Carrinho vazio</Text>
+          ) : (
+            orderItems.map((item, idx) => (
+              <View key={idx} style={styles.itemRow}>
+                <View style={styles.itemLeft}>
+                  <Text style={styles.itemQty}>{item.quantity}x</Text>
+                  <Text style={styles.itemName} numberOfLines={1}>
+                    {item.product?.name || item.name}
+                  </Text>
+                </View>
+                <Text style={styles.itemPrice}>
+                  R$ {((item.price ?? item.product?.price ?? 0) * item.quantity).toFixed(2).replace('.', ',')}
                 </Text>
               </View>
-              <Text style={styles.itemPrice}>
-                R$ {((item.product?.price ?? 0) * item.quantity).toFixed(2).replace('.', ',')}
-              </Text>
-            </View>
-          ))}
+            ))
+          )}
         </View>
 
-        {/* Forma de pagamento */}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Forma de pagamento</Text>
           {PAYMENT_OPTIONS.map((opt) => (
@@ -147,27 +198,20 @@ export default function Pagamento() {
               </View>
             </TouchableOpacity>
           ))}
-
-          {/* Info extra por método */}
           {paymentMethod === 'pix' && (
             <View style={styles.methodInfo}>
               <Ionicons name="information-circle-outline" size={16} color={GREEN} />
-              <Text style={styles.methodInfoText}>
-                Após confirmar, você receberá a chave PIX para realizar o pagamento.
-              </Text>
+              <Text style={styles.methodInfoText}>Após confirmar, você receberá a chave PIX para realizar o pagamento.</Text>
             </View>
           )}
           {paymentMethod === 'boleto' && (
             <View style={styles.methodInfo}>
               <Ionicons name="information-circle-outline" size={16} color={GREEN} />
-              <Text style={styles.methodInfoText}>
-                O boleto será gerado após a confirmação. Prazo de compensação: 1 a 3 dias úteis.
-              </Text>
+              <Text style={styles.methodInfoText}>O boleto será gerado após a confirmação. Prazo de compensação: 1 a 3 dias úteis.</Text>
             </View>
           )}
         </View>
 
-        {/* Total */}
         <View style={styles.card}>
           <View style={styles.totalRow}>
             <Text style={styles.totalLabel}>Subtotal</Text>
@@ -183,24 +227,19 @@ export default function Pagamento() {
             <Text style={styles.grandValue}>R$ {totalValue.toFixed(2).replace('.', ',')}</Text>
           </View>
         </View>
-
       </ScrollView>
 
       <View style={styles.footer}>
         <TouchableOpacity
-          style={[styles.confirmBtn, loading && { opacity: 0.7 }]}
+          style={[styles.confirmBtn, (loading || loadingOrder) && { opacity: 0.7 }]}
           onPress={handleConfirm}
-          disabled={loading}
+          disabled={loading || loadingOrder}
           activeOpacity={0.85}
         >
-          {loading
-            ? <ActivityIndicator color="#fff" />
-            : <Text style={styles.confirmBtnText}>Confirmar Pedido</Text>
-          }
+          {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.confirmBtnText}>Confirmar Pedido</Text>}
         </TouchableOpacity>
       </View>
 
-      {/* ── Modal confirmar ── */}
       {modal.visible && modal.type === 'confirm' && (
         <View style={styles.modalOverlay}>
           <View style={styles.modalBox}>
@@ -214,17 +253,13 @@ export default function Pagamento() {
                 <Text style={styles.modalBtnCancelText}>Cancelar</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.modalBtnConfirm} onPress={handleFinalize}>
-                {loading
-                  ? <ActivityIndicator color="#fff" size="small" />
-                  : <Text style={styles.modalBtnConfirmText}>Confirmar</Text>
-                }
+                {loading ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.modalBtnConfirmText}>Confirmar</Text>}
               </TouchableOpacity>
             </View>
           </View>
         </View>
       )}
 
-      {/* ── Modal pendente (PIX/Boleto) ── */}
       {modal.visible && modal.type === 'pending' && (
         <View style={styles.modalOverlay}>
           <View style={styles.modalBox}>
@@ -234,11 +269,8 @@ export default function Pagamento() {
             <Text style={styles.modalTitle}>Pedido recebido!</Text>
             <Text style={styles.modalMessage}>
               Seu pedido foi criado e está aguardando a confirmação do pagamento via{' '}
-              <Text style={{ fontWeight: 'bold' }}>
-                {paymentMethod === 'pix' ? 'PIX' : 'Boleto'}
-              </Text>.
-              {'\n\n'}
-              Você pode acompanhar o status na aba <Text style={{ fontWeight: 'bold' }}>Pedidos</Text> do seu perfil.
+              <Text style={{ fontWeight: 'bold' }}>{paymentMethod === 'pix' ? 'PIX' : 'Boleto'}</Text>.
+              {'\n\n'}Você pode acompanhar o status na aba <Text style={{ fontWeight: 'bold' }}>Pedidos</Text> do seu perfil.
             </Text>
             <View style={styles.modalButtons}>
               <TouchableOpacity style={styles.modalBtnCancel} onPress={handleFinishPending}>
@@ -252,7 +284,6 @@ export default function Pagamento() {
         </View>
       )}
 
-      {/* ── Modal confirmado ── */}
       {modal.visible && modal.type === 'confirmed' && (
         <View style={styles.modalOverlay}>
           <View style={styles.modalBox}>
@@ -260,9 +291,7 @@ export default function Pagamento() {
               <Ionicons name="checkmark-circle-outline" size={40} color={GREEN} />
             </View>
             <Text style={styles.modalTitle}>Pagamento confirmado!</Text>
-            <Text style={styles.modalMessage}>
-              Seu pedido foi confirmado com sucesso e está sendo processado.
-            </Text>
+            <Text style={styles.modalMessage}>Seu pedido foi confirmado com sucesso e está sendo processado.</Text>
             <TouchableOpacity style={[styles.modalBtnConfirm, { marginTop: 4 }]} onPress={handleGoToOrders}>
               <Text style={styles.modalBtnConfirmText}>Ver meus pedidos</Text>
             </TouchableOpacity>
@@ -275,6 +304,7 @@ export default function Pagamento() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#f5f5f0' },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 16, paddingVertical: 14, backgroundColor: '#fff',
@@ -289,6 +319,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05, shadowRadius: 4, elevation: 2,
   },
   cardTitle: { fontSize: 15, fontWeight: '600', color: '#1C1C1E', marginBottom: 14 },
+  emptyText: { textAlign: 'center', color: '#aaa', paddingVertical: 20 },
   itemRow: {
     flexDirection: 'row', justifyContent: 'space-between',
     alignItems: 'center', paddingVertical: 8,

@@ -20,7 +20,6 @@ const GUEST_USER = {
 
 export function UserProvider({ children }) {
   const [user, setUser] = useState(null);
-
   const resetCart = useCartStore((state) => state.resetCart);
   const resetOrders = useOrderStore((state) => state.resetOrders);
 
@@ -31,58 +30,117 @@ export function UserProvider({ children }) {
   const loadUser = async () => {
     try {
       const storedUser = await AsyncStorage.getItem('wavecare_user');
-      console.log('[loadUser] storedUser raw:', storedUser);
-
       if (storedUser) {
-        const parsed = JSON.parse(storedUser);
-        console.log('[loadUser] parsed user:', parsed);
-        setUser(parsed);
+        setUser(JSON.parse(storedUser));
       } else {
         setUser(GUEST_USER);
       }
     } catch (error) {
-      console.error('Erro ao carregar usuário:', error);
       setUser(GUEST_USER);
     }
   };
 
-  const login = async (userData, token) => {
+  // ---------- LOGIN (funcional, com admin e usuário comum) ----------
+  const login = async (userData, token, typedEmail) => {
     try {
-      await AsyncStorage.removeItem('wavecare_user');
-      const { data } = await getUserById(userData.id, token);
-      const fullUser = { ...userData, ...data };
-      setUser(fullUser);
-      await AsyncStorage.setItem('wavecare_user', JSON.stringify(fullUser));
-      console.log('[login] usuário autenticado:', fullUser.email);
+      await AsyncStorage.setItem('wavecare_token', token);
+
+      const finalUser = {
+        ...userData,
+        email: typedEmail || userData.email,
+        favorites: userData.favorites || [],
+      };
+
+      if (finalUser.id && finalUser.id !== 'guest') {
+        try {
+          const { data } = await getUserById(finalUser.id, token);
+          Object.assign(finalUser, data);
+        } catch (err) {
+          console.log('Erro ao buscar dados completos:', err);
+        }
+      }
+
+      setUser(finalUser);
+      await AsyncStorage.setItem('wavecare_user', JSON.stringify(finalUser));
+
+      const isAdmin = (typedEmail || finalUser.email)?.toLowerCase() === 'admin@wavecare.com';
+
+      // Pequeno delay para garantir que o estado foi atualizado
+      setTimeout(() => {
+        if (isAdmin) {
+          router.replace('/admin/dashboard');
+        } else {
+          router.replace('/(tabs)/home');
+        }
+      }, 100);
     } catch (error) {
-      console.log('[login] usando dados básicos do login:', error?.message);
-      setUser(userData);
-      await AsyncStorage.setItem('wavecare_user', JSON.stringify(userData));
+      console.log('[login] erro crítico:', error);
+      const isAdmin = typedEmail?.toLowerCase() === 'admin@wavecare.com';
+      setTimeout(() => {
+        if (isAdmin) {
+          router.replace('/admin/dashboard');
+        } else {
+          router.replace('/(tabs)/home');
+        }
+      }, 100);
     }
   };
 
+  // ---------- LOGOUT ROBUSTO (com fallback para web) ----------
+  const logout = async () => {
+    try {
+      await authService.logout();
+    } catch (error) {
+      console.log('[logout] erro ao chamar authService.logout:', error?.message);
+    } finally {
+      // Limpa storage
+      await AsyncStorage.multiRemove(['wavecare_token', 'wavecare_user', 'wavecare_cart']);
+      resetCart();
+      resetOrders();
+      setUser(GUEST_USER);
+
+      // Tenta navegar com o router do Expo
+      try {
+        router.replace('/seja-bem-vindo');
+      } catch (e) {
+        console.log('[logout] router.replace falhou:', e?.message);
+      }
+
+      // Fallback para web (garante o redirecionamento mesmo se o router falhar)
+      if (typeof window !== 'undefined' && window.location) {
+        try {
+          window.location.href = '/seja-bem-vindo';
+        } catch (we) {
+          console.log('[logout] fallback window.location falhou:', we?.message);
+        }
+      }
+    }
+  };
+
+  // ---------- DELETE ACCOUNT (chama logout ao final) ----------
+  const deleteAccount = async () => {
+    try {
+      if (user?.id && !user?.guest) {
+        await deleteUserApi(user.id);
+      }
+    } catch (error) {
+      console.log('[deleteAccount]', error?.message);
+    } finally {
+      await logout();
+    }
+  };
+
+  // ---------- DEMAIS FUNÇÕES (refresh, update, toggleFavorite) ----------
   const refreshUser = async () => {
     if (!user || user.guest || !user.id) return;
-
     try {
-      const { data } = await getUserById(user.id);
-
-      const updatedUser = {
-        ...data,
-        favorites: user.favorites || [],
-      };
-
+      const token = await AsyncStorage.getItem('wavecare_token');
+      const { data } = await getUserById(user.id, token);
+      const updatedUser = { ...data, favorites: user.favorites || [] };
       setUser(updatedUser);
-
-      await AsyncStorage.setItem(
-        'wavecare_user',
-        JSON.stringify(updatedUser)
-      );
+      await AsyncStorage.setItem('wavecare_user', JSON.stringify(updatedUser));
     } catch (error) {
-      console.error(
-        'Erro ao atualizar dados do usuário:',
-        error
-      );
+      console.error('Erro ao atualizar usuário:', error);
     }
   };
 
@@ -94,118 +152,34 @@ export function UserProvider({ children }) {
         telefone: updatedUser.telefone,
         cidade: updatedUser.cidade,
       });
-
       setUser(updatedUser);
-
-      await AsyncStorage.setItem(
-        'wavecare_user',
-        JSON.stringify(updatedUser)
-      );
+      await AsyncStorage.setItem('wavecare_user', JSON.stringify(updatedUser));
     } catch (error) {
-      console.error(
-        'Erro ao atualizar usuário:',
-        error
-      );
+      console.error('Erro ao atualizar usuário:', error);
       throw error;
     }
   };
 
   const toggleFavorite = async (product) => {
     if (!user || user.guest) return false;
-
     const favorites = user.favorites || [];
-
-    const isFavorite = favorites.some(
-      (fav) => fav.id === product.id
-    );
-
+    const isFavorite = favorites.some((fav) => fav.id === product.id);
     const updatedFavorites = isFavorite
       ? favorites.filter((fav) => fav.id !== product.id)
-      : [
-          ...favorites,
-          {
-            id: product.id,
-            name: product.name,
-            price: product.price,
-            image: product.image,
-            category: product.category,
-            season: product.season,
-          },
-        ];
-
-    const updatedUser = {
-      ...user,
-      favorites: updatedFavorites,
-    };
-
+      : [...favorites, {
+          id: product.id,
+          name: product.name,
+          price: product.price,
+          image: product.image,
+          category: product.category,
+          season: product.season,
+        }];
+    const updatedUser = { ...user, favorites: updatedFavorites };
     await updateUser(updatedUser);
-
     return !isFavorite;
   };
 
- const logout = async () => {
-  try {
-    console.log('[logout] iniciando logout');
-    await authService.logout();
-  } catch (error) {
-    console.log('[logout] erro ao sair:', error?.message);
-  } finally {
-    await AsyncStorage.multiRemove([
-      'wavecare_token',
-      'wavecare_user',
-      'wavecare_cart',
-    ]);
-    // Verifica se os itens foram realmente removidos
-    const remainingToken = await AsyncStorage.getItem('wavecare_token');
-    console.log('[logout] token após multiRemove:', remainingToken);
-
-    resetCart();
-    resetOrders();
-
-    // Define usuário como convidado em vez de `null` para manter
-    // o estado da aplicação consistente após logout.
-    setUser(GUEST_USER);
-    console.log('[logout] user definido como GUEST_USER no contexto');
-
-    // Força redirecionamento para a tela inicial/boas-vindas com
-    // fallback para web usando window.location.href.
-    try {
-      router.replace('/seja-bem-vindo');
-      console.log('[logout] router.replace chamado com sucesso');
-    } catch (e) {
-      console.log('[logout] router.replace falhou:', e?.message);
-    }
-
-    if (typeof window !== 'undefined') {
-      try {
-        // Força reload/redirect no navegador caso o router não funcione
-        window.location.href = '/seja-bem-vindo';
-      } catch (we) {
-        console.log('[logout] fallback window.location falhou:', we?.message);
-      }
-    }
-  }
-};
-  const deleteAccount = async () => {
-    try {
-      if (user?.id && !user?.guest) {
-        await deleteUserApi(user.id);
-      }
-    } catch (error) {
-      console.log(
-        '[deleteAccount]',
-        error?.response?.status,
-        error?.message
-      );
-    } finally {
-      await logout();
-    }
-  };
-
-  // ADMIN FIXO POR EMAIL
-  const isAdmin =
-    user?.email?.toLowerCase() ===
-    'admin@wavecare.com';
+  const isAdmin = user?.email?.toLowerCase() === 'admin@wavecare.com';
 
   return (
     <UserContext.Provider
