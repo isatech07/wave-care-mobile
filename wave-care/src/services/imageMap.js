@@ -1,7 +1,4 @@
-// src/services/imageMap.js
 // Caminhos espelham exatamente o campo `image` do seed corrigido
-// e os nomes reais dos arquivos em assets/products/
-
 const imageMap = {
   // ─── VERÃO ────────────────────────────────────────────────────────────────
   '/products/verao-produtos/verao-shampoo.png':       require('../../assets/products/verao-produtos/verao-shampoo.png'),

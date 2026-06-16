@@ -9,6 +9,7 @@ import { useUser } from '../contexts/UserContext';
 import { useCartStore } from '../stores/useCartStore';
 import { useOrderStore } from '../stores/useOrderStore';
 import api from '../services/api';
+import { useFonts, Poppins_400Regular, Poppins_500Medium, Poppins_600SemiBold, Poppins_700Bold } from '@expo-google-fonts/poppins';
 
 const GREEN = '#2D5A45';
 
@@ -30,6 +31,13 @@ export default function Pagamento() {
   const [loadingOrder, setLoadingOrder] = useState(false);
   const [totalValue, setTotalValue] = useState(0);
   const [orderItems, setOrderItems] = useState([]);
+
+  const [fontsLoaded] = useFonts({
+    Poppins_400Regular,
+    Poppins_500Medium,
+    Poppins_600SemiBold,
+    Poppins_700Bold,
+  });
 
   const items = useCartStore((state) => state.items);
   const clearCart = useCartStore((state) => state.clearCart);
@@ -132,12 +140,12 @@ export default function Pagamento() {
     router.replace('/(tabs)/perfil');
   };
 
-  if (loadingOrder) {
+  if (!fontsLoaded || loadingOrder) {
     return (
       <SafeAreaView style={styles.safe}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={GREEN} />
-          <Text style={{ marginTop: 16, color: '#888' }}>Carregando pedido...</Text>
+          <Text style={styles.loadingText}>Carregando pedido...</Text>
         </View>
       </SafeAreaView>
     );
@@ -201,13 +209,17 @@ export default function Pagamento() {
           {paymentMethod === 'pix' && (
             <View style={styles.methodInfo}>
               <Ionicons name="information-circle-outline" size={16} color={GREEN} />
-              <Text style={styles.methodInfoText}>Após confirmar, você receberá a chave PIX para realizar o pagamento.</Text>
+              <Text style={styles.methodInfoText}>
+                Após confirmar, você receberá a chave PIX para realizar o pagamento.
+              </Text>
             </View>
           )}
           {paymentMethod === 'boleto' && (
             <View style={styles.methodInfo}>
               <Ionicons name="information-circle-outline" size={16} color={GREEN} />
-              <Text style={styles.methodInfoText}>O boleto será gerado após a confirmação. Prazo de compensação: 1 a 3 dias úteis.</Text>
+              <Text style={styles.methodInfoText}>
+                O boleto será gerado após a confirmação. Prazo de compensação: 1 a 3 dias úteis.
+              </Text>
             </View>
           )}
         </View>
@@ -236,7 +248,11 @@ export default function Pagamento() {
           disabled={loading || loadingOrder}
           activeOpacity={0.85}
         >
-          {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.confirmBtnText}>Confirmar Pedido</Text>}
+          {loading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.confirmBtnText}>Confirmar Pedido</Text>
+          )}
         </TouchableOpacity>
       </View>
 
@@ -249,11 +265,18 @@ export default function Pagamento() {
               Pagamento: {PAYMENT_OPTIONS.find(o => o.id === paymentMethod)?.title}
             </Text>
             <View style={styles.modalButtons}>
-              <TouchableOpacity style={styles.modalBtnCancel} onPress={() => setModal({ visible: false, type: '' })}>
+              <TouchableOpacity
+                style={styles.modalBtnCancel}
+                onPress={() => setModal({ visible: false, type: '' })}
+              >
                 <Text style={styles.modalBtnCancelText}>Cancelar</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.modalBtnConfirm} onPress={handleFinalize}>
-                {loading ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.modalBtnConfirmText}>Confirmar</Text>}
+                {loading ? (
+                  <ActivityIndicator color="#fff" size="small" />
+                ) : (
+                  <Text style={styles.modalBtnConfirmText}>Confirmar</Text>
+                )}
               </TouchableOpacity>
             </View>
           </View>
@@ -269,8 +292,12 @@ export default function Pagamento() {
             <Text style={styles.modalTitle}>Pedido recebido!</Text>
             <Text style={styles.modalMessage}>
               Seu pedido foi criado e está aguardando a confirmação do pagamento via{' '}
-              <Text style={{ fontWeight: 'bold' }}>{paymentMethod === 'pix' ? 'PIX' : 'Boleto'}</Text>.
-              {'\n\n'}Você pode acompanhar o status na aba <Text style={{ fontWeight: 'bold' }}>Pedidos</Text> do seu perfil.
+              <Text style={styles.modalMessageBold}>
+                {paymentMethod === 'pix' ? 'PIX' : 'Boleto'}
+              </Text>
+              .
+              {'\n\n'}Você pode acompanhar o status na aba{' '}
+              <Text style={styles.modalMessageBold}>Pedidos</Text> do seu perfil.
             </Text>
             <View style={styles.modalButtons}>
               <TouchableOpacity style={styles.modalBtnCancel} onPress={handleFinishPending}>
@@ -291,8 +318,13 @@ export default function Pagamento() {
               <Ionicons name="checkmark-circle-outline" size={40} color={GREEN} />
             </View>
             <Text style={styles.modalTitle}>Pagamento confirmado!</Text>
-            <Text style={styles.modalMessage}>Seu pedido foi confirmado com sucesso e está sendo processado.</Text>
-            <TouchableOpacity style={[styles.modalBtnConfirm, { marginTop: 4 }]} onPress={handleGoToOrders}>
+            <Text style={styles.modalMessage}>
+              Seu pedido foi confirmado com sucesso e está sendo processado.
+            </Text>
+            <TouchableOpacity
+              style={[styles.modalBtnConfirm, { marginTop: 4 }]}
+              onPress={handleGoToOrders}
+            >
               <Text style={styles.modalBtnConfirmText}>Ver meus pedidos</Text>
             </TouchableOpacity>
           </View>
@@ -303,93 +335,289 @@ export default function Pagamento() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#f5f5f0' },
-  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  safe: {
+    flex: 1,
+    backgroundColor: '#f5f5f0',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 16,
+    color: '#888',
+    fontFamily: 'Poppins_400Regular',
+  },
   header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 16, paddingVertical: 14, backgroundColor: '#fff',
-    borderBottomWidth: 1, borderBottomColor: '#eee',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
   },
-  backBtn: { width: 40, height: 40, justifyContent: 'center' },
-  headerTitle: { fontSize: 18, fontWeight: '700', color: '#1C1C1E' },
-  scroll: { padding: 16, gap: 16, paddingBottom: 120 },
+  backBtn: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontFamily: 'Poppins_700Bold',
+    color: '#1C1C1E',
+  },
+  scroll: {
+    padding: 16,
+    gap: 16,
+    paddingBottom: 120,
+  },
   card: {
-    backgroundColor: '#fff', borderRadius: 16, padding: 18,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05, shadowRadius: 4, elevation: 2,
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 18,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
-  cardTitle: { fontSize: 15, fontWeight: '600', color: '#1C1C1E', marginBottom: 14 },
-  emptyText: { textAlign: 'center', color: '#aaa', paddingVertical: 20 },
+  cardTitle: {
+    fontSize: 15,
+    fontFamily: 'Poppins_600SemiBold',
+    color: '#1C1C1E',
+    marginBottom: 14,
+  },
+  emptyText: {
+    textAlign: 'center',
+    color: '#aaa',
+    fontFamily: 'Poppins_400Regular',
+    paddingVertical: 20,
+  },
   itemRow: {
-    flexDirection: 'row', justifyContent: 'space-between',
-    alignItems: 'center', paddingVertical: 8,
-    borderBottomWidth: 1, borderBottomColor: '#f0f0f0',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
   },
-  itemLeft: { flexDirection: 'row', alignItems: 'center', flex: 1, gap: 8 },
-  itemQty: { fontWeight: '700', color: GREEN, fontSize: 13, minWidth: 24 },
-  itemName: { fontSize: 13, color: '#333', flex: 1 },
-  itemPrice: { fontWeight: '600', fontSize: 13, color: '#1C1C1E' },
+  itemLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    gap: 8,
+  },
+  itemQty: {
+    fontFamily: 'Poppins_700Bold',
+    color: GREEN,
+    fontSize: 13,
+    minWidth: 24,
+  },
+  itemName: {
+    fontSize: 13,
+    fontFamily: 'Poppins_400Regular',
+    color: '#333',
+    flex: 1,
+  },
+  itemPrice: {
+    fontFamily: 'Poppins_600SemiBold',
+    fontSize: 13,
+    color: '#1C1C1E',
+  },
   payOption: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    padding: 14, borderRadius: 12, borderWidth: 1.5, borderColor: '#eee', marginBottom: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 14,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: '#eee',
+    marginBottom: 10,
   },
-  payOptionActive: { borderColor: GREEN, backgroundColor: GREEN + '08' },
-  payOptionLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  payOptionActive: {
+    borderColor: GREEN,
+    backgroundColor: GREEN + '08',
+  },
+  payOptionLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
   payIconBox: {
-    width: 42, height: 42, borderRadius: 12,
-    backgroundColor: GREEN + '15', justifyContent: 'center', alignItems: 'center',
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    backgroundColor: GREEN + '15',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  payIconBoxActive: { backgroundColor: GREEN },
-  payOptionTitle: { fontWeight: '600', fontSize: 14, color: '#1C1C1E' },
-  payOptionSub: { fontSize: 12, color: '#888' },
+  payIconBoxActive: {
+    backgroundColor: GREEN,
+  },
+  payOptionTitle: {
+    fontFamily: 'Poppins_600SemiBold',
+    fontSize: 14,
+    color: '#1C1C1E',
+  },
+  payOptionSub: {
+    fontSize: 12,
+    fontFamily: 'Poppins_400Regular',
+    color: '#888',
+  },
   radio: {
-    width: 20, height: 20, borderRadius: 10, borderWidth: 2,
-    borderColor: '#ccc', justifyContent: 'center', alignItems: 'center',
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: '#ccc',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  radioActive: { borderColor: GREEN },
-  radioDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: GREEN },
+  radioActive: {
+    borderColor: GREEN,
+  },
+  radioDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: GREEN,
+  },
   methodInfo: {
-    flexDirection: 'row', alignItems: 'flex-start', gap: 8,
-    backgroundColor: GREEN + '0D', borderRadius: 10, padding: 12, marginTop: 4,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+    backgroundColor: GREEN + '0D',
+    borderRadius: 10,
+    padding: 12,
+    marginTop: 4,
   },
-  methodInfoText: { flex: 1, fontSize: 12, color: '#444', lineHeight: 18 },
-  totalRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
-  totalLabel: { fontSize: 14, color: '#888' },
-  totalValue: { fontWeight: '600', fontSize: 14, color: '#1C1C1E' },
-  divider: { height: 1, backgroundColor: '#eee', marginVertical: 10 },
-  grandLabel: { fontWeight: '700', fontSize: 16, color: '#1C1C1E' },
-  grandValue: { fontWeight: '700', fontSize: 20, color: GREEN },
+  methodInfoText: {
+    flex: 1,
+    fontSize: 12,
+    fontFamily: 'Poppins_400Regular',
+    color: '#444',
+    lineHeight: 18,
+  },
+  totalRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  totalLabel: {
+    fontSize: 14,
+    fontFamily: 'Poppins_400Regular',
+    color: '#888',
+  },
+  totalValue: {
+    fontFamily: 'Poppins_600SemiBold',
+    fontSize: 14,
+    color: '#1C1C1E',
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#eee',
+    marginVertical: 10,
+  },
+  grandLabel: {
+    fontFamily: 'Poppins_700Bold',
+    fontSize: 16,
+    color: '#1C1C1E',
+  },
+  grandValue: {
+    fontFamily: 'Poppins_700Bold',
+    fontSize: 20,
+    color: GREEN,
+  },
   footer: {
-    position: 'absolute', bottom: 0, left: 0, right: 0,
-    padding: 20, backgroundColor: '#fff',
-    borderTopWidth: 1, borderTopColor: '#eee',
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 20,
+    backgroundColor: '#fff',
+    borderTopWidth: 1,
+    borderTopColor: '#eee',
   },
   confirmBtn: {
-    backgroundColor: GREEN, borderRadius: 16,
-    paddingVertical: 16, alignItems: 'center',
+    backgroundColor: GREEN,
+    borderRadius: 16,
+    paddingVertical: 16,
+    alignItems: 'center',
   },
-  confirmBtnText: { fontWeight: '700', color: '#fff', fontSize: 16 },
+  confirmBtnText: {
+    fontFamily: 'Poppins_700Bold',
+    color: '#fff',
+    fontSize: 16,
+  },
   modalOverlay: {
-    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     backgroundColor: 'rgba(0,0,0,0.5)',
-    alignItems: 'center', justifyContent: 'center', zIndex: 999,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 999,
   },
   modalBox: {
-    backgroundColor: '#fff', borderRadius: 16, padding: 24,
-    marginHorizontal: 32, width: '85%',
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 24,
+    marginHorizontal: 32,
+    width: '85%',
   },
-  modalIcon: { alignItems: 'center', marginBottom: 12 },
-  modalTitle: { fontSize: 17, fontWeight: 'bold', color: '#222', marginBottom: 10, textAlign: 'center' },
-  modalMessage: { fontSize: 14, color: '#555', lineHeight: 22, marginBottom: 24, textAlign: 'center' },
-  modalButtons: { flexDirection: 'row', gap: 10 },
+  modalIcon: {
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  modalTitle: {
+    fontSize: 17,
+    fontFamily: 'Poppins_700Bold',
+    color: '#222',
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  modalMessage: {
+    fontSize: 14,
+    fontFamily: 'Poppins_400Regular',
+    color: '#555',
+    lineHeight: 22,
+    marginBottom: 24,
+    textAlign: 'center',
+  },
+  modalMessageBold: {
+    fontFamily: 'Poppins_700Bold',
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    gap: 10,
+  },
   modalBtnCancel: {
-    flex: 1, paddingVertical: 12, borderRadius: 10,
-    backgroundColor: '#eee', alignItems: 'center',
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 10,
+    backgroundColor: '#eee',
+    alignItems: 'center',
   },
-  modalBtnCancelText: { color: '#555', fontWeight: '600', fontSize: 14 },
+  modalBtnCancelText: {
+    color: '#555',
+    fontFamily: 'Poppins_600SemiBold',
+    fontSize: 14,
+  },
   modalBtnConfirm: {
-    flex: 1, paddingVertical: 12, borderRadius: 10,
-    backgroundColor: GREEN, alignItems: 'center',
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 10,
+    backgroundColor: GREEN,
+    alignItems: 'center',
   },
-  modalBtnConfirmText: { color: '#fff', fontWeight: '600', fontSize: 14 },
+  modalBtnConfirmText: {
+    color: '#fff',
+    fontFamily: 'Poppins_600SemiBold',
+    fontSize: 14,
+  },
 });

@@ -51,7 +51,6 @@ const C = {
   shadow:       '#1C1917',
 };
 
-// Imagens dos produtos de verão
 const IMAGES = {
   kitCompleto:    require('../../assets/products/verao-produtos/Summer-Protection-mobile.png'),
   condicionador:  require('../../assets/products/verao-produtos/verao-condicionador.png'),
@@ -122,7 +121,7 @@ function BenefitChip({ iconName, text }) {
   );
 }
 
-function ProductCard({ name, desc, price, oldPrice, stars, reviews, highlight, image, delay, productId, onAddToCart, isFavorite, onToggleFavorite }) {
+function ProductCard({ name, desc, price, oldPrice, stars, reviews, highlight, image, delay, productId, onAddToCart, isFavorite, onToggleFavorite, router }) {
   const anim = useFadeSlide(delay, 20);
 
   return (
@@ -135,11 +134,9 @@ function ProductCard({ name, desc, price, oldPrice, stars, reviews, highlight, i
             <Ionicons name="image-outline" size={44} color={C.mutedLight} />
           </View>
         )}
-
         <TouchableOpacity style={styles.favBtn} onPress={() => onToggleFavorite && onToggleFavorite({ id: name, nome: name, preco: parseFloat(price?.replace('R$ ', '').replace(',', '.') ?? '0'), image, categoria: 'Produto', estacao: 'Verão' })} activeOpacity={0.8}>
           <Ionicons name={isFavorite ? 'heart' : 'heart-outline'} size={18} color={isFavorite ? '#E53E3E' : C.muted} />
         </TouchableOpacity>
-
         {highlight && (
           <View style={styles.featuredBadge}>
             <Ionicons name="trophy" size={10} color={C.bg} style={{ marginRight: 3 }} />
@@ -147,7 +144,6 @@ function ProductCard({ name, desc, price, oldPrice, stars, reviews, highlight, i
           </View>
         )}
       </View>
-
       <View style={styles.productInfo}>
         <View style={styles.starsRow}>
           <Ionicons name="star" size={12} color={C.gold} />
@@ -155,7 +151,6 @@ function ProductCard({ name, desc, price, oldPrice, stars, reviews, highlight, i
         </View>
         <Text style={styles.productName}>{name}</Text>
         <Text style={styles.productDesc}>{desc}</Text>
-
         <View style={styles.productFooter}>
           <View>
             {oldPrice ? <Text style={styles.oldPrice}>{oldPrice}</Text> : null}
@@ -165,7 +160,10 @@ function ProductCard({ name, desc, price, oldPrice, stars, reviews, highlight, i
             <TouchableOpacity style={styles.cartBtn} onPress={() => onAddToCart && onAddToCart({ id: productId, name, price, image })} activeOpacity={0.8}>
               <Ionicons name="cart-outline" size={18} color={C.accent} />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.buyBtn} onPress={() => onAddToCart && onAddToCart({ id: productId, name, price, image })} activeOpacity={0.8}>
+            <TouchableOpacity style={styles.buyBtn} onPress={() => {
+              if (onAddToCart) onAddToCart({ id: productId, name, price, image });
+              router.push('/pagamento');
+            }} activeOpacity={0.8}>
               <Text style={styles.buyBtnText}>Comprar</Text>
             </TouchableOpacity>
           </View>
@@ -175,7 +173,7 @@ function ProductCard({ name, desc, price, oldPrice, stars, reviews, highlight, i
   );
 }
 
-function ProductCardSmall({ name, price, stars, reviews, image, delay, type, productId, onAddToCart, isFavorite, onToggleFavorite }) {
+function ProductCardSmall({ name, price, stars, reviews, image, delay, type, productId, onAddToCart, isFavorite, onToggleFavorite, router }) {
   const anim = useFadeSlide(delay, 20);
 
   return (
@@ -188,12 +186,10 @@ function ProductCardSmall({ name, price, stars, reviews, image, delay, type, pro
             <Ionicons name="image-outline" size={32} color={C.mutedLight} />
           </View>
         )}
-
         <TouchableOpacity style={styles.favBtn} onPress={() => onToggleFavorite && onToggleFavorite({ id: name, nome: name, preco: parseFloat(price?.replace('R$ ', '').replace(',', '.') ?? '0'), image, categoria: 'Produto', estacao: 'Verão' })} activeOpacity={0.8}>
           <Ionicons name={isFavorite ? 'heart' : 'heart-outline'} size={15} color={isFavorite ? '#E53E3E' : C.muted} />
         </TouchableOpacity>
       </View>
-
       <View style={styles.productInfoSmall}>
         <View style={styles.starsRow}>
           <Ionicons name="star" size={11} color={C.gold} />
@@ -201,12 +197,14 @@ function ProductCardSmall({ name, price, stars, reviews, image, delay, type, pro
         </View>
         <Text style={styles.productNameSmall}>{name}</Text>
         <Text style={styles.productPriceSmall}>{price}</Text>
-
         <View style={styles.smallCardActions}>
           <TouchableOpacity style={styles.smallCartBtn} onPress={() => onAddToCart && onAddToCart({ id: productId, name, price, image })} activeOpacity={0.8}>
             <Ionicons name="cart-outline" size={16} color={C.accent} />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.buyBtnFull} onPress={() => onAddToCart && onAddToCart({ id: productId, name, price, image })} activeOpacity={0.8}>
+          <TouchableOpacity style={styles.buyBtnFull} onPress={() => {
+            if (onAddToCart) onAddToCart({ id: productId, name, price, image });
+            router.push('/pagamento');
+          }} activeOpacity={0.8}>
             <Text style={styles.buyBtnText}>Comprar</Text>
           </TouchableOpacity>
         </View>
@@ -251,7 +249,7 @@ function Toast({ visible, message, icon }) {
 }
 
 export default function SummerScreen() {
- const { getBySeason,products, loading } = useProducts();
+  const { getBySeason, products, loading } = useProducts();
   const router = useRouter();
   const scrollViewRef = useRef(null);
   const { user, toggleFavorite } = useUser();
@@ -274,145 +272,136 @@ export default function SummerScreen() {
     []
   );
 
- const [fontsLoaded] = useFonts({
-      PlayfairDisplay_700Bold,
-      PlayfairDisplay_800ExtraBold,
-      Poppins_400Regular,
-      Poppins_500Medium,
-      Poppins_600SemiBold,
-      Poppins_700Bold,
-    });
-  
-    const badgeAnim = useFadeSlide(60, 0);
-    const titleAnim = useFadeSlide(180, 36);
-    const subAnim = useFadeSlide(340, 20);
-  
-    useEffect(() => {
-      scrollViewRef.current?.scrollTo({ y: 0, animated: false });
-    }, []);
-  
-    useEffect(() => {
-      if (user?.id && !user.guest) {
-        fetchCart(user.id);
-      }
-    }, [user?.id]);
-  
-    useEffect(() => {
-      const interval = setInterval(() => {
-        setBenefitIndex((prev) => (prev + 1) % summerBenefits.length);
-      }, 3500);
-      return () => clearInterval(interval);
-    }, [summerBenefits.length]);
-  
-    const showToast = useCallback((message, icon = 'checkmark-circle') => {
-      if (toastTimeout.current) clearTimeout(toastTimeout.current);
-      setToastMessage(message);
-      setToastIcon(icon);
-      setToastVisible(true);
-      toastTimeout.current = setTimeout(() => setToastVisible(false), 2200);
-    }, []);
-  
-    const handleAddToCart = useCallback((product) => {
-      if (!user?.id || user.guest) {
-        showToast('Faça login para adicionar ao carrinho', 'log-in-outline');
-        return;
-      }
-      const productId = product.productId ?? product.id;
-      if (!productId) {
-        showToast('Produto inválido', 'alert-circle-outline');
-        return;
-      }
-      addItem(user.id, productId);
-      showToast((product.name || product.nome) + ' adicionado!', 'cart-outline');
-    }, [user, addItem, showToast]);
-  
-    const handleRemoveFromCart = useCallback((cartItemId) => {
-      const item = items.find(i => i.id === cartItemId || i.product?.name === cartItemId);
-      if (!item) return;
-      decreaseItem(user.id, item.id, item.quantity);
-    }, [items, user, decreaseItem]);
-  
-    const handleDeleteFromCart = useCallback((cartItemId) => {
-      const item = items.find(i => i.id === cartItemId || i.product?.name === cartItemId);
-      if (!item) return;
-      removeItem(user.id, item.id);
-    }, [items, user, removeItem]);
-  
-    const handleToggleFavorite = useCallback(async (product) => {
-      if (!user || user.guest) {
-        showToast('Faça login para favoritar produtos', 'log-in-outline');
-        setTimeout(() => router.push('/login'), 1500);
-        return;
-      }
-      const wasAdded = await toggleFavorite(product);
-      if (wasAdded) {
-        showToast(product.name + ' adicionado aos favoritos', 'heart');
-      } else {
-        showToast(product.name + ' removido dos favoritos', 'heart-dislike-outline');
-      }
-    }, [user, toggleFavorite, showToast, router]);
-  
-    if (loading || !fontsLoaded) return null;
-  
-    const seasonProducts = getBySeason('verao');
-  
-    const cartForSheet = items.map(i => {
-      const localProduct = products.find(p => p.id === i.productId || p.name === i.product?.name);
-      return {
-        id:        i.id,          // id do CartItem (usado para update/remove)
-        productId: i.productId,   // id real do Produto (usado para o "+")
-        name:      i.product?.name ?? '',
-        nome:      i.product?.name ?? '',
-        price:     i.product?.price ?? 0,
-        preco:     i.product?.price ?? 0,
-        image:     localProduct?.imageSource ?? null,
-        categoria: i.product?.category ?? 'Produto',
-        qty:       i.quantity,
-      };
-    });
+  const [fontsLoaded] = useFonts({
+    PlayfairDisplay_700Bold,
+    PlayfairDisplay_800ExtraBold,
+    Poppins_400Regular,
+    Poppins_500Medium,
+    Poppins_600SemiBold,
+    Poppins_700Bold,
+  });
+
+  const badgeAnim = useFadeSlide(60, 0);
+  const titleAnim = useFadeSlide(180, 36);
+  const subAnim = useFadeSlide(340, 20);
+
+  useEffect(() => {
+    scrollViewRef.current?.scrollTo({ y: 0, animated: false });
+  }, []);
+
+  useEffect(() => {
+    if (user?.id && !user.guest) {
+      fetchCart(user.id);
+    }
+  }, [user?.id]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setBenefitIndex((prev) => (prev + 1) % summerBenefits.length);
+    }, 3500);
+    return () => clearInterval(interval);
+  }, [summerBenefits.length]);
+
+  const showToast = useCallback((message, icon = 'checkmark-circle') => {
+    if (toastTimeout.current) clearTimeout(toastTimeout.current);
+    setToastMessage(message);
+    setToastIcon(icon);
+    setToastVisible(true);
+    toastTimeout.current = setTimeout(() => setToastVisible(false), 2200);
+  }, []);
+
+  const handleAddToCart = useCallback((product) => {
+    if (!user?.id || user.guest) {
+      showToast('Faça login para adicionar ao carrinho', 'log-in-outline');
+      return;
+    }
+    const productId = product.productId ?? product.id;
+    if (!productId) {
+      showToast('Produto inválido', 'alert-circle-outline');
+      return;
+    }
+    addItem(user.id, productId);
+    showToast((product.name || product.nome) + ' adicionado!', 'cart-outline');
+  }, [user, addItem, showToast]);
+
+  const handleRemoveFromCart = useCallback((cartItemId) => {
+    const item = items.find(i => i.id === cartItemId || i.product?.name === cartItemId);
+    if (!item) return;
+    decreaseItem(user.id, item.id, item.quantity);
+  }, [items, user, decreaseItem]);
+
+  const handleDeleteFromCart = useCallback((cartItemId) => {
+    const item = items.find(i => i.id === cartItemId || i.product?.name === cartItemId);
+    if (!item) return;
+    removeItem(user.id, item.id);
+  }, [items, user, removeItem]);
+
+  const handleToggleFavorite = useCallback(async (product) => {
+    if (!user || user.guest) {
+      showToast('Faça login para favoritar produtos', 'log-in-outline');
+      setTimeout(() => router.push('/login'), 1500);
+      return;
+    }
+    const wasAdded = await toggleFavorite(product);
+    if (wasAdded) {
+      showToast(product.name + ' adicionado aos favoritos', 'heart');
+    } else {
+      showToast(product.name + ' removido dos favoritos', 'heart-dislike-outline');
+    }
+  }, [user, toggleFavorite, showToast, router]);
+
+  if (loading || !fontsLoaded) return null;
+
+  const seasonProducts = getBySeason('verao');
+
+  const cartForSheet = items.map(i => {
+    const localProduct = products.find(p => p.id === i.productId || p.name === i.product?.name);
+    return {
+      id:        i.id,
+      productId: i.productId,
+      name:      i.product?.name ?? '',
+      nome:      i.product?.name ?? '',
+      price:     i.product?.price ?? 0,
+      preco:     i.product?.price ?? 0,
+      image:     localProduct?.imageSource ?? null,
+      categoria: i.product?.category ?? 'Produto',
+      qty:       i.quantity,
+    };
+  });
 
   return (
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="dark-content" backgroundColor={C.bg} />
-
       <ScrollView
         ref={scrollViewRef}
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* ===== HERO ===== */}
         <View style={styles.heroCard}>
-          <Circle size={280} color="rgba(194,65,12,0.12)" style={{ top: -80,   right: -80 }} />
-          <Circle size={160} color="rgba(217,119,6,0.10)" style={{ top: 60,    right: 20  }} />
+          <Circle size={280} color="rgba(194,65,12,0.12)" style={{ top: -80, right: -80 }} />
+          <Circle size={160} color="rgba(217,119,6,0.10)" style={{ top: 60, right: 20 }} />
           <Circle size={200} color="rgba(194,65,12,0.06)" style={{ bottom: -50, left: -70 }} />
-
           <Animated.View style={badgeAnim}>
             <Badge iconName="sunny" label="NOVA COLEÇÃO DE VERÃO 2026" />
           </Animated.View>
-
           <Animated.Text style={[styles.heroTitle, titleAnim]}>
             Cuide dos{'\n'}seus fios{'\n'}no verão
           </Animated.Text>
-
           <Animated.Text style={[styles.heroSub, subAnim]}>
             Fórmulas exclusivas criadas para proteger do sol,
             maresia e calor — realçando brilho e definição natural.
           </Animated.Text>
-
           <View style={styles.heroDivider} />
-
           <View style={styles.statsRow}>
-            <Stat iconName="leaf"      value="12+"  label="PRODUTOS"  delay={480} />
+            <Stat iconName="leaf" value="12+" label="PRODUTOS" delay={480} />
             <View style={styles.statDivider} />
-            <Stat iconName="thumbs-up" value="98%"  label="APROVAÇÃO" delay={620} />
+            <Stat iconName="thumbs-up" value="98%" label="APROVAÇÃO" delay={620} />
             <View style={styles.statDivider} />
-            <Stat iconName="people"    value="5K+"  label="CLIENTES"  delay={760} />
+            <Stat iconName="people" value="5K+" label="CLIENTES" delay={760} />
           </View>
-
         </View>
 
-        {/* ===== BENEFÍCIOS ===== */}
         <View style={styles.section}>
           <Badge iconName="water" label="POR QUE SUMMER?" />
           <View style={styles.autoCarouselWrap}>
@@ -423,7 +412,6 @@ export default function SummerScreen() {
           </View>
         </View>
 
-        {/* ===== PRODUTO DESTAQUE ===== */}
         <View style={styles.section}>
           <Badge iconName="trophy" label="MAIS VENDIDO" />
           <Text style={[styles.sectionTitle, { marginTop: 10 }]}>
@@ -432,37 +420,35 @@ export default function SummerScreen() {
           <Text style={styles.sectionSub}>
             O kit mais completo da estação para proteção total dos seus fios
           </Text>
-            <ProductCard
-              name="Kit Summer Protection"
-              productId={seasonProducts.find(p => p.name === 'Kit Summer Protection')?.id}
-              desc="Kit completo com shampoo, condicionador, máscara e óleo protetor solar para fios"
-              price="R$ 229,90"
-              oldPrice="R$ 249,90"
-              stars="4.8"
-              reviews="250"
-              highlight
-              image={IMAGES.kitCompleto}
-              delay={200}
-              onAddToCart={handleAddToCart}
-              isFavorite={user?.favorites?.some(f => f.name === 'Kit Summer Protection')}
-              onToggleFavorite={handleToggleFavorite}
-            />
+          <ProductCard
+            name="Kit Summer Protection"
+            productId={seasonProducts.find(p => p.name === 'Kit Summer Protection')?.id}
+            desc="Kit completo com shampoo, condicionador, máscara e óleo protetor solar para fios"
+            price="R$ 229,90"
+            oldPrice="R$ 249,90"
+            stars="4.8"
+            reviews="250"
+            highlight
+            image={IMAGES.kitCompleto}
+            delay={200}
+            onAddToCart={handleAddToCart}
+            isFavorite={user?.favorites?.some(f => f.name === 'Kit Summer Protection')}
+            onToggleFavorite={handleToggleFavorite}
+            router={router}
+          />
         </View>
 
-        {/* ===== LINHA COMPLETA ===== */}
         <View style={styles.section}>
           <Badge iconName="grid" label="LINHA COMPLETA" />
           <Text style={[styles.sectionTitle, { marginTop: 10 }]}>
             Linha de Produtos{'\n'}& Kits de Verão
           </Text>
           <Divider />
-
-          {/* Filtro */}
           <View style={styles.filterRow}>
             {[
-              { key: 'todos',    label: 'Todos' },
-              { key: 'produto',  label: 'Produtos' },
-              { key: 'kit',      label: 'Kits' },
+              { key: 'todos', label: 'Todos' },
+              { key: 'produto', label: 'Produtos' },
+              { key: 'kit', label: 'Kits' },
             ].map(f => (
               <TouchableOpacity
                 key={f.key}
@@ -476,16 +462,14 @@ export default function SummerScreen() {
               </TouchableOpacity>
             ))}
           </View>
-
           <View style={styles.productsGrid}>
             {seasonProducts
               .filter(p => activeFilter === 'todos' || (p.categoria?.toLowerCase() === 'produtos' ? 'produto' : p.categoria?.toLowerCase()) === activeFilter)
               .map((p, i) => {
-                const delay = p.categoria?.toLowerCase() === 'produtos' ? 100 + (i * 50) : 400 + ((i - (seasonProducts.filter(item => item.categoria?.toLowerCase() === 'produtos').length)) * 50);
-                const type = p.categoria?.toLowerCase() === 'produtos' ? 'produto' : p.categoria?.toLowerCase();
+                const delay = 100 + (i * 50);
                 return (
-                  <ProductCardSmall 
-                    key={p.id} 
+                  <ProductCardSmall
+                    key={p.id}
                     name={p.name}
                     desc={p.description}
                     price={`R$ ${p.price?.toFixed(2).replace('.', ',')}`}
@@ -498,34 +482,30 @@ export default function SummerScreen() {
                     onAddToCart={handleAddToCart}
                     isFavorite={user?.favorites?.some(f => f.id === p.id)}
                     onToggleFavorite={handleToggleFavorite}
+                    router={router}
                   />
                 );
               })}
           </View>
         </View>
 
-        {/* ===== DIFERENCIAIS ===== */}
         <View style={styles.section}>
           <Badge iconName="bulb" label="DIFERENCIAIS" />
           <View style={[styles.highlightsRow, { marginTop: 14 }]}>
-            <HighlightCard iconName="leaf"    title="Natural" text="Ingredientes 100% naturais"    delay={200} />
-            <HighlightCard iconName="flask"   title="Testado" text="Dermatologicamente aprovado"   delay={350} />
-            <HighlightCard iconName="refresh" title="Eco"     text="Embalagens recicláveis"         delay={500} />
+            <HighlightCard iconName="leaf" title="Natural" text="Ingredientes 100% naturais" delay={200} />
+            <HighlightCard iconName="flask" title="Testado" text="Dermatologicamente aprovado" delay={350} />
+            <HighlightCard iconName="refresh" title="Eco" text="Embalagens recicláveis" delay={500} />
           </View>
         </View>
 
-        {/* ===== CTA FINAL ===== */}
         <View style={styles.ctaCard}>
-          <Circle size={220} color="rgba(194,65,12,0.15)" style={{ top: -60,   right: -60 }} />
+          <Circle size={220} color="rgba(194,65,12,0.15)" style={{ top: -60, right: -60 }} />
           <Circle size={130} color="rgba(217,119,6,0.10)" style={{ bottom: -40, left: -40 }} />
-
           <Badge iconName="gift" label="OFERTA ESPECIAL" />
-
           <Text style={styles.ctaCardTitle}>Monte seu{'\n'}kit verão</Text>
           <Text style={styles.ctaCardSub}>
             Combine produtos e ganhe até 20% de desconto na sua linha Summer personalizada.
           </Text>
-
           <TouchableOpacity
             style={styles.ctaBtnLight}
             activeOpacity={0.85}
@@ -537,58 +517,43 @@ export default function SummerScreen() {
             </View>
           </TouchableOpacity>
         </View>
-
         <View style={{ height: 20 }} />
       </ScrollView>
       <Toast visible={toastVisible} message={toastMessage} icon={toastIcon} />
-        <TouchableOpacity
-          style={styles.floatingCartBtn}
-          activeOpacity={0.85}
-          onPress={() => setCartVisible(true)}
-        >
-          <Ionicons name="cart-outline" size={22} color="#FFFFFF" />
-          {items.reduce((sum, i) => sum + i.quantity, 0) > 0 && (
-            <View style={styles.cartBadge}>
-              <Text style={styles.cartBadgeText}>
-                {items.reduce((sum, i) => sum + i.quantity, 0)}
-              </Text>
-            </View>
-          )}
-        </TouchableOpacity>
-          <CartSheet
-            visible={cartVisible}
-            cart={cartForSheet}
-            onClose={() => setCartVisible(false)}
-            onAdd={handleAddToCart}
-            onRemove={handleRemoveFromCart}
-            onDelete={handleDeleteFromCart}
-            onCheckout={() => {
-              setCartVisible(false);
-              router.push('/pagamento');
-            }}
-          />
+      <TouchableOpacity
+        style={styles.floatingCartBtn}
+        activeOpacity={0.85}
+        onPress={() => setCartVisible(true)}
+      >
+        <Ionicons name="cart-outline" size={22} color="#FFFFFF" />
+        {items.reduce((sum, i) => sum + i.quantity, 0) > 0 && (
+          <View style={styles.cartBadge}>
+            <Text style={styles.cartBadgeText}>
+              {items.reduce((sum, i) => sum + i.quantity, 0)}
+            </Text>
+          </View>
+        )}
+      </TouchableOpacity>
+      <CartSheet
+        visible={cartVisible}
+        cart={cartForSheet}
+        onClose={() => setCartVisible(false)}
+        onAdd={handleAddToCart}
+        onRemove={handleRemoveFromCart}
+        onDelete={handleDeleteFromCart}
+        onCheckout={() => {
+          setCartVisible(false);
+          router.push('/pagamento');
+        }}
+      />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-
-  // ─── Layout base ─────────────────────────────────────────────────────────
-  safe: {
-    flex: 1,
-    backgroundColor: C.bg,
-  },
-  scroll: {
-    flex: 1,
-    backgroundColor: C.bg,
-  },
-  scrollContent: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    gap: 20,
-  },
-
-  // ─── Hero ────────────────────────────────────────────────────────────────
+  safe: { flex: 1, backgroundColor: C.bg },
+  scroll: { flex: 1, backgroundColor: C.bg },
+  scrollContent: { paddingHorizontal: 16, paddingTop: 16, gap: 20 },
   heroCard: {
     backgroundColor: C.bgCardDark,
     borderRadius: 28,
@@ -616,16 +581,8 @@ const styles = StyleSheet.create({
     lineHeight: 23,
     marginBottom: 26,
   },
-  heroDivider: {
-    height: 1,
-    backgroundColor: C.accent,
-    marginBottom: 22,
-  },
-
-  // ─── Seções ──────────────────────────────────────────────────────────────
-  section: {
-    gap: 0,
-  },
+  heroDivider: { height: 1, backgroundColor: C.accent, marginBottom: 22 },
+  section: { gap: 0 },
   sectionTitle: {
     fontFamily: 'PlayfairDisplay_700Bold',
     color: C.accent,
@@ -641,8 +598,6 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     marginBottom: 14,
   },
-
-  // ─── Badge ───────────────────────────────────────────────────────────────
   badge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -665,21 +620,9 @@ const styles = StyleSheet.create({
     fontSize: 10,
     letterSpacing: 1.3,
   },
-  badgeTextDark: {
-    color: C.bg,
-  },
-
-  // ─── Stats ───────────────────────────────────────────────────────────────
-  statsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 28,
-  },
-  statItem: {
-    flex: 1,
-    alignItems: 'center',
-    gap: 4,
-  },
+  badgeTextDark: { color: C.bg },
+  statsRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 28 },
+  statItem: { flex: 1, alignItems: 'center', gap: 4 },
   statValue: {
     fontFamily: 'Poppins_700Bold',
     color: C.fg,
@@ -692,13 +635,7 @@ const styles = StyleSheet.create({
     fontSize: 9,
     letterSpacing: 1.2,
   },
-  statDivider: {
-    width: 1,
-    height: 36,
-    backgroundColor: C.border,
-  },
-
-  // ─── Botões CTA ──────────────────────────────────────────────────────────
+  statDivider: { width: 1, height: 36, backgroundColor: C.border },
   ctaBtnLight: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -723,8 +660,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-
-  // ─── CTA Card ────────────────────────────────────────────────────────────
   ctaCard: {
     backgroundColor: C.bgCardDark,
     borderRadius: 28,
@@ -752,14 +687,7 @@ const styles = StyleSheet.create({
     lineHeight: 21,
     marginBottom: 24,
   },
-
-  // ─── Chips de benefício ───────────────────────────────────────────────────
-  autoCarouselWrap: {
-    marginTop: 12,
-    minHeight: 42,
-    justifyContent: 'center',
-    alignItems: 'flex-start',
-  },
+  autoCarouselWrap: { marginTop: 12, minHeight: 42, justifyContent: 'center', alignItems: 'flex-start' },
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -771,38 +699,11 @@ const styles = StyleSheet.create({
     paddingVertical: 9,
     gap: 7,
   },
-  chipText: {
-    fontFamily: 'Poppins_500Medium',
-    color: C.fg,
-    fontSize: 12,
-  },
-
-  // ─── Divider ─────────────────────────────────────────────────────────────
-  dividerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginTop: 10,
-    marginBottom: 16,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: C.border,
-  },
-  dividerLabel: {
-    fontFamily: 'Poppins_500Medium',
-    color: C.mutedLight,
-    fontSize: 10,
-    letterSpacing: 1,
-  },
-
-  // ─── Filtro ──────────────────────────────────────────────────────────────
-  filterRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 16,
-  },
+  chipText: { fontFamily: 'Poppins_500Medium', color: C.fg, fontSize: 12 },
+  dividerRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 10, marginBottom: 16 },
+  dividerLine: { flex: 1, height: 1, backgroundColor: C.border },
+  dividerLabel: { fontFamily: 'Poppins_500Medium', color: C.mutedLight, fontSize: 10, letterSpacing: 1 },
+  filterRow: { flexDirection: 'row', gap: 8, marginBottom: 16 },
   filterChip: {
     paddingHorizontal: 18,
     paddingVertical: 8,
@@ -811,27 +712,10 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: C.border,
   },
-  filterChipActive: {
-    backgroundColor: C.accent,
-    borderColor: C.accent,
-  },
-  filterChipText: {
-    fontFamily: 'Poppins_600SemiBold',
-    color: C.muted,
-    fontSize: 13,
-  },
-  filterChipTextActive: {
-    color: C.bg,
-  },
-
-  // ─── Grid de produtos ─────────────────────────────────────────────────────
-  productsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 14,
-  },
-
-  // ─── Card grande (destaque) ───────────────────────────────────────────────
+  filterChipActive: { backgroundColor: C.accent, borderColor: C.accent },
+  filterChipText: { fontFamily: 'Poppins_600SemiBold', color: C.muted, fontSize: 13 },
+  filterChipTextActive: { color: C.bg },
+  productsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 14 },
   productCard: {
     backgroundColor: C.bgCard,
     borderRadius: 20,
@@ -844,31 +728,11 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 4,
   },
-  productCardHighlight: {
-    borderColor: C.accentBorder,
-    borderWidth: 1.5,
-  },
-  productThumb: {
-    height: 220,
-    backgroundColor: 'transparent',
-    justifyContent: 'center',
-    alignItems: 'center',
-    overflow: 'hidden',
-  },
-  productThumbHighlight: {
-    height: 280,
-    backgroundColor: 'transparent',
-  },
-  productImage: {
-    width: '100%',
-    height: '100%',
-    zIndex: 1,
-  },
-  productImagePlaceholder: {
-    alignItems: 'center',
-    gap: 6,
-    zIndex: 1,
-  },
+  productCardHighlight: { borderColor: C.accentBorder, borderWidth: 1.5 },
+  productThumb: { height: 220, backgroundColor: 'transparent', justifyContent: 'center', alignItems: 'center', overflow: 'hidden' },
+  productThumbHighlight: { height: 280, backgroundColor: 'transparent' },
+  productImage: { width: '100%', height: '100%', zIndex: 1 },
+  productImagePlaceholder: { alignItems: 'center', gap: 6, zIndex: 1 },
   favBtn: {
     position: 'absolute',
     top: 10,
@@ -895,60 +759,16 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     zIndex: 2,
   },
-  featuredBadgeText: {
-    fontFamily: 'Poppins_700Bold',
-    color: C.bg,
-    fontSize: 9,
-    letterSpacing: 1.1,
-  },
-  productInfo: {
-    padding: 18,
-    gap: 6,
-  },
-  starsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  starsText: {
-    fontFamily: 'Poppins_500Medium',
-    color: C.gold,
-    fontSize: 12,
-  },
-  productName: {
-    fontFamily: 'Poppins_600SemiBold',
-    color: C.fg,
-    fontSize: 16,
-    lineHeight: 23,
-  },
-  productDesc: {
-    fontFamily: 'Poppins_400Regular',
-    color: C.muted,
-    fontSize: 13,
-    lineHeight: 19,
-  },
-  productFooter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: 10,
-  },
-  oldPrice: {
-    fontFamily: 'Poppins_400Regular',
-    color: C.mutedLight,
-    fontSize: 12,
-    textDecorationLine: 'line-through',
-  },
-  productPrice: {
-    fontFamily: 'Poppins_700Bold',
-    color: C.fg,
-    fontSize: 20,
-  },
-  productActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
+  featuredBadgeText: { fontFamily: 'Poppins_700Bold', color: C.bg, fontSize: 9, letterSpacing: 1.1 },
+  productInfo: { padding: 18, gap: 6 },
+  starsRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  starsText: { fontFamily: 'Poppins_500Medium', color: C.gold, fontSize: 12 },
+  productName: { fontFamily: 'Poppins_600SemiBold', color: C.fg, fontSize: 16, lineHeight: 23 },
+  productDesc: { fontFamily: 'Poppins_400Regular', color: C.muted, fontSize: 13, lineHeight: 19 },
+  productFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 10 },
+  oldPrice: { fontFamily: 'Poppins_400Regular', color: C.mutedLight, fontSize: 12, textDecorationLine: 'line-through' },
+  productPrice: { fontFamily: 'Poppins_700Bold', color: C.fg, fontSize: 20 },
+  productActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   cartBtn: {
     width: 42,
     height: 42,
@@ -959,19 +779,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  buyBtn: {
-    backgroundColor: C.accent,
-    borderRadius: 100,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-  },
-  buyBtnText: {
-    fontFamily: 'Poppins_600SemiBold',
-    color: C.bg,
-    fontSize: 13,
-  },
-
-  // ─── Card pequeno ─────────────────────────────────────────────────────────
+  buyBtn: { backgroundColor: C.accent, borderRadius: 100, paddingHorizontal: 20, paddingVertical: 12 },
+  buyBtnText: { fontFamily: 'Poppins_600SemiBold', color: C.bg, fontSize: 13 },
   productCardSmall: {
     backgroundColor: C.bgCard,
     borderRadius: 18,
@@ -985,39 +794,12 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 3,
   },
-  productThumbSmall: {
-    height: 170,
-    backgroundColor: 'transparent',
-    justifyContent: 'center',
-    alignItems: 'center',
-    overflow: 'hidden',
-  },
-  productImageSmall: {
-    width: '100%',
-    height: '100%',
-    zIndex: 1,
-  },
-  productInfoSmall: {
-    padding: 14,
-    gap: 4,
-  },
-  productNameSmall: {
-    fontFamily: 'Poppins_600SemiBold',
-    color: C.fg,
-    fontSize: 13,
-    lineHeight: 18,
-  },
-  productPriceSmall: {
-    fontFamily: 'Poppins_700Bold',
-    color: C.fg,
-    fontSize: 16,
-  },
-  smallCardActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginTop: 8,
-  },
+  productThumbSmall: { height: 170, backgroundColor: 'transparent', justifyContent: 'center', alignItems: 'center', overflow: 'hidden' },
+  productImageSmall: { width: '100%', height: '100%', zIndex: 1 },
+  productInfoSmall: { padding: 14, gap: 4 },
+  productNameSmall: { fontFamily: 'Poppins_600SemiBold', color: C.fg, fontSize: 13, lineHeight: 18 },
+  productPriceSmall: { fontFamily: 'Poppins_700Bold', color: C.fg, fontSize: 16 },
+  smallCardActions: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 },
   smallCartBtn: {
     width: 36,
     height: 36,
@@ -1028,19 +810,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  buyBtnFull: {
-    flex: 1,
-    backgroundColor: C.accent,
-    borderRadius: 100,
-    paddingVertical: 9,
-    alignItems: 'center',
-  },
-
-  // ─── Diferenciais ────────────────────────────────────────────────────────
-  highlightsRow: {
-    flexDirection: 'row',
-    gap: 10,
-  },
+  buyBtnFull: { flex: 1, backgroundColor: C.accent, borderRadius: 100, paddingVertical: 9, alignItems: 'center' },
+  highlightsRow: { flexDirection: 'row', gap: 10 },
   highlightCard: {
     flex: 1,
     backgroundColor: C.bgCard,
@@ -1056,29 +827,9 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 2,
   },
-  highlightIconBox: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: C.accentSoft,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  highlightTitle: {
-    fontFamily: 'Poppins_600SemiBold',
-    color: C.fg,
-    fontSize: 13,
-    textAlign: 'center',
-  },
-  highlightText: {
-    fontFamily: 'Poppins_400Regular',
-    color: C.muted,
-    fontSize: 11,
-    lineHeight: 15,
-    textAlign: 'center',
-  },
-
-  // ─── Misc ─────────────────────────────────────────────────────────────────
+  highlightIconBox: { width: 44, height: 44, borderRadius: 22, backgroundColor: C.accentSoft, justifyContent: 'center', alignItems: 'center' },
+  highlightTitle: { fontFamily: 'Poppins_600SemiBold', color: C.fg, fontSize: 13, textAlign: 'center' },
+  highlightText: { fontFamily: 'Poppins_400Regular', color: C.muted, fontSize: 11, lineHeight: 15, textAlign: 'center' },
   floatingCartBtn: {
     position: 'absolute',
     right: 22,
@@ -1107,12 +858,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  cartBadgeText: {
-    fontFamily: 'Poppins_700Bold',
-    color: '#FFFFFF',
-    fontSize: 10,
-    lineHeight: 12,
-  },
+  cartBadgeText: { fontFamily: 'Poppins_700Bold', color: '#FFFFFF', fontSize: 10, lineHeight: 12 },
   toast: {
     position: 'absolute',
     top: 60,
@@ -1139,16 +885,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 10,
   },
-  toastText: {
-    fontFamily: 'Poppins_500Medium',
-    color: C.bg,
-    fontSize: 13,
-    flex: 1,
-  },
-  placeholderText: {
-    fontFamily: 'Poppins_400Regular',
-    color: C.mutedLight,
-    fontSize: 11,
-  },
+  toastText: { fontFamily: 'Poppins_500Medium', color: C.bg, fontSize: 13, flex: 1 },
+  placeholderText: { fontFamily: 'Poppins_400Regular', color: C.mutedLight, fontSize: 11 },
 });
-  

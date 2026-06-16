@@ -3,6 +3,7 @@ import React, {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
 } from 'react';
 import {
   View,
@@ -21,6 +22,8 @@ import {
   ActivityIndicator,
   RefreshControl,
   Image,
+  FlatList,
+  Pressable,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -29,19 +32,21 @@ import Animated, {
   useSharedValue,
   withSpring,
   withTiming,
+  withRepeat,
+  cancelAnimation,
+  Easing,
   FadeIn,
   FadeInDown,
 } from 'react-native-reanimated';
 import { useUser } from '../../contexts/UserContext';
 import { router } from 'expo-router';
-// ADICIONE no topo do arquivo
 import imageMap from '../../services/imageMap';
 import api from '../../services/api';
 import * as ImagePicker from 'expo-image-picker';
 
-
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const IS_TABLET = SCREEN_WIDTH >= 768;
+const CARD_WIDTH = SCREEN_WIDTH * 0.7;
+const GRID_CARD_WIDTH = (SCREEN_WIDTH - 20 * 2 - 14) / 2;
 
 // DESIGN TOKENS
 const C = {
@@ -88,7 +93,7 @@ const ORDER_STATUS = {
   confirmed: { label: 'Confirmado', bg: C.infoBg,    color: C.info,    icon: 'checkmark-circle-outline' },
   shipped:   { label: 'Enviado',    bg: C.purpleBg,  color: C.purple,  icon: 'bicycle-outline'          },
   delivered: { label: 'Entregue',   bg: C.successBg, color: C.success, icon: 'ribbon-outline'           },
-  cancelled: { label: 'Cancelado',  bg: C.dangerBg,  color: C.danger,  icon: 'close-circle-outline'     },
+  canceled: { label: 'Cancelado',  bg: C.dangerBg,  color: C.danger,  icon: 'close-circle-outline'     },
 };
 
 const TABS = [
@@ -413,7 +418,7 @@ const OrderStatusModal = ({ visible, order, onClose, onUpdate }) => {
   const [updating, setUpdating] = useState(false);
   if (!order) return null;
 
-  const statuses = ['pending', 'confirmed', 'shipped', 'delivered', 'cancelled'];
+  const statuses = ['pending', 'confirmed', 'shipped', 'delivered', 'canceled'];
 
   const handleStatus = async (newStatus) => {
     setUpdating(true);
@@ -672,7 +677,7 @@ const OrdersScreen = () => {
   const filters = [
     { key: 'all', label: 'Todos' }, { key: 'pending', label: 'Pendente' },
     { key: 'confirmed', label: 'Confirmado' }, { key: 'shipped', label: 'Enviado' },
-    { key: 'delivered', label: 'Entregue' }, { key: 'cancelled', label: 'Cancelado' },
+    { key: 'delivered', label: 'Entregue' }, { key: 'canceled', label: 'Cancelado' },
   ];
 
   const filtered = useMemo(() => orders.filter(o => {
@@ -807,8 +812,8 @@ const ProductsScreen = () => {
   };
 
   const handleDelete = (product) => {
-    setDeleteModal({ visible: true, product });
-  };
+  setDeleteModal({ visible: true, product });
+};
 
   const confirmDelete = async () => {
     const product = deleteModal.product;
@@ -818,9 +823,10 @@ const ProductsScreen = () => {
       setProducts(prev => prev.filter(p => p.id !== product.id));
       Alert.alert('Sucesso', 'Produto excluído');
     } catch (err) {
-      Alert.alert('Erro', err?.response?.data?.message || 'Não foi possível excluir');
+      Alert.alert('Erro', 'Não foi possível excluir');
     }
   };
+
 
   const filters = [
     { key: 'all', label: 'Todos' },
@@ -974,18 +980,28 @@ const UsersScreen = () => {
     || (u.email ?? '').toLowerCase().includes(search.toLowerCase())
   ), [users, search]);
 
-  const handleDeleteUser = (user) => {
-    Alert.alert('Excluir Usuário', `Deseja excluir a conta de "${user.name}"?`, [
+const handleDeleteUser = (user) => {
+  Alert.alert(
+    'Excluir Usuário',
+    `Deseja excluir ${user.name || user.email}?`,
+    [
       { text: 'Cancelar', style: 'cancel' },
-      { text: 'Excluir', style: 'destructive', onPress: async () => {
+      { 
+        text: 'Excluir', 
+        style: 'destructive',
+        onPress: async () => {
           try {
-            await api.delete(`/users/${user.id}`);
+            await api.delete(`/users/admin/${user.id}`);
             setUsers(prev => prev.filter(u => u.id !== user.id));
-          } catch { Alert.alert('Erro', 'Não foi possível excluir o usuário.'); }
+            Alert.alert('Sucesso', 'Usuário excluído!');
+          } catch (error) {
+            Alert.alert('Erro', 'Falha ao excluir usuário');
+          }
         }
       },
-    ]);
-  };
+    ]
+  );
+};
 
   if (loading) return <LoadingOverlay />;
 
@@ -1025,7 +1041,7 @@ const UsersScreen = () => {
               </TouchableOpacity>
 
               {isExpanded && (
-                <View style={s.userCardExpanded}>
+              <View style={s.userCardExpanded}>
                   <Divider mx={0} />
                   <View style={{ padding: 16, gap: 10 }}>
                     {[
@@ -1039,12 +1055,15 @@ const UsersScreen = () => {
                         <Text style={s.userDetailValue}>{value}</Text>
                       </View>
                     ))}
-                    {!isAdmin && (
-                      <TouchableOpacity style={s.deleteUserBtn} onPress={() => handleDeleteUser(user)}>
-                        <Ionicons name="trash-outline" size={16} color={C.danger} />
-                        <Text style={s.deleteUserBtnText}>Excluir conta</Text>
-                      </TouchableOpacity>
-                    )}
+                      {!isAdmin && (
+                        <TouchableOpacity 
+                          style={s.deleteUserBtn} 
+                          onPress={() => handleDeleteUser(user)}
+                        >
+                          <Ionicons name="trash-outline" size={16} color={C.danger} />
+                          <Text style={s.deleteUserBtnText}>Excluir conta</Text>
+                        </TouchableOpacity>
+                      )}
                   </View>
                 </View>
               )}

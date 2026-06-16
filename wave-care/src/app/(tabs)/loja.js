@@ -32,6 +32,7 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import { useUser } from '../../contexts/UserContext';
 import { useCartStore } from '../../stores/useCartStore';
 import { useProducts } from '../../contexts/ProductContext';
+import imageMap from '../../services/imageMap';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -206,30 +207,33 @@ function CartSheet({ visible, cart, onClose, onAdd, onRemove, onDelete, onChecko
         ) : (
           <>
             <ScrollView style={styles.cartList} showsVerticalScrollIndicator={false}>
-              {cart.map((item, index) => (
-                <Animated.View key={item.id} entering={FadeInDown.delay(index * 80).springify()} style={styles.cartItem}>
-                 <Image source={item.product?.imageSource ?? { uri: item.product?.image }} style={styles.cartItemImage} contentFit="cover" />
-                  <View style={styles.cartItemInfo}>
-                    <Text style={styles.cartItemName} numberOfLines={1}>{item.product?.name}</Text>
-                    <Text style={styles.cartItemCategory}>{item.product?.category}</Text>
-                    <Text style={styles.cartItemPrice}>R$ {(Number(item.price ?? 0) * item.qty).toFixed(2).replace('.', ',')}</Text>
-                    <View style={styles.cartQtyRow}>
-                      <TouchableOpacity style={styles.qtyBtn} onPress={() => onRemove(item.id)} activeOpacity={0.7}>
-                        <Ionicons name="remove" size={14} color={COLORS.green} />
-                      </TouchableOpacity>
-                      <View style={styles.qtyDisplay}>
-                        <Text style={styles.qtyText}>{item.quantity ?? 0}</Text>
+              {cart.map((item, index) => {
+                const imageSource = imageMap[item.product?.image] || item.product?.imageSource;
+                return (
+                  <Animated.View key={item.id} entering={FadeInDown.delay(index * 80).springify()} style={styles.cartItem}>
+                    <Image source={imageSource || { uri: item.product?.image }} style={styles.cartItemImage} contentFit="cover" />
+                    <View style={styles.cartItemInfo}>
+                      <Text style={styles.cartItemName} numberOfLines={1}>{item.product?.name}</Text>
+                      <Text style={styles.cartItemCategory}>{item.product?.category}</Text>
+                      <Text style={styles.cartItemPrice}>R$ {(Number(item.price ?? 0) * item.quantity).toFixed(2).replace('.', ',')}</Text>
+                      <View style={styles.cartQtyRow}>
+                        <TouchableOpacity style={styles.qtyBtn} onPress={() => onRemove(item.id)} activeOpacity={0.7}>
+                          <Ionicons name="remove" size={14} color={COLORS.green} />
+                        </TouchableOpacity>
+                        <View style={styles.qtyDisplay}>
+                          <Text style={styles.qtyText}>{item.quantity ?? 0}</Text>
+                        </View>
+                        <TouchableOpacity style={styles.qtyBtn} onPress={() => onAdd({ id: item.productId, name: item.product?.name })} activeOpacity={0.7}>
+                          <Ionicons name="add" size={14} color={COLORS.green} />
+                        </TouchableOpacity>
                       </View>
-                      <TouchableOpacity style={styles.qtyBtn} onPress={() => onAdd(item)} activeOpacity={0.7}>
-                        <Ionicons name="add" size={14} color={COLORS.green} />
-                      </TouchableOpacity>
                     </View>
-                  </View>
-                  <TouchableOpacity style={styles.deleteBtn} onPress={() => onDelete(item.id)} activeOpacity={0.7}>
-                    <Ionicons name="trash-outline" size={16} color={COLORS.red} />
-                  </TouchableOpacity>
-                </Animated.View>
-              ))}
+                    <TouchableOpacity style={styles.deleteBtn} onPress={() => onDelete(item.id)} activeOpacity={0.7}>
+                      <Ionicons name="trash-outline" size={16} color={COLORS.red} />
+                    </TouchableOpacity>
+                  </Animated.View>
+                );
+              })}
             </ScrollView>
 
             <View style={styles.cartFooter}>
@@ -263,9 +267,10 @@ function CartSheet({ visible, cart, onClose, onAdd, onRemove, onDelete, onChecko
   );
 }
 
-function ProductCard({ item, viewMode, onAddToCart, isFavorite, onToggleFavorite, index }) {
+function ProductCard({ item, viewMode, onAddToCart, onBuyNow, isFavorite, onToggleFavorite, index }) {
   const heartScale = useSharedValue(1);
   const cardScale = useSharedValue(1);
+  const imageSource = imageMap[item.image] || item.imageSource;
 
   const heartStyle = useAnimatedStyle(() => ({
     transform: [{ scale: heartScale.value }],
@@ -302,7 +307,7 @@ function ProductCard({ item, viewMode, onAddToCart, isFavorite, onToggleFavorite
       <Animated.View entering={FadeInDown.delay(index * 70).springify().damping(16)} style={[styles.gridCard, cardStyle]}>
         <TouchableOpacity activeOpacity={1} onPressIn={handlePressIn} onPressOut={handlePressOut}>
           <View style={styles.cardImageContainer}>
-            <Image source={item.imageSource} style={styles.gridImage} contentFit="cover" transition={300} />
+            <Image source={imageSource} style={styles.gridImage} contentFit="cover" transition={300} />
             <LinearGradient colors={['transparent', 'rgba(0,0,0,0.03)']} style={styles.imageOverlay} />
             {item.badge && (
               <View style={[styles.badge, { backgroundColor: badgeStyle.bg }]}>
@@ -336,11 +341,16 @@ function ProductCard({ item, viewMode, onAddToCart, isFavorite, onToggleFavorite
                 <Text style={styles.originalPrice}>R$ {Number(item.precoOriginal ?? 0).toFixed(2)}</Text>
               )}
             </View>
-            <TouchableOpacity style={styles.addBtn} onPress={() => onAddToCart(item)} activeOpacity={0.8}>
-              <LinearGradient colors={[COLORS.greenLight, COLORS.greenMuted]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.addBtnGradient}>
-                <Text style={styles.addBtnText}>Adicionar</Text>
-              </LinearGradient>
-            </TouchableOpacity>
+            <View style={styles.cardActions}>
+              <TouchableOpacity style={styles.cartBtn} onPress={() => onAddToCart(item)} activeOpacity={0.8}>
+                <Ionicons name="cart-outline" size={18} color={COLORS.green} />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.buyBtn} onPress={() => onBuyNow(item)} activeOpacity={0.8}>
+                <LinearGradient colors={[COLORS.greenLight, COLORS.greenMuted]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.buyBtnGradient}>
+                  <Text style={styles.buyBtnText}>Comprar</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </View>
           </View>
         </TouchableOpacity>
       </Animated.View>
@@ -351,7 +361,7 @@ function ProductCard({ item, viewMode, onAddToCart, isFavorite, onToggleFavorite
     <Animated.View entering={FadeInDown.delay(index * 70).springify().damping(16)} style={[styles.compactCard, cardStyle]}>
       <TouchableOpacity activeOpacity={1} onPressIn={handlePressIn} onPressOut={handlePressOut} style={styles.compactInner}>
         <View style={styles.compactImageContainer}>
-          <Image source={item.imageSource} style={styles.compactImage} contentFit="cover" transition={300} />
+          <Image source={imageSource} style={styles.compactImage} contentFit="cover" transition={300} />
           {item.badge && (
             <View style={[styles.badgeCompact, { backgroundColor: badgeStyle.bg }]}>
               <Text style={[styles.badgeTextCompact, { color: badgeStyle.text }]}>{item.badge}</Text>
@@ -380,9 +390,12 @@ function ProductCard({ item, viewMode, onAddToCart, isFavorite, onToggleFavorite
               <AnimatedTouchable style={[styles.heartBtnSmall, heartStyle]} onPress={handleFavorite} activeOpacity={0.7}>
                 <Ionicons name={isFavorite ? 'heart' : 'heart-outline'} size={16} color={isFavorite ? COLORS.red : COLORS.darkSoft} />
               </AnimatedTouchable>
-              <TouchableOpacity style={styles.addBtnSmall} onPress={() => onAddToCart(item)} activeOpacity={0.8}>
-                <LinearGradient colors={[COLORS.greenLight, COLORS.greenMuted]} style={styles.addBtnSmallGradient}>
-                  <Ionicons name="cart-outline" size={16} color={COLORS.white} />
+              <TouchableOpacity style={styles.cartBtnSmall} onPress={() => onAddToCart(item)} activeOpacity={0.8}>
+                <Ionicons name="cart-outline" size={16} color={COLORS.green} />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.buyBtnSmall} onPress={() => onBuyNow(item)} activeOpacity={0.8}>
+                <LinearGradient colors={[COLORS.greenLight, COLORS.greenMuted]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.buyBtnSmallGradient}>
+                  <Text style={styles.buyBtnSmallText}>Comprar</Text>
                 </LinearGradient>
               </TouchableOpacity>
             </View>
@@ -446,8 +459,6 @@ export default function loja() {
     decreaseItem,
     removeItem,
     fetchCart,
-    itemCount,
-    total
   } = useCartStore();
 
   const [selectedSeason, setSelectedSeason] = useState('Todos');
@@ -462,8 +473,6 @@ export default function loja() {
   const [toastIcon, setToastIcon] = useState('checkmark-circle');
   const toastTimeout = useRef(null);
 
-
-  // Carrega favoritos do usuário quando a tela ganha foco
   useFocusEffect(
     useCallback(() => {
       if (user && !user.guest) {
@@ -493,21 +502,41 @@ export default function loja() {
       return;
     }
     try {
-      await addItem(user.id, item.id);
-      showToast(`${item.name} adicionado!`, 'cart-outline');
+      const productId = item.id || item.productId;
+      if (!productId) {
+        showToast('Produto inválido', 'alert-circle-outline');
+        return;
+      }
+      await addItem(user.id, productId);
+      showToast(`${item.name || 'Produto'} adicionado!`, 'cart-outline');
     } catch (error) {
       console.log(error);
       showToast('Erro ao adicionar produto', 'alert-circle-outline');
     }
   }, [user, addItem, showToast, router]);
 
+  const handleBuyNow = useCallback((item) => {
+    if (!user || user.guest) {
+      showToast('Faça login para comprar', 'log-in-outline');
+      setTimeout(() => router.push('/login'), 1500);
+      return;
+    }
+    const productId = item.id || item.productId;
+    if (!productId) {
+      showToast('Produto inválido', 'alert-circle-outline');
+      return;
+    }
+    addItem(user.id, productId);
+    router.push('/pagamento');
+  }, [user, addItem, router, showToast]);
+
   const handleRemoveFromCart = useCallback(async (cartItemId) => {
-  try {
-    const found = cart.find(i => i.id === cartItemId);
-    if (found) await decreaseItem(user.id, cartItemId, found.quantity);
-  } catch (error) {
-    console.log(error);
-  }
+    try {
+      const found = cart.find(i => i.id === cartItemId);
+      if (found) await decreaseItem(user.id, cartItemId, found.quantity);
+    } catch (error) {
+      console.log(error);
+    }
   }, [cart, decreaseItem, user]);
 
   const handleDeleteFromCart = useCallback(async (cartItemId) => {
@@ -533,7 +562,6 @@ export default function loja() {
     router.push('/pagamento');
   }, [user, cart, router, showToast]);
 
-
   const handleToggleFavorite = useCallback(async (product) => {
     if (!user || user.guest) {
       showToast('Faça login para favoritar produtos', 'log-in-outline');
@@ -553,6 +581,20 @@ export default function loja() {
       showToast(product.name + ' removido dos favoritos', 'heart-dislike-outline');
     }
   }, [user, toggleFavorite, showToast, router]);
+
+  const cartForSheet = cart.map(item => ({
+    id: item.id,
+    productId: item.productId,
+    product: {
+      name: item.product?.name ?? '',
+      price: item.product?.price ?? 0,
+      category: item.product?.category ?? 'Produto',
+      image: item.product?.image ?? null,
+      imageSource: imageMap[item.product?.image] || item.product?.imageSource,
+    },
+    quantity: item.quantity,
+    price: item.product?.price ?? 0,
+  }));
 
   const filteredProducts = products
     .filter(p => {
@@ -578,10 +620,11 @@ export default function loja() {
       viewMode={viewMode}
       index={index}
       onAddToCart={handleAddToCart}
+      onBuyNow={handleBuyNow}
       isFavorite={favorites.includes(item.id)}
       onToggleFavorite={handleToggleFavorite}
     />
-  ), [viewMode, handleAddToCart, favorites, handleToggleFavorite]);
+  ), [viewMode, handleAddToCart, handleBuyNow, favorites, handleToggleFavorite]);
 
   if (loading) return null;
 
@@ -596,7 +639,7 @@ export default function loja() {
           <Animated.View entering={FadeInDown.delay(200).duration(600)}>
             <View style={styles.heroBadge}>
               <Ionicons name="sparkles" size={11} color={COLORS.green} />
-              <Text style={styles.heroBadgeText}>Nova coleção 2025</Text>
+              <Text style={styles.heroBadgeText}>Nova coleção 2026</Text>
             </View>
           </Animated.View>
           <Animated.Text entering={FadeInDown.delay(350).duration(700)} style={styles.heroTitle}>
@@ -670,10 +713,7 @@ export default function loja() {
 
   return (
     <View style={styles.container}>
-      <StatusBar
-        barStyle="light-content"
-        backgroundColor={COLORS.green}
-      />
+      <StatusBar barStyle="light-content" backgroundColor={COLORS.green} />
 
       <FlatList
         data={filteredProducts}
@@ -684,44 +724,20 @@ export default function loja() {
         ListHeaderComponent={ListHeader}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
-        columnWrapperStyle={
-          viewMode === 'grid'
-            ? styles.columnWrapper
-            : undefined
-        }
+        columnWrapperStyle={viewMode === 'grid' ? styles.columnWrapper : undefined}
         ListEmptyComponent={
           <View style={styles.emptyList}>
-            <Ionicons
-              name="search-outline"
-              size={48}
-              color={COLORS.lightGray}
-            />
-
-            <Text style={styles.emptyTitle}>
-              Nenhum produto encontrado
-            </Text>
-
-            <Text style={styles.emptyText}>
-              Tente ajustar os filtros
-            </Text>
+            <Ionicons name="search-outline" size={48} color={COLORS.lightGray} />
+            <Text style={styles.emptyTitle}>Nenhum produto encontrado</Text>
+            <Text style={styles.emptyText}>Tente ajustar os filtros</Text>
           </View>
         }
       />
 
-      <FloatingCartButton
-        cartCount={cartCount}
-        onPress={() => setCartVisible(true)}
-      />
+      <FloatingCartButton cartCount={cartCount} onPress={() => setCartVisible(true)} />
 
-      <View
-        style={styles.toastContainer}
-        pointerEvents="none"
-      >
-        <Toast
-          visible={toastVisible}
-          message={toastMessage}
-          icon={toastIcon}
-        />
+      <View style={styles.toastContainer} pointerEvents="none">
+        <Toast visible={toastVisible} message={toastMessage} icon={toastIcon} />
       </View>
 
       <FilterPanel
@@ -736,9 +752,10 @@ export default function loja() {
           setSelectedCategory('Todos');
         }}
       />
+
       <CartSheet
         visible={cartVisible}
-        cart={cart}
+        cart={cartForSheet}
         onClose={() => setCartVisible(false)}
         onAdd={handleAddToCart}
         onRemove={handleRemoveFromCart}
@@ -807,9 +824,15 @@ const styles = StyleSheet.create({
   priceRow: { flexDirection: 'row', alignItems: 'baseline', gap: 6, marginBottom: 12 },
   price: { fontFamily: 'Poppins_700Bold', fontSize: 16, color: COLORS.green, fontWeight: '900', letterSpacing: -0.3 },
   originalPrice: { fontFamily: 'Poppins_400Regular', fontSize: 11, color: COLORS.grayLight, textDecorationLine: 'line-through', fontWeight: '500' },
-  addBtn: { borderRadius: 14, overflow: 'hidden' },
-  addBtnGradient: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 10, borderRadius: 14 },
-  addBtnText: { fontFamily: 'Poppins_700Bold', color: COLORS.white, fontSize: 12, fontWeight: '800', letterSpacing: 0.3 },
+  cardActions: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 },
+  cartBtn: { width: 38, height: 38, borderRadius: 19, borderWidth: 1.5, borderColor: COLORS.green + '40', backgroundColor: COLORS.white, alignItems: 'center', justifyContent: 'center' },
+  buyBtn: { flex: 1, borderRadius: 19, overflow: 'hidden' },
+  buyBtnGradient: { paddingVertical: 10, borderRadius: 19, alignItems: 'center', justifyContent: 'center' },
+  buyBtnText: { fontFamily: 'Poppins_600SemiBold', color: COLORS.white, fontSize: 13, fontWeight: '600' },
+  cartBtnSmall: { width: 34, height: 34, borderRadius: 17, borderWidth: 1.5, borderColor: COLORS.green + '40', backgroundColor: COLORS.white, alignItems: 'center', justifyContent: 'center' },
+  buyBtnSmall: { flex: 1, borderRadius: 17, overflow: 'hidden', marginLeft: 6 },
+  buyBtnSmallGradient: { paddingVertical: 8, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
+  buyBtnSmallText: { fontFamily: 'Poppins_600SemiBold', color: COLORS.white, fontSize: 11, fontWeight: '600' },
   compactCard: { backgroundColor: COLORS.white, borderRadius: 22, marginHorizontal: 20, marginTop: 14, overflow: 'hidden', shadowColor: COLORS.shadowDark, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.07, shadowRadius: 14, elevation: 4 },
   compactInner: { flexDirection: 'row' },
   compactImageContainer: { position: 'relative', overflow: 'hidden' },
@@ -817,7 +840,7 @@ const styles = StyleSheet.create({
   compactInfo: { flex: 1, padding: 16, justifyContent: 'space-between' },
   compactDesc: { fontFamily: 'Poppins_400Regular', fontSize: 12, color: COLORS.gray, lineHeight: 17, marginTop: 4, letterSpacing: 0.1 },
   compactBottom: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 10 },
-  compactActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  compactActions: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   heartBtnSmall: { width: 34, height: 34, borderRadius: 17, backgroundColor: COLORS.lighterGray, alignItems: 'center', justifyContent: 'center' },
   addBtnSmall: { borderRadius: 17, overflow: 'hidden' },
   addBtnSmallGradient: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
