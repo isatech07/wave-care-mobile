@@ -34,16 +34,16 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useUser } from '../../contexts/UserContext';
 import { router } from 'expo-router';
+// ADICIONE no topo do arquivo
+import imageMap from '../../services/imageMap';
 import api from '../../services/api';
 import * as ImagePicker from 'expo-image-picker';
+
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const IS_TABLET = SCREEN_WIDTH >= 768;
 
-// ─────────────────────────────────────────────
 // DESIGN TOKENS
-// ─────────────────────────────────────────────
-
 const C = {
   primary:      '#2D5A45',
   primaryLight: '#4A7B64',
@@ -81,10 +81,8 @@ const SHADOW = {
 
 const R = { xs: 8, sm: 12, md: 16, lg: 20, xl: 28, xxl: 36, full: 999 };
 
-// ─────────────────────────────────────────────
-// STATUS CONFIG
-// ─────────────────────────────────────────────
 
+// STATUS CONFIG
 const ORDER_STATUS = {
   pending:   { label: 'Pendente',   bg: C.warningBg, color: C.warning, icon: 'time-outline'            },
   confirmed: { label: 'Confirmado', bg: C.infoBg,    color: C.info,    icon: 'checkmark-circle-outline' },
@@ -100,10 +98,7 @@ const TABS = [
   { key: 'users',     label: 'Usuários', icon: 'people-outline',      iconActive: 'people'      },
 ];
 
-// ─────────────────────────────────────────────
 // ATOMIC COMPONENTS
-// ─────────────────────────────────────────────
-
 const PressableScale = ({ onPress, style, children, disabled }) => {
   const scale = useSharedValue(1);
   const animStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
@@ -176,10 +171,7 @@ const LoadingOverlay = () => (
   </View>
 );
 
-// ─────────────────────────────────────────────
 // LOGOUT MODAL
-// ─────────────────────────────────────────────
-
 const LogoutModal = ({ visible, onConfirm, onCancel, loading }) => (
   <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
     <View style={s.logoutOverlay}>
@@ -206,15 +198,14 @@ const LogoutModal = ({ visible, onConfirm, onCancel, loading }) => (
   </Modal>
 );
 
-// ─────────────────────────────────────────────
-// PRODUCT FORM MODAL (COM IMAGEM)
-// ─────────────────────────────────────────────
+const CATEGORIES = ['Shampoo', 'Condicionador', 'Máscara', 'Leave-in', 'Óleo', 'Finalizador', 'Acessório'];
+const SEASONS    = ['Verão', 'Inverno', 'Primavera', 'Outono'];
 
 const ProductFormModal = ({ visible, onClose, onSave, editingProduct }) => {
   const isEdit = !!editingProduct;
   const [form, setForm] = useState({
-    name: '', description: '', price: '', stock: '', category: '', season: '',
-    image: ''
+    name: '', description: '', price: '', stock: '',
+    category: '', season: '', image: null,
   });
   const [saving, setSaving] = useState(false);
 
@@ -227,10 +218,10 @@ const ProductFormModal = ({ visible, onClose, onSave, editingProduct }) => {
         stock:       String(editingProduct.stock ?? ''),
         category:    editingProduct.category    ?? '',
         season:      editingProduct.season      ?? '',
-        image:       editingProduct.image       ?? '',
+        image:       editingProduct.image       ?? null,
       });
     } else {
-      setForm({ name: '', description: '', price: '', stock: '', category: '', season: '', image: '' });
+      setForm({ name: '', description: '', price: '', stock: '', category: '', season: '', image: null });
     }
   }, [editingProduct, visible]);
 
@@ -239,14 +230,13 @@ const ProductFormModal = ({ visible, onClose, onSave, editingProduct }) => {
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Permissão necessária', 'Precisamos de acesso à galeria para adicionar imagem.');
+      Alert.alert('Permissão necessária', 'Precisamos de acesso à galeria.');
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       quality: 0.7,
-      base64: false,
     });
     if (!result.canceled && result.assets[0].uri) {
       setField('image', result.assets[0].uri);
@@ -258,15 +248,14 @@ const ProductFormModal = ({ visible, onClose, onSave, editingProduct }) => {
     if (!form.price || isNaN(Number(form.price))) { Alert.alert('Erro', 'Preço inválido.'); return; }
     setSaving(true);
     try {
-      // Prepara payload sem badge, com image
       const payload = {
         name:        form.name.trim(),
         description: form.description.trim(),
         price:       Number(form.price),
         stock:       Number(form.stock) || 0,
-        category:    form.category.trim(),
-        season:      form.season.trim(),
-        image:       form.image.trim() || null,
+        category:    form.category,
+        season:      form.season,
+        image:       form.image || null,
       };
       await onSave(payload);
       onClose();
@@ -277,15 +266,27 @@ const ProductFormModal = ({ visible, onClose, onSave, editingProduct }) => {
     }
   };
 
-  const fields = [
-    { key: 'name',        label: 'Nome *',      placeholder: 'Ex: Shampoo Wave Care',  keyboard: 'default' },
-    { key: 'description', label: 'Descrição',   placeholder: 'Breve descrição',        keyboard: 'default' },
-    { key: 'price',       label: 'Preço (R$) *',placeholder: '0.00',                   keyboard: 'numeric' },
-    { key: 'stock',       label: 'Estoque',     placeholder: '0',                      keyboard: 'numeric' },
-    { key: 'category',    label: 'Categoria',   placeholder: 'Ex: Shampoo',            keyboard: 'default' },
-    { key: 'season',      label: 'Estação',     placeholder: 'Ex: Verão',              keyboard: 'default' },
-    { key: 'image',       label: 'URL da Imagem', placeholder: 'https://... ou deixe vazio', keyboard: 'default' },
-  ];
+  const PillSelector = ({ label, options, value, onSelect }) => (
+    <View style={{ marginBottom: 4 }}>
+      <Text style={s.fieldLabel}>{label}</Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+        <View style={{ flexDirection: 'row', gap: 8, paddingVertical: 4 }}>
+          {options.map(opt => {
+            const active = value === opt;
+            return (
+              <TouchableOpacity
+                key={opt}
+                onPress={() => onSelect(active ? '' : opt)}
+                style={[s.formPill, active && s.formPillActive]}
+              >
+                <Text style={[s.formPillText, active && s.formPillTextActive]}>{opt}</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      </ScrollView>
+    </View>
+  );
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
@@ -296,43 +297,118 @@ const ProductFormModal = ({ visible, onClose, onSave, editingProduct }) => {
           </TouchableOpacity>
           <Text style={s.formModalTitle}>{isEdit ? 'Editar Produto' : 'Novo Produto'}</Text>
           <TouchableOpacity onPress={handleSave} disabled={saving} style={[s.formSaveBtn, saving && { opacity: 0.6 }]}>
-            {saving ? <ActivityIndicator size="small" color="#FFF" /> : <Text style={s.formSaveBtnText}>Salvar</Text>}
+            {saving
+              ? <ActivityIndicator size="small" color="#FFF" />
+              : <Text style={s.formSaveBtnText}>Salvar</Text>
+            }
           </TouchableOpacity>
         </View>
 
         <ScrollView contentContainerStyle={{ padding: 20, gap: 16 }} showsVerticalScrollIndicator={false}>
-          {fields.map(({ key, label, placeholder, keyboard }) => (
-            <View key={key}>
-              <Text style={s.fieldLabel}>{label}</Text>
-              <TextInput
-                style={s.fieldInput}
-                value={form[key]}
-                onChangeText={v => setField(key, v)}
-                placeholder={placeholder}
-                placeholderTextColor={C.inkTertiary}
-                keyboardType={keyboard}
-                multiline={key === 'description'}
-                numberOfLines={key === 'description' ? 3 : 1}
-              />
-            </View>
-          ))}
-          <TouchableOpacity style={s.imagePickerBtn} onPress={pickImage}>
-            <Ionicons name="images-outline" size={20} color={C.primary} />
-            <Text style={s.imagePickerText}>Escolher imagem da galeria</Text>
-          </TouchableOpacity>
-          {form.image ? (
-            <Image source={{ uri: form.image }} style={s.imagePreview} />
-          ) : null}
+
+          {/* IMAGEM */}
+          <View>
+            <Text style={s.fieldLabel}>Imagem do Produto</Text>
+            <TouchableOpacity onPress={pickImage} style={s.imagePickerArea}>
+              {form.image ? (
+                <>
+                  <Image
+                    source={
+                      imageMap[form.image]
+                        ? imageMap[form.image]
+                        : { uri: form.image }
+                    }
+                    style={s.imagePickerPreview}
+                  />
+                  <View style={s.imagePickerOverlay}>
+                    <Ionicons name="camera-outline" size={22} color="#FFF" />
+                    <Text style={s.imagePickerOverlayText}>Trocar imagem</Text>
+                  </View>
+                </>
+              ) : (
+                <View style={s.imagePickerPlaceholder}>
+                  <Ionicons name="image-outline" size={36} color={C.inkTertiary} />
+                  <Text style={s.imagePickerPlaceholderText}>Toque para adicionar imagem</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          </View>
+
+          {/* NOME */}
+          <View>
+            <Text style={s.fieldLabel}>Nome *</Text>
+            <TextInput
+              style={s.fieldInput}
+              value={form.name}
+              onChangeText={v => setField('name', v)}
+              placeholder="Ex: Shampoo Wave Care"
+              placeholderTextColor={C.inkTertiary}
+            />
+          </View>
+
+          {/* DESCRIÇÃO */}
+          <View>
+            <Text style={s.fieldLabel}>Descrição</Text>
+            <TextInput
+              style={[s.fieldInput, { height: 80, textAlignVertical: 'top' }]}
+              value={form.description}
+              onChangeText={v => setField('description', v)}
+              placeholder="Breve descrição do produto"
+              placeholderTextColor={C.inkTertiary}
+              multiline
+              numberOfLines={3}
+            />
+          </View>
+
+          {/* PREÇO */}
+          <View>
+            <Text style={s.fieldLabel}>Preço (R$) *</Text>
+            <TextInput
+              style={s.fieldInput}
+              value={form.price}
+              onChangeText={v => setField('price', v)}
+              placeholder="0,00"
+              placeholderTextColor={C.inkTertiary}
+              keyboardType="numeric"
+            />
+          </View>
+
+          {/* ESTOQUE */}
+          <View>
+            <Text style={s.fieldLabel}>Estoque</Text>
+            <TextInput
+              style={s.fieldInput}
+              value={form.stock}
+              onChangeText={v => setField('stock', v)}
+              placeholder="0"
+              placeholderTextColor={C.inkTertiary}
+              keyboardType="numeric"
+            />
+          </View>
+
+          {/* CATEGORIA */}
+          <PillSelector
+            label="Categoria"
+            options={CATEGORIES}
+            value={form.category}
+            onSelect={v => setField('category', v)}
+          />
+
+          {/* ESTAÇÃO */}
+          <PillSelector
+            label="Estação"
+            options={SEASONS}
+            value={form.season}
+            onSelect={v => setField('season', v)}
+          />
+
         </ScrollView>
       </SafeAreaView>
     </Modal>
   );
 };
 
-// ─────────────────────────────────────────────
 // ORDER STATUS MODAL
-// ─────────────────────────────────────────────
-
 const OrderStatusModal = ({ visible, order, onClose, onUpdate }) => {
   const [updating, setUpdating] = useState(false);
   if (!order) return null;
@@ -390,10 +466,7 @@ const OrderStatusModal = ({ visible, order, onClose, onUpdate }) => {
   );
 };
 
-// ─────────────────────────────────────────────
 // HEADER
-// ─────────────────────────────────────────────
-
 const AppHeader = ({ activeTab }) => {
   const { logout } = useUser();
   const [logoutModalVisible, setLogoutModalVisible] = useState(false);
@@ -428,10 +501,7 @@ const AppHeader = ({ activeTab }) => {
   );
 };
 
-// ─────────────────────────────────────────────
 // TAB BAR
-// ─────────────────────────────────────────────
-
 const TabBar = ({ activeTab, setActiveTab }) => (
   <View style={s.tabBar}>
     {TABS.map((tab) => {
@@ -463,10 +533,7 @@ const TabItem = ({ tab, active, onPress }) => {
   );
 };
 
-// ─────────────────────────────────────────────
 // DASHBOARD SCREEN
-// ─────────────────────────────────────────────
-
 const DashboardScreen = ({ setActiveTab }) => {
   const [orders, setOrders] = useState([]);
   const [products, setProducts] = useState([]);
@@ -572,9 +639,7 @@ const DashboardScreen = ({ setActiveTab }) => {
   );
 };
 
-// ─────────────────────────────────────────────
 // ORDERS SCREEN
-// ─────────────────────────────────────────────
 
 const OrdersScreen = () => {
   const [orders, setOrders] = useState([]);
@@ -703,9 +768,8 @@ const OrdersScreen = () => {
   );
 };
 
-// ─────────────────────────────────────────────
-// PRODUCTS SCREEN (COM IMAGEM E NOME DO CLIENTE NOS PEDIDOS)
-// ─────────────────────────────────────────────
+
+// PRODUCTS SCREEN 
 
 const ProductsScreen = () => {
   const [products, setProducts] = useState([]);
@@ -804,28 +868,21 @@ const ProductsScreen = () => {
           </PressableScale>
         </View>
 
-   {filtered.map((product, i) => {
-  // Gera a URL da imagem (pode ser removida se não precisar mais do log)
-  const imageUrl = product.image
-    ? (product.image.startsWith('http') ? product.image : `http://localhost:3002${product.image}`)
-    : null;
-  console.log(`🖼️ Produto: ${product.name} | URL:`, imageUrl);
-
+  {filtered.map((product, i) => {
   return (
     <Animated.View key={product.id} entering={FadeInDown.delay(i * 50).duration(300)}>
       <Card pa={0} style={s.productCard}>
         {(product.stock ?? 0) === 0 && (
           <View style={s.productOutBadge}><Text style={s.productOutBadgeText}>ESGOTADO</Text></View>
         )}
-        <View style={s.productCardInner}>
-          {/* Exibe a imagem do produto se existir, senão mostra ícone */}
-          {product.image ? (
-            <Image source={{ uri: imageUrl }} style={s.productImage} />
-          ) : (
-            <View style={[s.productThumb, { backgroundColor: C.primary + '12' }]}>
-              <Ionicons name="flask-outline" size={24} color={C.primary} />
-            </View>
-          )}
+          <View style={s.productCardInner}>
+            {imageMap[product.image] ? (
+              <Image source={imageMap[product.image]} style={s.productImage} />
+            ) : (
+              <View style={[s.productThumb, { backgroundColor: C.primary + '12' }]}>
+                <Ionicons name="flask-outline" size={24} color={C.primary} />
+              </View>
+            )}
           <View style={{ flex: 1 }}>
             <Text style={s.productName}>{product.name}</Text>
             {product.category && <Text style={s.productCategory}>{product.category}</Text>}
@@ -888,10 +945,7 @@ const ProductsScreen = () => {
   );
 };
 
-// ─────────────────────────────────────────────
 // USERS SCREEN
-// ─────────────────────────────────────────────
-
 const UsersScreen = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -1176,7 +1230,7 @@ const s = StyleSheet.create({
   productOutBadge: { backgroundColor: C.dangerBg, paddingVertical: 4, paddingHorizontal: 16, borderBottomWidth: 1, borderBottomColor: C.danger + '30' },
   productOutBadgeText: { fontFamily: 'Poppins_700Bold', fontSize: 10, color: C.danger, letterSpacing: 1 },
   productCardInner: { flexDirection: 'row', alignItems: 'center', padding: 16, gap: 12 },
-  productThumb:     { width: 52, height: 52, borderRadius: R.md, alignItems: 'center', justifyContent: 'center' },
+  productThumb: { width: 80, height: 80, borderRadius: R.md, alignItems: 'center', justifyContent: 'center' },
   productName:      { fontFamily: 'Poppins_600SemiBold', fontSize: 13, color: C.ink, marginBottom: 2 },
   productCategory:  { fontFamily: 'Poppins_400Regular', fontSize: 11, color: C.inkTertiary, marginBottom: 6 },
   productMeta:      { flexDirection: 'row', alignItems: 'center', gap: 10 },
@@ -1194,6 +1248,20 @@ const s = StyleSheet.create({
   justifyContent: 'center',
   zIndex: 999,
 },
+
+// Form Pills
+formPill:           { paddingHorizontal: 16, paddingVertical: 8, borderRadius: R.full, backgroundColor: C.surface, borderWidth: 1, borderColor: C.border },
+formPillActive:     { backgroundColor: C.primary, borderColor: C.primary },
+formPillText:       { fontFamily: 'Poppins_500Medium', fontSize: 13, color: C.inkSecondary },
+formPillTextActive: { color: '#FFF' },
+
+// Image Picker
+imagePickerArea: { width: '100%', height: 180, borderRadius: R.lg, overflow: 'hidden', borderWidth: 1.5, borderColor: C.border, borderStyle: 'dashed' },
+imagePickerPreview: { width: '100%', height: '100%', resizeMode: 'cover' },
+imagePickerOverlay: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(0,0,0,0.45)', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 10 },
+imagePickerOverlayText: { fontFamily: 'Poppins_500Medium', fontSize: 13, color: '#FFF' },
+imagePickerPlaceholder: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: C.surfaceAlt },
+imagePickerPlaceholderText: { fontFamily: 'Poppins_400Regular', fontSize: 13, color: C.inkTertiary },
 
   modalBox: { backgroundColor: '#fff', borderRadius: 16, padding: 24, width: '85%' },
   modalTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 12 },
@@ -1216,7 +1284,7 @@ const s = StyleSheet.create({
   adminBadgeText:  { fontFamily: 'Poppins_700Bold', fontSize: 9, color: '#FFF', letterSpacing: 0.5 },
   deleteUserBtn:   { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8, paddingVertical: 10, paddingHorizontal: 14, borderRadius: R.md, backgroundColor: C.dangerBg, alignSelf: 'flex-start' },
   deleteUserBtnText: { fontFamily: 'Poppins_500Medium', fontSize: 13, color: C.danger },
-  productImage: { width: 52, height: 52, borderRadius: R.md, resizeMode: 'cover' },
+  productImage: { width: 80, height: 80, borderRadius: R.md, resizeMode: 'cover' },
 
   // Empty State
   emptyState:   { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 40, gap: 8 },

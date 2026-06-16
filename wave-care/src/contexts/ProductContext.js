@@ -11,11 +11,8 @@ export function ProductProvider({ children }) {
   useEffect(() => {
     getProducts()
       .then(res => {
-        console.log('🔍 p.image exemplos:', res.data.slice(0, 3).map(p => p.image));
         const mapped = res.data.map(p => {
           const imagePath = p.image || '';
-          // Busca a imagem local pelo caminho salvo no banco.
-          // Se não achar no mapa, fica null (mostra placeholder).
           const imageSource = imageMap[imagePath] || null;
           return {
             ...p,
